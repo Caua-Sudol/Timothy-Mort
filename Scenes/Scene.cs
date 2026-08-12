@@ -6,9 +6,6 @@ namespace DontLikePoetry;
 
 public class Scene
 {
-    private const string DefaultMapPath = "Content/SimpleCutsceneMap.tmx";
-    private const int DefaultPlayerStartX = 10;
-    private const int DefaultPlayerStartY = 552;
     private const int PlayerWidth = 16;
     private const int PlayerHeight = 16;
 
@@ -34,7 +31,9 @@ public class Scene
     private readonly PlayerCollision _playerCollision = new PlayerCollision();
     private Vector2 _checkpoint;
     private bool _playerIsDead;
-    private readonly Vector2 _playerStart;
+    private Vector2 _playerStart;
+    private readonly Vector2 _fallbackPlayerStart;
+    private string _requestedScenarioId;
 
     public SceneMode SceneMode { get; private set; }
     public double SecondsPerFrame { get; private set; }
@@ -47,14 +46,19 @@ public class Scene
     }
 
     public Scene()
-        : this(DefaultMapPath, new Vector2(DefaultPlayerStartX, DefaultPlayerStartY))
+        : this(ScenarioCatalog.Initial)
+    {
+    }
+
+    public Scene(ScenarioDefinition scenario)
+        : this(scenario.MapPath, scenario.FallbackPlayerStart)
     {
     }
 
     public Scene(string mapPath, Vector2 playerStart)
     {
         _map = new LevelMap(mapPath);
-        _playerStart = playerStart;
+        _fallbackPlayerStart = playerStart;
     }
 
     public Player Player
@@ -69,7 +73,10 @@ public class Scene
     {
         _fadeAlpha = 0.0f;
         _playerIsDead = false;
+        _requestedScenarioId = null;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
+        _map.LoadContent(graphicsDevice);
+        _playerStart = _map.PlayerSpawn ?? _fallbackPlayerStart;
         _checkpoint = _playerStart;
 
         var fadeColor = Enumerable.Repeat(Color.White, ScreenWidth * ScreenHeight).ToArray();
@@ -78,8 +85,6 @@ public class Scene
 
         _player = new Player((int)_playerStart.X, (int)_playerStart.Y, PlayerGravity, PlayerWidth, PlayerHeight);
         _player.LoadContent(graphicsDevice, PlayerWidth, PlayerHeight);
-
-        _map.LoadContent(graphicsDevice);
 
         SceneMode = SceneMode.PLAYING;
         SecondsPerFrame = SecondsPerFramePlaying;
@@ -107,7 +112,21 @@ public class Scene
 
     public void Restart(Camera camera)
     {
+        _requestedScenarioId = null;
         RespawnPlayer(camera);
+    }
+
+    public bool TryTakeScenarioTransition(out string scenarioId)
+    {
+        scenarioId = _requestedScenarioId;
+
+        if (string.IsNullOrEmpty(scenarioId))
+        {
+            return false;
+        }
+
+        _requestedScenarioId = null;
+        return true;
     }
 
     private void UpdatePlaying(Camera camera, double deltaTime)
@@ -122,6 +141,13 @@ public class Scene
         }
 
         UpdatePlayingCamera(camera);
+
+        string destination = _map.GetSceneDestination(_player.HitBox);
+        if (!string.IsNullOrEmpty(destination))
+        {
+            _requestedScenarioId = destination;
+            return;
+        }
 
         if (PlayerTouchedCutsceneTrigger())
         {
@@ -246,7 +272,14 @@ public class Scene
 
     public void DrawDebug(SpriteBatch spriteBatch, Camera camera, DebugView debugView)
     {
-        debugView.DrawWorld(spriteBatch, camera, _player, _map.Platforms, _map.CutsceneTriggers, _checkpoint);
+        debugView.DrawWorld(
+            spriteBatch,
+            camera,
+            _player,
+            _map.Platforms,
+            _map.CutsceneTriggers,
+            _map.SceneExits,
+            _checkpoint);
     }
 
     private void DrawWorld(SpriteBatch spriteBatch, Camera camera)

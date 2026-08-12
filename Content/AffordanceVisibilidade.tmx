@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="128" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="5" nextobjectid="15">
+ <objectgroup id="1" name="mapaGeral" color="#57d957">
+  <object id="1" name="inicio" x="0" y="832" width="640" height="256"/>
+  <object id="2" name="distrator_plataforma_1" x="704" y="608" width="160" height="32"/>
+  <object id="3" name="plataforma_intermediaria" x="1312" y="832" width="608" height="256"/>
+  <object id="4" name="distrator_parede" x="1696" y="768" width="64" height="64"/>
+  <object id="5" name="plataforma_apos_parede" x="2432" y="832" width="576" height="256"/>
+  <object id="6" name="distrator_plataforma_2" x="2624" y="640" width="160" height="32"/>
+  <object id="7" name="plataforma_final" x="3552" y="832" width="544" height="256"/>
+  <object id="8" name="distrator_plataforma_3" x="3680" y="640" width="160" height="32"/>
+ </objectgroup>
+ <objectgroup id="2" name="gelatina" color="#ff4fd8">
+  <object id="9" name="gelatina_plataforma_1" x="896" y="768" width="160" height="32"/>
+  <object id="10" name="gelatina_parede_1" x="2176" y="608" width="64" height="224"/>
+  <object id="11" name="gelatina_plataforma_2" x="3200" y="704" width="160" height="32"/>
+ </objectgroup>
+ <objectgroup id="3" name="spawnJogador" color="#4fa3ff">
+  <object id="12" name="spawn_inicial" x="160" y="816" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="4" name="saidaCena" color="#ffd84f"/>
+</map>

@@ -11,6 +11,7 @@ public class Game1 : Game
     private const int LogicalHeight = 1080;
     private const int WindowMargin = 64;
     private const double SecondsPerFrameMenu = 1.0 / 60.0;
+    private const float ScenarioFadeDurationSeconds = 0.75f;
 
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
@@ -24,6 +25,17 @@ public class Game1 : Game
     private AppScreen _activeScreen = AppScreen.START_MENU;
     private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
+    private Texture2D _scenarioFadeTexture;
+    private float _scenarioFadeAlpha;
+    private string _pendingScenarioId;
+    private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionState.NONE;
+
+    private enum ScenarioTransitionState
+    {
+        NONE,
+        FADING_OUT,
+        FADING_IN
+    }
 
     public Game1()
     {
@@ -42,7 +54,7 @@ public class Game1 : Game
 
     protected override void Initialize()
     { 
-        _scene = new Scene();
+        _scene = new Scene(ScenarioCatalog.Initial);
         _debugView = new DebugView();
 
         SpriteFont font = Content.Load<SpriteFont>("font");
@@ -64,6 +76,8 @@ public class Game1 : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _gameRenderTarget = new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
+        _scenarioFadeTexture = new Texture2D(GraphicsDevice, 1, 1);
+        _scenarioFadeTexture.SetData(new[] { Color.White });
         _debugView.LoadContent(GraphicsDevice);
         _scene.LoadContent(GraphicsDevice);
 
@@ -75,7 +89,7 @@ public class Game1 : Game
         double deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
         var keyboardState = Keyboard.GetState();
 
-        if (KeyWasPressed(keyboardState, Keys.F3))
+        if (keyboardState.IsKeyDown(Keys.LeftControl) && KeyWasPressed(keyboardState, Keys.P))
         {
             _debugView.Toggle();
         }
@@ -192,6 +206,12 @@ public class Game1 : Game
 
     private void UpdatePlaying(KeyboardState keyboardState, double deltaTime)
     {
+        if (_scenarioTransitionState != ScenarioTransitionState.NONE)
+        {
+            UpdateScenarioTransition(deltaTime);
+            return;
+        }
+
         if (_overlayState == OverlayState.DEATH_MENU)
         {
             UpdateDeathMenu(keyboardState);
@@ -211,10 +231,57 @@ public class Game1 : Game
 
         _scene.Update(_camera, deltaTime);
 
+        if (_scene.TryTakeScenarioTransition(out string destinationScenarioId))
+        {
+            BeginScenarioTransition(destinationScenarioId);
+            return;
+        }
+
         if (_scene.PlayerIsDead)
         {
             OpenDeathMenu();
         }
+    }
+
+    private void BeginScenarioTransition(string destinationScenarioId)
+    {
+        _pendingScenarioId = destinationScenarioId;
+        _scenarioFadeAlpha = 0.0f;
+        _scenarioTransitionState = ScenarioTransitionState.FADING_OUT;
+    }
+
+    private void UpdateScenarioTransition(double deltaTime)
+    {
+        float fadeDelta = (float)(deltaTime / ScenarioFadeDurationSeconds);
+
+        if (_scenarioTransitionState == ScenarioTransitionState.FADING_OUT)
+        {
+            _scenarioFadeAlpha = Math.Min(1.0f, _scenarioFadeAlpha + fadeDelta);
+
+            if (_scenarioFadeAlpha >= 1.0f)
+            {
+                ChangeScenario(_pendingScenarioId);
+                _pendingScenarioId = null;
+                _scenarioTransitionState = ScenarioTransitionState.FADING_IN;
+            }
+
+            return;
+        }
+
+        _scenarioFadeAlpha = Math.Max(0.0f, _scenarioFadeAlpha - fadeDelta);
+
+        if (_scenarioFadeAlpha <= 0.0f)
+        {
+            _scenarioTransitionState = ScenarioTransitionState.NONE;
+        }
+    }
+
+    private void ChangeScenario(string scenarioId)
+    {
+        ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
+        _scene = new Scene(scenario);
+        _scene.LoadContent(GraphicsDevice);
+        _overlayState = OverlayState.NONE;
     }
 
     private void UpdatePauseMenu(KeyboardState keyboardState)
@@ -292,5 +359,22 @@ public class Game1 : Game
         {
             _deathMenu.Draw(_spriteBatch);
         }
+
+        DrawScenarioTransition();
+    }
+
+    private void DrawScenarioTransition()
+    {
+        if (_scenarioTransitionState == ScenarioTransitionState.NONE)
+        {
+            return;
+        }
+
+        _spriteBatch.Begin();
+        _spriteBatch.Draw(
+            _scenarioFadeTexture,
+            new Rectangle(0, 0, LogicalWidth, LogicalHeight),
+            Color.Black * _scenarioFadeAlpha);
+        _spriteBatch.End();
     }
 }

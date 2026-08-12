@@ -29,6 +29,7 @@ public class DebugView
         Player player,
         IEnumerable<Rectangle> platforms,
         IEnumerable<Rectangle> triggers,
+        IEnumerable<SceneExit> sceneExits,
         Vector2 checkpoint)
     {
         if (!IsEnabled)
@@ -49,6 +50,12 @@ public class DebugView
         {
             spriteBatch.Draw(_pixel, trigger, Color.Red * 0.25f);
             DrawOutline(spriteBatch, trigger, Color.Red);
+        }
+
+        foreach (SceneExit sceneExit in sceneExits)
+        {
+            spriteBatch.Draw(_pixel, sceneExit.Bounds, Color.Gold * 0.25f);
+            DrawOutline(spriteBatch, sceneExit.Bounds, Color.Gold);
         }
 
         DrawCross(spriteBatch, checkpoint, Color.Magenta);

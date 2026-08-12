@@ -12,7 +12,7 @@ Ele e um dump inicial: a intencao e copiar a estrutura e evoluir cada jogo sem p
 - `LeftShift`: dash.
 - `Escape`: abrir ou fechar o pause.
 - `Enter`: confirmar uma opcao de menu.
-- `F3`: ativar ou desativar o debug visual.
+- `Ctrl esquerdo + P`: ativar ou desativar o debug visual.
 
 ## Estrutura
 
@@ -45,7 +45,7 @@ As medidas atuais de movimento e uma regua para desenhar no Tiled estao em [docs
 
 ## Debug visual
 
-Com `F3` ativo, o jogo mostra dados do mundo sem abrir console ou imprimir varios textos:
+Com `Ctrl esquerdo + P` ativo, o jogo mostra dados do mundo sem abrir console ou imprimir varios textos:
 
 - contorno verde das plataformas;
 - trigger da cutscene em vermelho;

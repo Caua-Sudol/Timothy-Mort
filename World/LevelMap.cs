@@ -11,11 +11,17 @@ public class LevelMap
     private const int TileSize = 32;
     private const string PlatformLayerName = "mapaGeral";
     private const string CutsceneTriggerLayerName = "triggerColision";
+    private const string PlayerSpawnLayerName = "spawnJogador";
+    private const string SceneExitLayerName = "saidaCena";
+    private const string SceneDestinationPropertyName = "destino";
 
     private readonly string _mapPath;
     private readonly List<Rectangle> _platforms = new List<Rectangle>();
     private readonly List<Rectangle> _cutsceneTriggers = new List<Rectangle>();
+    private readonly List<SceneExit> _sceneExits = new List<SceneExit>();
     private Texture2D _platformTexture;
+
+    public Vector2? PlayerSpawn { get; private set; }
 
     public IEnumerable<Rectangle> Platforms
     {
@@ -30,6 +36,14 @@ public class LevelMap
         get
         {
             return _cutsceneTriggers;
+        }
+    }
+
+    public IEnumerable<SceneExit> SceneExits
+    {
+        get
+        {
+            return _sceneExits;
         }
     }
 
@@ -57,6 +71,19 @@ public class LevelMap
         return false;
     }
 
+    public string GetSceneDestination(Rectangle hitBox)
+    {
+        foreach (SceneExit sceneExit in _sceneExits)
+        {
+            if (hitBox.Intersects(sceneExit.Bounds))
+            {
+                return sceneExit.DestinationScenarioId;
+            }
+        }
+
+        return null;
+    }
+
     public void Draw(SpriteBatch spriteBatch)
     {
         foreach (var platform in _platforms)
@@ -69,6 +96,8 @@ public class LevelMap
     {
         _platforms.Clear();
         _cutsceneTriggers.Clear();
+        _sceneExits.Clear();
+        PlayerSpawn = null;
 
         var map = new TmxMap(_mapPath);
 
@@ -77,9 +106,44 @@ public class LevelMap
             _platforms.Add(new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height));
         }
 
-        foreach (var row in map.ObjectGroups[CutsceneTriggerLayerName].Objects)
+        var cutsceneTriggerLayer = map.ObjectGroups.FirstOrDefault(
+            layer => layer.Name == CutsceneTriggerLayerName);
+
+        if (cutsceneTriggerLayer != null)
         {
-            _cutsceneTriggers.Add(new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height));
+            foreach (var row in cutsceneTriggerLayer.Objects)
+            {
+                _cutsceneTriggers.Add(new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height));
+            }
+        }
+
+        var playerSpawnLayer = map.ObjectGroups.FirstOrDefault(
+            layer => layer.Name == PlayerSpawnLayerName);
+        var playerSpawnObject = playerSpawnLayer?.Objects.FirstOrDefault();
+
+        if (playerSpawnObject != null)
+        {
+            PlayerSpawn = new Vector2((float)playerSpawnObject.X, (float)playerSpawnObject.Y);
+        }
+
+        var sceneExitLayer = map.ObjectGroups.FirstOrDefault(
+            layer => layer.Name == SceneExitLayerName);
+
+        if (sceneExitLayer == null)
+        {
+            return;
+        }
+
+        foreach (var row in sceneExitLayer.Objects)
+        {
+            if (!row.Properties.TryGetValue(SceneDestinationPropertyName, out string destination) ||
+                string.IsNullOrWhiteSpace(destination))
+            {
+                continue;
+            }
+
+            var bounds = new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height);
+            _sceneExits.Add(new SceneExit(bounds, destination));
         }
     }
 
