@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -29,6 +30,7 @@ public class Scene
     private Player _player;
     private readonly LevelMap _map;
     private readonly PlayerCollision _playerCollision = new PlayerCollision();
+    private readonly HashSet<Rectangle> _usedGelatins = new HashSet<Rectangle>();
     private Vector2 _checkpoint;
     private bool _playerIsDead;
     private Vector2 _playerStart;
@@ -74,6 +76,7 @@ public class Scene
         _fadeAlpha = 0.0f;
         _playerIsDead = false;
         _requestedScenarioId = null;
+        _usedGelatins.Clear();
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
         _playerStart = _map.PlayerSpawn ?? _fallbackPlayerStart;
@@ -131,8 +134,16 @@ public class Scene
 
     private void UpdatePlaying(Camera camera, double deltaTime)
     {
+        bool wasGrounded = _player.IsGrounded;
         _player.Update(deltaTime);
         UpdatePlayerPhysics(deltaTime);
+
+        if (!wasGrounded && _player.IsGrounded)
+        {
+            _usedGelatins.Clear();
+        }
+
+        UpdateGelatinContact();
 
         if (PlayerFell())
         {
@@ -160,6 +171,20 @@ public class Scene
         _playerCollision.MoveAndResolve(_player, _map.Platforms, deltaTime);
     }
 
+    private void UpdateGelatinContact()
+    {
+        foreach (Rectangle gelatin in _map.Gelatins)
+        {
+            if (!_player.HitBox.Intersects(gelatin) || _usedGelatins.Contains(gelatin))
+            {
+                continue;
+            }
+
+            _player.RestoreDash();
+            _usedGelatins.Add(gelatin);
+        }
+    }
+
     private bool PlayerTouchedCutsceneTrigger()
     {
         return _map.HasCutsceneTrigger(_player.HitBox);
@@ -173,6 +198,7 @@ public class Scene
     private void KillPlayer()
     {
         _playerIsDead = true;
+        _usedGelatins.Clear();
         _player.CancelDash();
         _player.ResetVelocity();
     }
@@ -180,6 +206,7 @@ public class Scene
     private void RespawnPlayer(Camera camera)
     {
         _playerIsDead = false;
+        _usedGelatins.Clear();
         _player.Move((int)_checkpoint.X, (int)_checkpoint.Y);
         _player.CancelDash();
         _player.ResetVelocity();
@@ -277,6 +304,7 @@ public class Scene
             camera,
             _player,
             _map.Platforms,
+            _map.Gelatins,
             _map.CutsceneTriggers,
             _map.SceneExits,
             _checkpoint);

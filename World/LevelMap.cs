@@ -10,6 +10,7 @@ public class LevelMap
 {
     private const int TileSize = 32;
     private const string PlatformLayerName = "mapaGeral";
+    private const string GelatinLayerName = "gelatina";
     private const string CutsceneTriggerLayerName = "triggerColision";
     private const string PlayerSpawnLayerName = "spawnJogador";
     private const string SceneExitLayerName = "saidaCena";
@@ -17,6 +18,7 @@ public class LevelMap
 
     private readonly string _mapPath;
     private readonly List<Rectangle> _platforms = new List<Rectangle>();
+    private readonly List<Rectangle> _gelatins = new List<Rectangle>();
     private readonly List<Rectangle> _cutsceneTriggers = new List<Rectangle>();
     private readonly List<SceneExit> _sceneExits = new List<SceneExit>();
     private Texture2D _platformTexture;
@@ -28,6 +30,14 @@ public class LevelMap
         get
         {
             return _platforms;
+        }
+    }
+
+    public IEnumerable<Rectangle> Gelatins
+    {
+        get
+        {
+            return _gelatins;
         }
     }
 
@@ -90,11 +100,17 @@ public class LevelMap
         {
             spriteBatch.Draw(_platformTexture, platform, Color.Purple);
         }
+
+        foreach (var gelatin in _gelatins)
+        {
+            spriteBatch.Draw(_platformTexture, gelatin, Color.Purple);
+        }
     }
 
     private void LoadObjects()
     {
         _platforms.Clear();
+        _gelatins.Clear();
         _cutsceneTriggers.Clear();
         _sceneExits.Clear();
         PlayerSpawn = null;
@@ -104,6 +120,17 @@ public class LevelMap
         foreach (var row in map.ObjectGroups[PlatformLayerName].Objects)
         {
             _platforms.Add(new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height));
+        }
+
+        var gelatinLayer = map.ObjectGroups.FirstOrDefault(
+            layer => layer.Name == GelatinLayerName);
+
+        if (gelatinLayer != null)
+        {
+            foreach (var row in gelatinLayer.Objects)
+            {
+                _gelatins.Add(new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height));
+            }
         }
 
         var cutsceneTriggerLayer = map.ObjectGroups.FirstOrDefault(

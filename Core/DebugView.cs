@@ -28,6 +28,7 @@ public class DebugView
         Camera camera,
         Player player,
         IEnumerable<Rectangle> platforms,
+        IEnumerable<Rectangle> gelatins,
         IEnumerable<Rectangle> triggers,
         IEnumerable<SceneExit> sceneExits,
         Vector2 checkpoint)
@@ -44,6 +45,11 @@ public class DebugView
         foreach (Rectangle platform in platforms)
         {
             DrawOutline(spriteBatch, platform, Color.LimeGreen);
+        }
+
+        foreach (Rectangle gelatin in gelatins)
+        {
+            DrawOutline(spriteBatch, gelatin, Color.DeepSkyBlue);
         }
 
         foreach (Rectangle trigger in triggers)
