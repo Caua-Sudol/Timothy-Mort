@@ -22,6 +22,7 @@ public class Scene
     private const float CutsceneCameraZoom = 2.0f;
     private const float CutsceneWalkSpeed = 10.0f;
     private const float CutsceneEndX = 940.0f;
+    private const float GelatinMaximumFallSpeed = 96.0f;
 
     private Texture2D _fadeTexture;
     private Rectangle _fadeRectangle;
@@ -136,7 +137,9 @@ public class Scene
     {
         bool wasGrounded = _player.IsGrounded;
         _player.Update(deltaTime);
+        ApplyGelatinFallSpeed();
         UpdatePlayerPhysics(deltaTime);
+        ApplyGelatinFallSpeed();
 
         if (!wasGrounded && _player.IsGrounded)
         {
@@ -169,6 +172,20 @@ public class Scene
     private void UpdatePlayerPhysics(double deltaTime)
     {
         _playerCollision.MoveAndResolve(_player, _map.Platforms, deltaTime);
+    }
+
+    private void ApplyGelatinFallSpeed()
+    {
+        foreach (Rectangle gelatin in _map.Gelatins)
+        {
+            if (!_player.HitBox.Intersects(gelatin))
+            {
+                continue;
+            }
+
+            _player.LimitFallSpeed(GelatinMaximumFallSpeed);
+            return;
+        }
     }
 
     private void UpdateGelatinContact()
@@ -313,9 +330,11 @@ public class Scene
     private void DrawWorld(SpriteBatch spriteBatch, Camera camera)
     {
         var cameraTransform = camera.GetTransform();
-        spriteBatch.Begin(transformMatrix: cameraTransform);
+        spriteBatch.Begin(
+            samplerState: SamplerState.PointClamp,
+            transformMatrix: cameraTransform);
 
-        _player.Draw(spriteBatch, _player.Position);
+        _player.Draw(spriteBatch);
 
         _map.Draw(spriteBatch);
 

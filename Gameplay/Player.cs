@@ -299,6 +299,16 @@ public class Player
         _velocity = Vector2.Zero;
     }
 
+    public void LimitFallSpeed(float maximumFallSpeed)
+    {
+        if (_velocity.Y <= maximumFallSpeed)
+        {
+            return;
+        }
+
+        _velocity = new Vector2(_velocity.X, maximumFallSpeed);
+    }
+
     public void Grounded()
     {
         _isGrounded = true;
@@ -315,8 +325,8 @@ public class Player
         CanDash = true;
     }
 
-    public void Draw(SpriteBatch spriteBatch, Vector2 actor)
+    public void Draw(SpriteBatch spriteBatch)
     {
-        spriteBatch.Draw(_texture, actor, Color.Purple);
+        spriteBatch.Draw(_texture, HitBox, Color.Purple);
     }
 }
