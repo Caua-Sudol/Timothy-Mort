@@ -31,6 +31,10 @@ public class DebugView
         IEnumerable<Rectangle> gelatins,
         IEnumerable<Rectangle> triggers,
         IEnumerable<SceneExit> sceneExits,
+        IEnumerable<InterventionEntrance> interventionEntrances,
+        IEnumerable<Rectangle> interventionButtons,
+        IEnumerable<Rectangle> exitDoors,
+        InterventionEntrancePlacement? activeInterventionEntrancePlacement,
         Vector2 checkpoint)
     {
         if (!IsEnabled)
@@ -62,6 +66,26 @@ public class DebugView
         {
             spriteBatch.Draw(_pixel, sceneExit.Bounds, Color.Gold * 0.25f);
             DrawOutline(spriteBatch, sceneExit.Bounds, Color.Gold);
+        }
+
+        foreach (InterventionEntrance entrance in interventionEntrances)
+        {
+            Color color = activeInterventionEntrancePlacement.HasValue &&
+                entrance.Placement == activeInterventionEntrancePlacement.Value
+                    ? Color.Orange
+                    : Color.Gray;
+
+            DrawOutline(spriteBatch, entrance.Bounds, color);
+        }
+
+        foreach (Rectangle button in interventionButtons)
+        {
+            DrawOutline(spriteBatch, button, Color.Orange);
+        }
+
+        foreach (Rectangle door in exitDoors)
+        {
+            DrawOutline(spriteBatch, door, Color.Red);
         }
 
         DrawCross(spriteBatch, checkpoint, Color.Magenta);

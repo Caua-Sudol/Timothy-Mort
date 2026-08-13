@@ -8,6 +8,7 @@ public static class ScenarioCatalog
 {
     public const string InitialScenarioId = "simple_cutscene";
     public const string AffordanceVisibilityScenarioId = "affordance_visibilidade";
+    public const string AffordanceInterventionScenarioId = "affordance_intervencao";
 
     private static readonly IReadOnlyDictionary<string, ScenarioDefinition> Scenarios =
         new Dictionary<string, ScenarioDefinition>(StringComparer.Ordinal)
@@ -19,6 +20,10 @@ public static class ScenarioCatalog
             [AffordanceVisibilityScenarioId] = new ScenarioDefinition(
                 AffordanceVisibilityScenarioId,
                 "Content/AffordanceVisibilidade.tmx",
+                new Vector2(160, 816)),
+            [AffordanceInterventionScenarioId] = new ScenarioDefinition(
+                AffordanceInterventionScenarioId,
+                "Content/AffordanceIntervencao.tmx",
                 new Vector2(160, 816))
         };
 

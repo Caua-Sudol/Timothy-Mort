@@ -7,6 +7,7 @@ namespace DontLikePoetry;
 
 public class Game1 : Game
 {
+    private const string AffordanceVisibilityPhaseId = "affordance_visibilidade";
     private const int LogicalWidth = 1920;
     private const int LogicalHeight = 1080;
     private const int WindowMargin = 64;
@@ -22,12 +23,17 @@ public class Game1 : Game
     private StartMenu _startMenu;
     private PauseMenu _pauseMenu;
     private DeathMenu _deathMenu;
+    private readonly PhaseState _phaseState = new PhaseState(
+        AffordanceVisibilityPhaseId,
+        ScenarioCatalog.InitialScenarioId,
+        ScenarioCatalog.AffordanceVisibilityScenarioId);
     private AppScreen _activeScreen = AppScreen.START_MENU;
     private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
     private Texture2D _scenarioFadeTexture;
     private float _scenarioFadeAlpha;
     private string _pendingScenarioId;
+    private string _pendingScenarioSpawnId;
     private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionState.NONE;
 
     private enum ScenarioTransitionState
@@ -54,7 +60,7 @@ public class Game1 : Game
 
     protected override void Initialize()
     { 
-        _scene = new Scene(ScenarioCatalog.Initial);
+        _scene = new Scene(ScenarioCatalog.Initial, null, _phaseState);
         _debugView = new DebugView();
 
         SpriteFont font = Content.Load<SpriteFont>("font");
@@ -231,21 +237,27 @@ public class Game1 : Game
 
         _scene.Update(_camera, deltaTime);
 
-        if (_scene.TryTakeScenarioTransition(out string destinationScenarioId))
+        if (_scene.TryTakeScenarioTransition(
+            out string destinationScenarioId,
+            out string destinationSpawnId))
         {
-            BeginScenarioTransition(destinationScenarioId);
+            BeginScenarioTransition(destinationScenarioId, destinationSpawnId);
             return;
         }
 
         if (_scene.PlayerIsDead)
         {
+            _phaseState.RegisterFallDeath();
             OpenDeathMenu();
         }
     }
 
-    private void BeginScenarioTransition(string destinationScenarioId)
+    private void BeginScenarioTransition(
+        string destinationScenarioId,
+        string destinationSpawnId)
     {
         _pendingScenarioId = destinationScenarioId;
+        _pendingScenarioSpawnId = destinationSpawnId;
         _scenarioFadeAlpha = 0.0f;
         _scenarioTransitionState = ScenarioTransitionState.FADING_OUT;
     }
@@ -260,8 +272,9 @@ public class Game1 : Game
 
             if (_scenarioFadeAlpha >= 1.0f)
             {
-                ChangeScenario(_pendingScenarioId);
+                ChangeScenario(_pendingScenarioId, _pendingScenarioSpawnId);
                 _pendingScenarioId = null;
+                _pendingScenarioSpawnId = null;
                 _scenarioTransitionState = ScenarioTransitionState.FADING_IN;
             }
 
@@ -276,11 +289,12 @@ public class Game1 : Game
         }
     }
 
-    private void ChangeScenario(string scenarioId)
+    private void ChangeScenario(string scenarioId, string spawnId)
     {
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
-        _scene = new Scene(scenario);
+        _scene = new Scene(scenario, spawnId, _phaseState);
         _scene.LoadContent(GraphicsDevice);
+        _phaseState.EnterScenario(scenarioId);
         _overlayState = OverlayState.NONE;
     }
 
@@ -292,6 +306,7 @@ public class Game1 : Game
             _overlayState = OverlayState.NONE;
         else if (selectedOption == PauseOption.RESTART)
         {
+            _phaseState.BeginAttempt();
             _scene.Restart(_camera);
             _overlayState = OverlayState.NONE;
         }
@@ -305,6 +320,7 @@ public class Game1 : Game
 
         if (selectedOption == DeathOption.RETRY)
         {
+            _phaseState.BeginAttempt();
             _scene.Restart(_camera);
             _overlayState = OverlayState.NONE;
         }

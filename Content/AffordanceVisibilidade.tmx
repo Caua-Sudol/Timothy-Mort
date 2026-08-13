@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="5" nextobjectid="15">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="17">
  <objectgroup id="1" name="mapaGeral" color="#57d957">
   <object id="1" name="inicio" x="0" y="832" width="640" height="256"/>
   <!-- <object id="2" name="distrator_plataforma_1" x="704" y="608" width="96" height="32"/> -->
@@ -19,4 +19,20 @@
   <object id="12" name="spawn_inicial" x="160" y="816" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="4" name="saidaCena" color="#ffd84f"/>
+ <objectgroup id="5" name="entradaIntervencao" color="#ff9f43">
+  <object id="15" name="entrada_antecipada" x="1760" y="704" width="64" height="128">
+   <properties>
+    <property name="destino" value="affordance_intervencao"/>
+    <property name="posicao" value="antecipada"/>
+    <property name="spawnDestino" value="spawn_entrada"/>
+   </properties>
+  </object>
+  <object id="16" name="entrada_tardia" x="2944" y="704" width="64" height="128">
+   <properties>
+    <property name="destino" value="affordance_intervencao"/>
+    <property name="posicao" value="tardia"/>
+    <property name="spawnDestino" value="spawn_entrada"/>
+   </properties>
+  </object>
+ </objectgroup>
 </map>

@@ -23,6 +23,8 @@ public class Scene
     private const float CutsceneWalkSpeed = 10.0f;
     private const float CutsceneEndX = 940.0f;
     private const float GelatinMaximumFallSpeed = 96.0f;
+    private const float InterventionButtonPressedOffset = 8.0f;
+    private const float InterventionButtonPressSpeed = 64.0f;
 
     private Texture2D _fadeTexture;
     private Rectangle _fadeRectangle;
@@ -36,7 +38,12 @@ public class Scene
     private bool _playerIsDead;
     private Vector2 _playerStart;
     private readonly Vector2 _fallbackPlayerStart;
+    private readonly string _entrySpawnId;
+    private readonly PhaseState _phaseState;
     private string _requestedScenarioId;
+    private string _requestedSpawnId;
+    private float _interventionButtonPressOffset;
+    private bool _exitDoorIsOpen;
 
     public SceneMode SceneMode { get; private set; }
     public double SecondsPerFrame { get; private set; }
@@ -48,20 +55,50 @@ public class Scene
         }
     }
 
+    public bool InterventionButtonPressed { get; private set; }
+
     public Scene()
-        : this(ScenarioCatalog.Initial)
+        : this(ScenarioCatalog.Initial, null, null)
     {
     }
 
     public Scene(ScenarioDefinition scenario)
-        : this(scenario.MapPath, scenario.FallbackPlayerStart)
+        : this(scenario, null, null)
+    {
+    }
+
+    public Scene(ScenarioDefinition scenario, string entrySpawnId)
+        : this(scenario, entrySpawnId, null)
+    {
+    }
+
+    public Scene(
+        ScenarioDefinition scenario,
+        string entrySpawnId,
+        PhaseState phaseState)
+        : this(
+            scenario.MapPath,
+            scenario.FallbackPlayerStart,
+            entrySpawnId,
+            phaseState)
     {
     }
 
     public Scene(string mapPath, Vector2 playerStart)
+        : this(mapPath, playerStart, null, null)
+    {
+    }
+
+    private Scene(
+        string mapPath,
+        Vector2 playerStart,
+        string entrySpawnId,
+        PhaseState phaseState)
     {
         _map = new LevelMap(mapPath);
         _fallbackPlayerStart = playerStart;
+        _entrySpawnId = entrySpawnId;
+        _phaseState = phaseState;
     }
 
     public Player Player
@@ -77,10 +114,16 @@ public class Scene
         _fadeAlpha = 0.0f;
         _playerIsDead = false;
         _requestedScenarioId = null;
+        _requestedSpawnId = null;
+        InterventionButtonPressed = false;
+        _interventionButtonPressOffset = 0.0f;
+        _exitDoorIsOpen = false;
         _usedGelatins.Clear();
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
-        _playerStart = _map.PlayerSpawn ?? _fallbackPlayerStart;
+        _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
+            ?? _map.PlayerSpawn
+            ?? _fallbackPlayerStart;
         _checkpoint = _playerStart;
 
         var fadeColor = Enumerable.Repeat(Color.White, ScreenWidth * ScreenHeight).ToArray();
@@ -120,9 +163,10 @@ public class Scene
         RespawnPlayer(camera);
     }
 
-    public bool TryTakeScenarioTransition(out string scenarioId)
+    public bool TryTakeScenarioTransition(out string scenarioId, out string spawnId)
     {
         scenarioId = _requestedScenarioId;
+        spawnId = _requestedSpawnId;
 
         if (string.IsNullOrEmpty(scenarioId))
         {
@@ -130,6 +174,7 @@ public class Scene
         }
 
         _requestedScenarioId = null;
+        _requestedSpawnId = null;
         return true;
     }
 
@@ -140,6 +185,7 @@ public class Scene
         ApplyGelatinFallSpeed();
         UpdatePlayerPhysics(deltaTime);
         ApplyGelatinFallSpeed();
+        UpdateInterventionButton(deltaTime);
 
         if (!wasGrounded && _player.IsGrounded)
         {
@@ -156,10 +202,22 @@ public class Scene
 
         UpdatePlayingCamera(camera);
 
-        string destination = _map.GetSceneDestination(_player.HitBox);
-        if (!string.IsNullOrEmpty(destination))
+        SceneExit sceneExit = _map.GetSceneExit(_player.HitBox);
+        if (sceneExit != null)
         {
-            _requestedScenarioId = destination;
+            _requestedScenarioId = sceneExit.DestinationScenarioId;
+            _requestedSpawnId = sceneExit.DestinationSpawnId;
+            return;
+        }
+
+        InterventionEntrance interventionEntrance = _map.GetInterventionEntrance(
+            _player.HitBox,
+            _phaseState?.InterventionEntrancePlacement);
+
+        if (interventionEntrance != null)
+        {
+            _requestedScenarioId = interventionEntrance.DestinationScenarioId;
+            _requestedSpawnId = interventionEntrance.DestinationSpawnId;
             return;
         }
 
@@ -171,7 +229,29 @@ public class Scene
 
     private void UpdatePlayerPhysics(double deltaTime)
     {
-        _playerCollision.MoveAndResolve(_player, _map.Platforms, deltaTime);
+        _playerCollision.MoveAndResolve(
+            _player,
+            _map.GetSolidColliders(_exitDoorIsOpen),
+            deltaTime);
+    }
+
+    private void UpdateInterventionButton(double deltaTime)
+    {
+        if (!InterventionButtonPressed &&
+            _map.HasInterventionButtonUnderPlayer(_player.HitBox, _player.IsGrounded))
+        {
+            InterventionButtonPressed = true;
+        }
+
+        if (!InterventionButtonPressed ||
+            _interventionButtonPressOffset >= InterventionButtonPressedOffset)
+        {
+            return;
+        }
+
+        _interventionButtonPressOffset = MathHelper.Min(
+            InterventionButtonPressedOffset,
+            _interventionButtonPressOffset + InterventionButtonPressSpeed * (float)deltaTime);
     }
 
     private void ApplyGelatinFallSpeed()
@@ -324,6 +404,10 @@ public class Scene
             _map.Gelatins,
             _map.CutsceneTriggers,
             _map.SceneExits,
+            _map.InterventionEntrances,
+            _map.InterventionButtons,
+            _map.ExitDoors,
+            _phaseState?.InterventionEntrancePlacement,
             _checkpoint);
     }
 
@@ -336,7 +420,11 @@ public class Scene
 
         _player.Draw(spriteBatch);
 
-        _map.Draw(spriteBatch);
+        _map.Draw(
+            spriteBatch,
+            _phaseState?.InterventionEntrancePlacement,
+            _interventionButtonPressOffset,
+            _exitDoorIsOpen);
 
         spriteBatch.End();
     }

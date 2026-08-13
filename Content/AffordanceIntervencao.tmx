@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="48" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="8" nextobjectid="11">
+ <objectgroup id="1" name="mapaGeral" color="#57d957">
+  <object id="1" name="plataforma_inicial" x="0" y="832" width="512" height="256"/>
+  <object id="2" name="plataforma_botao" x="1024" y="640" width="512" height="448"/>
+  <object id="10" name="parede_sobre_porta" x="0" y="0" width="64" height="704"/>
+ </objectgroup>
+ <objectgroup id="2" name="gelatina" color="#ff4fd8">
+  <object id="5" name="gelatina_demonstracao" x="672" y="704" width="160" height="32"/>
+ </objectgroup>
+ <objectgroup id="3" name="spawnJogador" color="#4fa3ff">
+  <object id="6" name="spawn_entrada" x="160" y="816" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="4" name="botaoIntervencao" color="#ff9f43">
+  <object id="7" name="botao_escolhas" x="1248" y="624" width="64" height="16"/>
+ </objectgroup>
+ <objectgroup id="5" name="portaSaida" color="#e84c4c">
+  <object id="8" name="porta_retorno" x="0" y="704" width="64" height="128"/>
+ </objectgroup>
+ <objectgroup id="6" name="retornoIntervencao" color="#ffd84f">
+  <object id="9" name="retorno_affordance_visibilidade" x="0" y="704" width="64" height="128">
+   <properties>
+    <property name="destino" value="affordance_visibilidade"/>
+    <property name="spawnDestino" value="spawn_inicial"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="7" name="saidaCena" color="#ffd84f"/>
+</map>
