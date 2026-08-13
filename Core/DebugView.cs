@@ -29,6 +29,9 @@ public class DebugView
         Player player,
         IEnumerable<Rectangle> platforms,
         IEnumerable<Rectangle> gelatins,
+        IEnumerable<Rectangle> verticalRoutePlatforms,
+        IEnumerable<Rectangle> verticalRouteGelatins,
+        bool verticalRouteRevealed,
         IEnumerable<Rectangle> triggers,
         IEnumerable<SceneExit> sceneExits,
         IEnumerable<InterventionEntrance> interventionEntrances,
@@ -54,6 +57,22 @@ public class DebugView
         foreach (Rectangle gelatin in gelatins)
         {
             DrawOutline(spriteBatch, gelatin, Color.DeepSkyBlue);
+        }
+
+        foreach (Rectangle platform in verticalRoutePlatforms)
+        {
+            DrawOutline(
+                spriteBatch,
+                platform,
+                verticalRouteRevealed ? Color.LimeGreen : Color.Gray);
+        }
+
+        foreach (Rectangle gelatin in verticalRouteGelatins)
+        {
+            DrawOutline(
+                spriteBatch,
+                gelatin,
+                verticalRouteRevealed ? Color.DeepSkyBlue : Color.Gray);
         }
 
         foreach (Rectangle trigger in triggers)

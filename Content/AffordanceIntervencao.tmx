@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="48" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="8" nextobjectid="11">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="48" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="9" nextobjectid="15">
  <objectgroup id="1" name="mapaGeral" color="#57d957">
   <object id="1" name="plataforma_inicial" x="0" y="832" width="512" height="256"/>
   <object id="2" name="plataforma_botao" x="1024" y="640" width="512" height="448"/>
-  <object id="10" name="parede_sobre_porta" x="0" y="0" width="64" height="704"/>
+  <object id="10" name="parede_sobre_porta" x="0" y="0" width="64" height="128"/>
  </objectgroup>
  <objectgroup id="2" name="gelatina" color="#ff4fd8">
   <object id="5" name="gelatina_demonstracao" x="672" y="704" width="160" height="32"/>
@@ -15,15 +15,22 @@
   <object id="7" name="botao_escolhas" x="1248" y="624" width="64" height="16"/>
  </objectgroup>
  <objectgroup id="5" name="portaSaida" color="#e84c4c">
-  <object id="8" name="porta_retorno" x="0" y="704" width="64" height="128"/>
+  <object id="8" name="porta_retorno" x="0" y="128" width="64" height="128"/>
  </objectgroup>
- <objectgroup id="6" name="retornoIntervencao" color="#ffd84f">
-  <object id="9" name="retorno_affordance_visibilidade" x="0" y="704" width="64" height="128">
+ <objectgroup id="6" name="saidaCena" color="#ffd84f">
+  <object id="9" name="retorno_affordance_visibilidade" x="0" y="128" width="64" height="128">
    <properties>
     <property name="destino" value="affordance_visibilidade"/>
     <property name="spawnDestino" value="spawn_inicial"/>
    </properties>
   </object>
  </objectgroup>
- <objectgroup id="7" name="saidaCena" color="#ffd84f"/>
+ <objectgroup id="7" name="rotaVerticalSolida" color="#74d957">
+  <object id="11" name="degrau_intermediario" x="608" y="448" width="192" height="32"/>
+  <object id="12" name="plataforma_porta" x="64" y="256" width="320" height="32"/>
+ </objectgroup>
+ <objectgroup id="8" name="rotaVerticalGelatina" color="#66d9ff">
+  <object id="13" name="gelatina_subida_1" x="864" y="512" width="160" height="32"/>
+  <object id="14" name="gelatina_subida_2" x="384" y="320" width="160" height="32"/>
+ </objectgroup>
 </map>

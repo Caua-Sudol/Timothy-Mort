@@ -25,6 +25,8 @@ public class Scene
     private const float GelatinMaximumFallSpeed = 96.0f;
     private const float InterventionButtonPressedOffset = 8.0f;
     private const float InterventionButtonPressSpeed = 64.0f;
+    private const float ExitDoorInitialDrop = 576.0f;
+    private const float ExitDoorRiseSpeed = 768.0f;
 
     private Texture2D _fadeTexture;
     private Rectangle _fadeRectangle;
@@ -43,7 +45,10 @@ public class Scene
     private string _requestedScenarioId;
     private string _requestedSpawnId;
     private float _interventionButtonPressOffset;
+    private float _exitDoorRiseOffset;
     private bool _exitDoorIsOpen;
+    private bool _interventionButtonActivationPending;
+    private bool _interventionButtonActivationIssued;
 
     public SceneMode SceneMode { get; private set; }
     public double SecondsPerFrame { get; private set; }
@@ -117,7 +122,10 @@ public class Scene
         _requestedSpawnId = null;
         InterventionButtonPressed = false;
         _interventionButtonPressOffset = 0.0f;
-        _exitDoorIsOpen = false;
+        _exitDoorRiseOffset = ExitDoorInitialDrop;
+        SyncInterventionState();
+        _interventionButtonActivationPending = false;
+        _interventionButtonActivationIssued = false;
         _usedGelatins.Clear();
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
@@ -178,6 +186,17 @@ public class Scene
         return true;
     }
 
+    public bool TryTakeInterventionButtonActivation()
+    {
+        if (!_interventionButtonActivationPending)
+        {
+            return false;
+        }
+
+        _interventionButtonActivationPending = false;
+        return true;
+    }
+
     private void UpdatePlaying(Camera camera, double deltaTime)
     {
         bool wasGrounded = _player.IsGrounded;
@@ -186,6 +205,7 @@ public class Scene
         UpdatePlayerPhysics(deltaTime);
         ApplyGelatinFallSpeed();
         UpdateInterventionButton(deltaTime);
+        UpdateExitDoorRise(deltaTime);
 
         if (!wasGrounded && _player.IsGrounded)
         {
@@ -202,7 +222,10 @@ public class Scene
 
         UpdatePlayingCamera(camera);
 
-        SceneExit sceneExit = _map.GetSceneExit(_player.HitBox);
+        SceneExit sceneExit = _map.GetSceneExit(
+            _player.HitBox,
+            _exitDoorIsOpen,
+            _phaseState?.ExitDoorIsOpen == true);
         if (sceneExit != null)
         {
             _requestedScenarioId = sceneExit.DestinationScenarioId;
@@ -212,7 +235,7 @@ public class Scene
 
         InterventionEntrance interventionEntrance = _map.GetInterventionEntrance(
             _player.HitBox,
-            _phaseState?.InterventionEntrancePlacement);
+            GetActiveInterventionEntrancePlacement());
 
         if (interventionEntrance != null)
         {
@@ -231,32 +254,74 @@ public class Scene
     {
         _playerCollision.MoveAndResolve(
             _player,
-            _map.GetSolidColliders(_exitDoorIsOpen),
+            _map.GetSolidColliders(
+                _exitDoorIsOpen,
+                _phaseState?.VerticalRouteRevealed == true,
+                _exitDoorRiseOffset),
             deltaTime);
     }
 
     private void UpdateInterventionButton(double deltaTime)
     {
-        if (!InterventionButtonPressed &&
-            _map.HasInterventionButtonUnderPlayer(_player.HitBox, _player.IsGrounded))
+        bool playerIsOnButton = _map.HasInterventionButtonUnderPlayer(
+            _player.HitBox,
+            _player.IsGrounded);
+
+        if (playerIsOnButton)
         {
             InterventionButtonPressed = true;
         }
+        else
+        {
+            InterventionButtonPressed = false;
+            _interventionButtonPressOffset = MathHelper.Max(
+                0.0f,
+                _interventionButtonPressOffset - InterventionButtonPressSpeed * (float)deltaTime);
 
-        if (!InterventionButtonPressed ||
-            _interventionButtonPressOffset >= InterventionButtonPressedOffset)
+            if (_interventionButtonPressOffset <= 0.0f)
+            {
+                _interventionButtonActivationIssued = false;
+            }
+
+            return;
+        }
+
+        if (_interventionButtonPressOffset < InterventionButtonPressedOffset)
+        {
+            _interventionButtonPressOffset = MathHelper.Min(
+                InterventionButtonPressedOffset,
+                _interventionButtonPressOffset + InterventionButtonPressSpeed * (float)deltaTime);
+        }
+
+        if (_interventionButtonPressOffset >= InterventionButtonPressedOffset &&
+            !_interventionButtonActivationIssued)
+        {
+            _interventionButtonActivationIssued = true;
+            _interventionButtonActivationPending = true;
+        }
+    }
+
+    private void UpdateExitDoorRise(double deltaTime)
+    {
+        if (!InterventionButtonPressed || _exitDoorRiseOffset <= 0.0f)
         {
             return;
         }
 
-        _interventionButtonPressOffset = MathHelper.Min(
-            InterventionButtonPressedOffset,
-            _interventionButtonPressOffset + InterventionButtonPressSpeed * (float)deltaTime);
+        _exitDoorRiseOffset = MathHelper.Max(
+            0.0f,
+            _exitDoorRiseOffset - ExitDoorRiseSpeed * (float)deltaTime);
+    }
+
+    public void SyncInterventionState()
+    {
+        _exitDoorIsOpen = _phaseState?.ExitDoorIsOpen == true;
     }
 
     private void ApplyGelatinFallSpeed()
     {
-        foreach (Rectangle gelatin in _map.Gelatins)
+        foreach (Rectangle gelatin in _map.GetGelatinVolumes(
+            _phaseState?.VerticalRouteRevealed == true))
         {
             if (!_player.HitBox.Intersects(gelatin))
             {
@@ -270,14 +335,24 @@ public class Scene
 
     private void UpdateGelatinContact()
     {
-        foreach (Rectangle gelatin in _map.Gelatins)
+        foreach (Rectangle gelatin in _map.GetGelatinVolumes(
+            _phaseState?.VerticalRouteRevealed == true))
         {
             if (!_player.HitBox.Intersects(gelatin) || _usedGelatins.Contains(gelatin))
             {
                 continue;
             }
 
-            _player.RestoreDash();
+            if (_phaseState?.AppliedSolutionUsesModule(
+                SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) == true)
+            {
+                _player.RestoreDash();
+            }
+            else
+            {
+                _player.RestoreDashWithoutVisualFeedback();
+            }
+
             _usedGelatins.Add(gelatin);
         }
     }
@@ -402,12 +477,15 @@ public class Scene
             _player,
             _map.Platforms,
             _map.Gelatins,
+            _map.VerticalRoutePlatforms,
+            _map.VerticalRouteGelatins,
+            _phaseState?.VerticalRouteRevealed == true,
             _map.CutsceneTriggers,
             _map.SceneExits,
             _map.InterventionEntrances,
             _map.InterventionButtons,
             _map.ExitDoors,
-            _phaseState?.InterventionEntrancePlacement,
+            GetActiveInterventionEntrancePlacement(),
             _checkpoint);
     }
 
@@ -422,11 +500,36 @@ public class Scene
 
         _map.Draw(
             spriteBatch,
-            _phaseState?.InterventionEntrancePlacement,
+            GetActiveInterventionEntrancePlacement(),
             _interventionButtonPressOffset,
-            _exitDoorIsOpen);
+            _exitDoorRiseOffset,
+            _exitDoorIsOpen,
+            _phaseState?.VerticalRouteRevealed == true,
+            GetAppliedVisualModules());
 
         spriteBatch.End();
+    }
+
+    private SolutionVisualModule GetAppliedVisualModules()
+    {
+        if (_phaseState == null || string.IsNullOrEmpty(_phaseState.AppliedSolutionId))
+        {
+            return SolutionVisualModule.NONE;
+        }
+
+        return AffordanceChoiceCatalog
+            .GetSolution(_phaseState.AppliedSolutionId)
+            .VisualModules;
+    }
+
+    private InterventionEntrancePlacement? GetActiveInterventionEntrancePlacement()
+    {
+        if (_phaseState == null || !_phaseState.InterventionEntranceIsActive)
+        {
+            return null;
+        }
+
+        return _phaseState.InterventionEntrancePlacement;
     }
 
     private void DrawScreenEffects(SpriteBatch spriteBatch)

@@ -24,6 +24,9 @@ public enum PlayerState
 
 public class Player
 {
+    private static readonly Color DashAvailableColor = Color.Purple;
+    private static readonly Color DashSpentColor = Color.SlateGray;
+
     private Vector2 _player;
     private int _widthPlayer;
     private int _heightPlayer;
@@ -43,6 +46,7 @@ public class Player
     private double _jumpBufferTimer;
 
     public bool CanDash { get; private set; } = true;
+    public bool ShowsDashAsAvailable { get; private set; } = true;
     private Vector2 _dashDirection;
     private float _dashSpeed = 960f;
     private float _dashDuration = 0.18f;
@@ -198,6 +202,7 @@ public class Player
         _dashTimer = _dashDuration;
         State = PlayerState.Dashing;
         CanDash = false;
+        ShowsDashAsAvailable = false;
     }
 
     private void UpdateDash(double deltaTime)
@@ -323,10 +328,17 @@ public class Player
     public void RestoreDash()
     {
         CanDash = true;
+        ShowsDashAsAvailable = true;
+    }
+
+    public void RestoreDashWithoutVisualFeedback()
+    {
+        CanDash = true;
     }
 
     public void Draw(SpriteBatch spriteBatch)
     {
-        spriteBatch.Draw(_texture, HitBox, Color.Purple);
+        Color color = ShowsDashAsAvailable ? DashAvailableColor : DashSpentColor;
+        spriteBatch.Draw(_texture, HitBox, color);
     }
 }

@@ -25,6 +25,8 @@ todo mapa nem serão interpretadas antes de suas etapas próprias:
 | `botaoIntervencao` | Botão pressionado ao ser pisado por cima; futuramente abre as escolhas. |
 | `portaSaida` | Porta de retorno mantida fechada até uma solução permitir progressão. |
 | `retornoIntervencao` | Saída condicionada da intervenção para o mapa do problema. |
+| `rotaVerticalSolida` | Plataformas sólidas reveladas depois da primeira escolha. |
+| `rotaVerticalGelatina` | Gelatinas reveladas depois da primeira escolha. |
 
 ## Objetos e propriedades
 

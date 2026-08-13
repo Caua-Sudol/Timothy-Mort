@@ -17,8 +17,11 @@ public class LevelMap
     private const string InterventionEntranceLayerName = "entradaIntervencao";
     private const string InterventionButtonLayerName = "botaoIntervencao";
     private const string ExitDoorLayerName = "portaSaida";
+    private const string VerticalRoutePlatformLayerName = "rotaVerticalSolida";
+    private const string VerticalRouteGelatinLayerName = "rotaVerticalGelatina";
     private const string SceneDestinationPropertyName = "destino";
     private const string SceneDestinationSpawnPropertyName = "spawnDestino";
+    private const string SceneRequiresAppliedSolutionPropertyName = "requerSolucaoAplicada";
     private const string InterventionEntrancePlacementPropertyName = "posicao";
 
     private readonly string _mapPath;
@@ -29,6 +32,8 @@ public class LevelMap
     private readonly List<InterventionEntrance> _interventionEntrances = new List<InterventionEntrance>();
     private readonly List<Rectangle> _interventionButtons = new List<Rectangle>();
     private readonly List<Rectangle> _exitDoors = new List<Rectangle>();
+    private readonly List<Rectangle> _verticalRoutePlatforms = new List<Rectangle>();
+    private readonly List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
     private readonly Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
     private Texture2D _platformTexture;
 
@@ -90,6 +95,16 @@ public class LevelMap
         }
     }
 
+    public IEnumerable<Rectangle> VerticalRoutePlatforms
+    {
+        get { return _verticalRoutePlatforms; }
+    }
+
+    public IEnumerable<Rectangle> VerticalRouteGelatins
+    {
+        get { return _verticalRouteGelatins; }
+    }
+
     public LevelMap(string mapPath)
     {
         _mapPath = mapPath;
@@ -125,10 +140,23 @@ public class LevelMap
         return null;
     }
 
-    public SceneExit GetSceneExit(Rectangle hitBox)
+    public SceneExit GetSceneExit(
+        Rectangle hitBox,
+        bool exitDoorIsOpen,
+        bool appliedSolutionAllowsExit)
     {
+        if (!exitDoorIsOpen && _exitDoors.Count > 0)
+        {
+            return null;
+        }
+
         foreach (SceneExit sceneExit in _sceneExits)
         {
+            if (sceneExit.RequiresAppliedSolution && !appliedSolutionAllowsExit)
+            {
+                continue;
+            }
+
             if (hitBox.Intersects(sceneExit.Bounds))
             {
                 return sceneExit;
@@ -183,11 +211,22 @@ public class LevelMap
         return false;
     }
 
-    public IEnumerable<Rectangle> GetSolidColliders(bool exitDoorIsOpen)
+    public IEnumerable<Rectangle> GetSolidColliders(
+        bool exitDoorIsOpen,
+        bool verticalRouteRevealed,
+        float exitDoorRiseOffset)
     {
         foreach (Rectangle platform in _platforms)
         {
             yield return platform;
+        }
+
+        if (verticalRouteRevealed)
+        {
+            foreach (Rectangle platform in _verticalRoutePlatforms)
+            {
+                yield return platform;
+            }
         }
 
         if (exitDoorIsOpen)
@@ -197,7 +236,29 @@ public class LevelMap
 
         foreach (Rectangle door in _exitDoors)
         {
-            yield return door;
+            yield return new Rectangle(
+                door.X,
+                door.Y + (int)exitDoorRiseOffset,
+                door.Width,
+                door.Height);
+        }
+    }
+
+    public IEnumerable<Rectangle> GetGelatinVolumes(bool verticalRouteRevealed)
+    {
+        foreach (Rectangle gelatin in _gelatins)
+        {
+            yield return gelatin;
+        }
+
+        if (!verticalRouteRevealed)
+        {
+            yield break;
+        }
+
+        foreach (Rectangle gelatin in _verticalRouteGelatins)
+        {
+            yield return gelatin;
         }
     }
 
@@ -205,28 +266,47 @@ public class LevelMap
         SpriteBatch spriteBatch,
         InterventionEntrancePlacement? activeInterventionEntrancePlacement,
         float interventionButtonPressOffset,
-        bool exitDoorIsOpen)
+        float exitDoorRiseOffset,
+        bool exitDoorIsOpen,
+        bool verticalRouteRevealed,
+        SolutionVisualModule visualModules)
     {
         foreach (var platform in _platforms)
         {
             spriteBatch.Draw(_platformTexture, platform, Color.Purple);
         }
 
-        foreach (var gelatin in _gelatins)
+        foreach (Rectangle gelatin in _gelatins)
         {
-            spriteBatch.Draw(_platformTexture, gelatin, Color.Purple);
+            DrawGelatin(spriteBatch, gelatin, visualModules);
         }
 
-        if (!activeInterventionEntrancePlacement.HasValue)
+        if (verticalRouteRevealed)
         {
-            return;
-        }
-
-        foreach (InterventionEntrance entrance in _interventionEntrances)
-        {
-            if (entrance.Placement == activeInterventionEntrancePlacement.Value)
+            foreach (Rectangle platform in _verticalRoutePlatforms)
             {
-                spriteBatch.Draw(_platformTexture, entrance.Bounds, Color.Orange);
+                spriteBatch.Draw(_platformTexture, platform, Color.Purple);
+            }
+
+            foreach (Rectangle gelatin in _verticalRouteGelatins)
+            {
+                DrawGelatin(spriteBatch, gelatin, visualModules);
+            }
+
+            if ((visualModules & SolutionVisualModule.PATH_INDICATOR) != 0)
+            {
+                DrawPathIndicators(spriteBatch);
+            }
+        }
+
+        if (activeInterventionEntrancePlacement.HasValue)
+        {
+            foreach (InterventionEntrance entrance in _interventionEntrances)
+            {
+                if (entrance.Placement == activeInterventionEntrancePlacement.Value)
+                {
+                    spriteBatch.Draw(_platformTexture, entrance.Bounds, Color.Orange);
+                }
             }
         }
 
@@ -247,7 +327,12 @@ public class LevelMap
 
         foreach (Rectangle door in _exitDoors)
         {
-            spriteBatch.Draw(_platformTexture, door, Color.Red);
+            var raisedDoor = new Rectangle(
+                door.X,
+                door.Y + (int)exitDoorRiseOffset,
+                door.Width,
+                door.Height);
+            spriteBatch.Draw(_platformTexture, raisedDoor, Color.Red);
         }
     }
 
@@ -260,6 +345,8 @@ public class LevelMap
         _interventionEntrances.Clear();
         _interventionButtons.Clear();
         _exitDoors.Clear();
+        _verticalRoutePlatforms.Clear();
+        _verticalRouteGelatins.Clear();
         _playerSpawns.Clear();
         PlayerSpawn = null;
 
@@ -327,8 +414,20 @@ public class LevelMap
 
                 row.Properties.TryGetValue(SceneDestinationSpawnPropertyName, out string destinationSpawn);
 
+                bool requiresAppliedSolution = false;
+                if (row.Properties.TryGetValue(
+                        SceneRequiresAppliedSolutionPropertyName,
+                        out string requiresAppliedSolutionValue))
+                {
+                    bool.TryParse(requiresAppliedSolutionValue, out requiresAppliedSolution);
+                }
+
                 var bounds = new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height);
-                _sceneExits.Add(new SceneExit(bounds, destination, destinationSpawn));
+                _sceneExits.Add(new SceneExit(
+                    bounds,
+                    destination,
+                    destinationSpawn,
+                    requiresAppliedSolution));
             }
         }
 
@@ -364,6 +463,8 @@ public class LevelMap
 
         LoadRectanglesFromOptionalLayer(map, InterventionButtonLayerName, _interventionButtons);
         LoadRectanglesFromOptionalLayer(map, ExitDoorLayerName, _exitDoors);
+        LoadRectanglesFromOptionalLayer(map, VerticalRoutePlatformLayerName, _verticalRoutePlatforms);
+        LoadRectanglesFromOptionalLayer(map, VerticalRouteGelatinLayerName, _verticalRouteGelatins);
     }
 
     private void LoadRectanglesFromOptionalLayer(
@@ -410,8 +511,70 @@ public class LevelMap
 
     private void LoadPlatformTexture(GraphicsDevice graphicsDevice)
     {
-        var platformColor = Enumerable.Repeat(Color.Purple, TileSize * TileSize).ToArray();
+        var platformColor = Enumerable.Repeat(Color.White, TileSize * TileSize).ToArray();
         _platformTexture = new Texture2D(graphicsDevice, TileSize, TileSize);
         _platformTexture.SetData(platformColor);
+    }
+
+    private void DrawGelatin(
+        SpriteBatch spriteBatch,
+        Rectangle gelatin,
+        SolutionVisualModule visualModules)
+    {
+        Color gelatinColor = (visualModules & SolutionVisualModule.GELATIN_COLOR) != 0
+            ? Color.DeepSkyBlue
+            : (visualModules & SolutionVisualModule.GELATIN_TEXTURE) != 0
+                ? Color.CornflowerBlue
+                : (visualModules & SolutionVisualModule.GELATIN_GLOW) != 0
+                    ? Color.Cyan
+                    : Color.Purple;
+
+        if ((visualModules & SolutionVisualModule.GELATIN_GLOW) != 0)
+        {
+            var glow = new Rectangle(
+                gelatin.X - 8,
+                gelatin.Y - 8,
+                gelatin.Width + 16,
+                gelatin.Height + 16);
+            spriteBatch.Draw(_platformTexture, glow, Color.Cyan * 0.35f);
+        }
+
+        spriteBatch.Draw(_platformTexture, gelatin, gelatinColor);
+
+        if ((visualModules & SolutionVisualModule.GELATIN_TEXTURE) == 0)
+        {
+            return;
+        }
+
+        for (int x = gelatin.Left + 8; x < gelatin.Right; x += 24)
+        {
+            spriteBatch.Draw(
+                _platformTexture,
+                new Rectangle(x, gelatin.Top, 6, gelatin.Height),
+                Color.White * 0.65f);
+        }
+    }
+
+    private void DrawPathIndicators(SpriteBatch spriteBatch)
+    {
+        foreach (Rectangle platform in _verticalRoutePlatforms)
+        {
+            var marker = new Rectangle(
+                platform.Center.X - 24,
+                platform.Top - 20,
+                48,
+                8);
+            spriteBatch.Draw(_platformTexture, marker, Color.Gold);
+        }
+
+        foreach (Rectangle gelatin in _verticalRouteGelatins)
+        {
+            var marker = new Rectangle(
+                gelatin.Center.X - 24,
+                gelatin.Top - 20,
+                48,
+                8);
+            spriteBatch.Draw(_platformTexture, marker, Color.Gold);
+        }
     }
 }

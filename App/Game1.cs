@@ -23,6 +23,7 @@ public class Game1 : Game
     private StartMenu _startMenu;
     private PauseMenu _pauseMenu;
     private DeathMenu _deathMenu;
+    private InterventionChoiceMenu _interventionChoiceMenu;
     private readonly PhaseState _phaseState = new PhaseState(
         AffordanceVisibilityPhaseId,
         ScenarioCatalog.InitialScenarioId,
@@ -69,6 +70,7 @@ public class Game1 : Game
         _startMenu = new StartMenu(font, menuCenter);
         _pauseMenu = new PauseMenu(font, menuCenter);
         _deathMenu = new DeathMenu(font, menuCenter);
+        _interventionChoiceMenu = new InterventionChoiceMenu(font);
 
         Vector2 cameraPosition = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
         Vector2 cameraDimensions = new Vector2(LogicalWidth, LogicalHeight);
@@ -84,6 +86,7 @@ public class Game1 : Game
         _gameRenderTarget = new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
         _scenarioFadeTexture = new Texture2D(GraphicsDevice, 1, 1);
         _scenarioFadeTexture.SetData(new[] { Color.White });
+        _interventionChoiceMenu.LoadContent(GraphicsDevice);
         _debugView.LoadContent(GraphicsDevice);
         _scene.LoadContent(GraphicsDevice);
 
@@ -224,6 +227,29 @@ public class Game1 : Game
             return;
         }
 
+        if (_overlayState == OverlayState.INTERVENTION_CHOICES)
+        {
+            _interventionChoiceMenu.Update(keyboardState, _previousKeyboardState);
+
+            if (_interventionChoiceMenu.TryTakeCompletedFirstChoice(
+                out InterventionSolutionDefinition solution,
+                out InterventionJustificationDefinition justification))
+            {
+                _phaseState.ApplyFirstChoice(solution, justification);
+                _scene.SyncInterventionState();
+                _overlayState = OverlayState.NONE;
+            }
+            else if (_interventionChoiceMenu.TryTakeCompletedRevision(
+                out InterventionSolutionDefinition revisionSolution))
+            {
+                _phaseState.ApplyRevision(revisionSolution);
+                _scene.SyncInterventionState();
+                _overlayState = OverlayState.NONE;
+            }
+
+            return;
+        }
+
         if (EscapeWasPressed(keyboardState))
         {
             TogglePause();
@@ -236,6 +262,23 @@ public class Game1 : Game
         }
 
         _scene.Update(_camera, deltaTime);
+
+        if (_scene.TryTakeInterventionButtonActivation())
+        {
+            if (!_phaseState.HasFirstChoice)
+            {
+                _interventionChoiceMenu.OpenInitial(AffordanceChoiceCatalog.InitialSolutions);
+                _overlayState = OverlayState.INTERVENTION_CHOICES;
+                return;
+            }
+
+            if (_phaseState.NeedsSolutionRevision)
+            {
+                _interventionChoiceMenu.OpenRevision(AffordanceChoiceCatalog.RevisionSolutions);
+                _overlayState = OverlayState.INTERVENTION_CHOICES;
+                return;
+            }
+        }
 
         if (_scene.TryTakeScenarioTransition(
             out string destinationScenarioId,
@@ -291,10 +334,23 @@ public class Game1 : Game
 
     private void ChangeScenario(string scenarioId, string spawnId)
     {
+        bool completedAffordanceVisibilityPhase =
+            scenarioId == ScenarioCatalog.InitialScenarioId &&
+            _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId &&
+            _phaseState.ExitDoorIsOpen;
+
+        if (completedAffordanceVisibilityPhase)
+        {
+            _phaseState.Reset(scenarioId);
+        }
+        else
+        {
+            _phaseState.EnterScenario(scenarioId);
+        }
+
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
         _scene = new Scene(scenario, spawnId, _phaseState);
         _scene.LoadContent(GraphicsDevice);
-        _phaseState.EnterScenario(scenarioId);
         _overlayState = OverlayState.NONE;
     }
 
@@ -374,6 +430,10 @@ public class Game1 : Game
         else if (_overlayState == OverlayState.DEATH_MENU)
         {
             _deathMenu.Draw(_spriteBatch);
+        }
+        else if (_overlayState == OverlayState.INTERVENTION_CHOICES)
+        {
+            _interventionChoiceMenu.Draw(_spriteBatch);
         }
 
         DrawScenarioTransition();
