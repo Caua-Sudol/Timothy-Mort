@@ -485,6 +485,7 @@ public class Scene
             _map.InterventionEntrances,
             _map.InterventionButtons,
             _map.ExitDoors,
+            _map.DebugMeasurementPair,
             GetActiveInterventionEntrancePlacement(),
             _checkpoint);
     }

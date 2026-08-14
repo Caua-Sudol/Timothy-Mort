@@ -19,10 +19,16 @@ public class LevelMap
     private const string ExitDoorLayerName = "portaSaida";
     private const string VerticalRoutePlatformLayerName = "rotaVerticalSolida";
     private const string VerticalRouteGelatinLayerName = "rotaVerticalGelatina";
+    private const string DebugMeasurementLayerName = "medicaoDebug";
     private const string SceneDestinationPropertyName = "destino";
     private const string SceneDestinationSpawnPropertyName = "spawnDestino";
     private const string SceneRequiresAppliedSolutionPropertyName = "requerSolucaoAplicada";
     private const string InterventionEntrancePlacementPropertyName = "posicao";
+    private const string DebugMeasurementPairIdPropertyName = "parId";
+    private const string DebugMeasurementRolePropertyName = "papel";
+    private const string DebugMeasurementActionPropertyName = "acao";
+    private const string DebugMeasurementOriginRole = "origem";
+    private const string DebugMeasurementDestinationRole = "destino";
 
     private readonly string _mapPath;
     private readonly List<Rectangle> _platforms = new List<Rectangle>();
@@ -38,6 +44,7 @@ public class LevelMap
     private Texture2D _platformTexture;
 
     public Vector2? PlayerSpawn { get; private set; }
+    public DebugMeasurementPair DebugMeasurementPair { get; private set; }
 
     public IEnumerable<Rectangle> Platforms
     {
@@ -349,6 +356,7 @@ public class LevelMap
         _verticalRouteGelatins.Clear();
         _playerSpawns.Clear();
         PlayerSpawn = null;
+        DebugMeasurementPair = null;
 
         var map = new TmxMap(_mapPath);
 
@@ -465,6 +473,89 @@ public class LevelMap
         LoadRectanglesFromOptionalLayer(map, ExitDoorLayerName, _exitDoors);
         LoadRectanglesFromOptionalLayer(map, VerticalRoutePlatformLayerName, _verticalRoutePlatforms);
         LoadRectanglesFromOptionalLayer(map, VerticalRouteGelatinLayerName, _verticalRouteGelatins);
+        LoadDebugMeasurementPair(map);
+    }
+
+    private void LoadDebugMeasurementPair(TmxMap map)
+    {
+        var layer = map.ObjectGroups.FirstOrDefault(
+            group => group.Name == DebugMeasurementLayerName);
+
+        if (layer == null)
+        {
+            return;
+        }
+
+        Vector2? origin = null;
+        Vector2? destination = null;
+        string pairId = null;
+        string action = null;
+        bool pairIsInvalid = false;
+
+        foreach (var row in layer.Objects)
+        {
+            if (!row.Properties.TryGetValue(
+                    DebugMeasurementPairIdPropertyName,
+                    out string markerPairId) ||
+                string.IsNullOrWhiteSpace(markerPairId) ||
+                !row.Properties.TryGetValue(
+                    DebugMeasurementRolePropertyName,
+                    out string markerRole) ||
+                !row.Properties.TryGetValue(
+                    DebugMeasurementActionPropertyName,
+                    out string markerAction) ||
+                string.IsNullOrWhiteSpace(markerAction) ||
+                markerRole != DebugMeasurementOriginRole &&
+                markerRole != DebugMeasurementDestinationRole)
+            {
+                continue;
+            }
+
+            if (pairId == null)
+            {
+                pairId = markerPairId;
+                action = markerAction;
+            }
+            else if (pairId != markerPairId || action != markerAction)
+            {
+                pairIsInvalid = true;
+                break;
+            }
+
+            var position = new Vector2((float)row.X, (float)row.Y);
+
+            if (markerRole == DebugMeasurementOriginRole)
+            {
+                if (origin.HasValue)
+                {
+                    pairIsInvalid = true;
+                    break;
+                }
+
+                origin = position;
+            }
+            else
+            {
+                if (destination.HasValue)
+                {
+                    pairIsInvalid = true;
+                    break;
+                }
+
+                destination = position;
+            }
+        }
+
+        if (pairIsInvalid || !origin.HasValue || !destination.HasValue)
+        {
+            return;
+        }
+
+        DebugMeasurementPair = new DebugMeasurementPair(
+            pairId,
+            action,
+            origin.Value,
+            destination.Value);
     }
 
     private void LoadRectanglesFromOptionalLayer(

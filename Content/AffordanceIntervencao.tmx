@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="48" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="9" nextobjectid="15">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="48" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="10" nextobjectid="17">
  <objectgroup id="1" name="mapaGeral" color="#57d957">
   <object id="1" name="plataforma_inicial" x="0" y="832" width="512" height="256"/>
   <object id="2" name="plataforma_botao" x="1024" y="640" width="512" height="448"/>
@@ -32,5 +32,23 @@
  <objectgroup id="8" name="rotaVerticalGelatina" color="#66d9ff">
   <object id="13" name="gelatina_subida_1" x="864" y="512" width="160" height="32"/>
   <object id="14" name="gelatina_subida_2" x="384" y="320" width="160" height="32"/>
+ </objectgroup>
+ <objectgroup id="9" name="medicaoDebug" color="#f4e04d">
+  <object id="15" name="origem_intervencao_teste_01" x="512" y="832">
+   <properties>
+    <property name="acao" value="dash"/>
+    <property name="papel" value="origem"/>
+    <property name="parId" value="intervencao_teste_01"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="16" name="destino_intervencao_teste_01" x="672" y="704">
+   <properties>
+    <property name="acao" value="dash"/>
+    <property name="papel" value="destino"/>
+    <property name="parId" value="intervencao_teste_01"/>
+   </properties>
+   <point/>
+  </object>
  </objectgroup>
 </map>

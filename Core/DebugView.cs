@@ -77,6 +77,7 @@ public class DebugView
         IEnumerable<InterventionEntrance> interventionEntrances,
         IEnumerable<Rectangle> interventionButtons,
         IEnumerable<Rectangle> exitDoors,
+        DebugMeasurementPair measurementPair,
         InterventionEntrancePlacement? activeInterventionEntrancePlacement,
         Vector2 checkpoint)
     {
@@ -147,6 +148,8 @@ public class DebugView
             DrawOutline(spriteBatch, door, Color.Red);
         }
 
+        DrawMeasurementPair(spriteBatch, measurementPair);
+
         DrawCross(spriteBatch, checkpoint, Color.Magenta);
         DrawCross(spriteBatch, camera.Position, Color.Cyan);
 
@@ -161,6 +164,81 @@ public class DebugView
         }
 
         return player.IsGrounded ? Color.LimeGreen : Color.Yellow;
+    }
+
+    private void DrawMeasurementPair(
+        SpriteBatch spriteBatch,
+        DebugMeasurementPair measurementPair)
+    {
+        if (measurementPair == null)
+        {
+            return;
+        }
+
+        Vector2 deltaInPixels = measurementPair.Destination - measurementPair.Origin;
+        Vector2 deltaInTiles = deltaInPixels / TileSize;
+        Vector2 midpoint = (measurementPair.Origin + measurementPair.Destination) / 2.0f;
+        string details =
+            $"PAIR: {measurementPair.PairId} | ACTION: {measurementPair.Action.ToUpperInvariant()}\n" +
+            $"DELTA PX: X={deltaInPixels.X:+0.0;-0.0;0.0} Y={deltaInPixels.Y:+0.0;-0.0;0.0}\n" +
+            $"DELTA TILE: X={deltaInTiles.X:+0.00;-0.00;0.00} Y={deltaInTiles.Y:+0.00;-0.00;0.00}";
+        Vector2 detailsSize = _font.MeasureString(details);
+        Vector2 detailsPosition = new Vector2(
+            midpoint.X - detailsSize.X / 2.0f,
+            midpoint.Y - detailsSize.Y - 12.0f);
+
+        DrawLine(
+            spriteBatch,
+            measurementPair.Origin,
+            measurementPair.Destination,
+            Color.White,
+            2.0f);
+        DrawCross(spriteBatch, measurementPair.Origin, Color.LimeGreen);
+        DrawCross(spriteBatch, measurementPair.Destination, Color.OrangeRed);
+        DrawWorldText(
+            spriteBatch,
+            "ORIGEM",
+            measurementPair.Origin + new Vector2(10.0f, 8.0f),
+            Color.LimeGreen);
+        DrawWorldText(
+            spriteBatch,
+            "DESTINO",
+            measurementPair.Destination + new Vector2(10.0f, 8.0f),
+            Color.OrangeRed);
+        DrawWorldText(spriteBatch, details, detailsPosition, Color.White);
+    }
+
+    private void DrawLine(
+        SpriteBatch spriteBatch,
+        Vector2 origin,
+        Vector2 destination,
+        Color color,
+        float thickness)
+    {
+        Vector2 delta = destination - origin;
+        float length = delta.Length();
+        float rotation = (float)System.Math.Atan2(delta.Y, delta.X);
+
+        spriteBatch.Draw(
+            _pixel,
+            origin,
+            null,
+            color,
+            rotation,
+            Vector2.Zero,
+            new Vector2(length, thickness),
+            SpriteEffects.None,
+            0.0f);
+    }
+
+    private void DrawWorldText(
+        SpriteBatch spriteBatch,
+        string text,
+        Vector2 position,
+        Color color)
+    {
+        spriteBatch.DrawString(_font, text, position + Vector2.One, Color.Black);
+        spriteBatch.DrawString(_font, text, position, color);
     }
 
     private void DrawOutline(SpriteBatch spriteBatch, Rectangle rectangle, Color color)
