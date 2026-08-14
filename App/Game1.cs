@@ -62,9 +62,9 @@ public class Game1 : Game
     protected override void Initialize()
     { 
         _scene = new Scene(ScenarioCatalog.Initial, null, _phaseState);
-        _debugView = new DebugView();
 
         SpriteFont font = Content.Load<SpriteFont>("font");
+        _debugView = new DebugView(font);
         Vector2 menuCenter = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
 
         _startMenu = new StartMenu(font, menuCenter);
@@ -422,6 +422,7 @@ public class Game1 : Game
     {
         _scene.Draw(_spriteBatch, _camera);
         _scene.DrawDebug(_spriteBatch, _camera, _debugView);
+        _debugView.DrawHud(_spriteBatch, _phaseState.CurrentScenarioId, _scene.Player);
 
         if (_overlayState == OverlayState.PAUSED)
         {

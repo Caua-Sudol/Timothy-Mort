@@ -7,10 +7,19 @@ namespace DontLikePoetry;
 public class DebugView
 {
     private const int MarkerSize = 8;
+    private const float TileSize = 32.0f;
+    private const int HudMargin = 16;
+    private const int HudPadding = 12;
 
+    private readonly SpriteFont _font;
     private Texture2D _pixel;
 
     public bool IsEnabled { get; private set; }
+
+    public DebugView(SpriteFont font)
+    {
+        _font = font;
+    }
 
     public void LoadContent(GraphicsDevice graphicsDevice)
     {
@@ -21,6 +30,37 @@ public class DebugView
     public void Toggle()
     {
         IsEnabled = !IsEnabled;
+    }
+
+    public void DrawHud(SpriteBatch spriteBatch, string scenarioId, Player player)
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        Vector2 positionInTiles = player.Position / TileSize;
+        string text =
+            $"SCENARIO: {scenarioId}\n" +
+            $"POS PX: X={player.Position.X:F1} Y={player.Position.Y:F1}\n" +
+            $"POS TILE: X={positionInTiles.X:F2} Y={positionInTiles.Y:F2}\n" +
+            $"VELOCITY PX/S: X={player.Velocity.X:F1} Y={player.Velocity.Y:F1}\n" +
+            $"STATE: {player.State.ToString().ToUpperInvariant()}\n" +
+            $"GROUNDED: {(player.IsGrounded ? "YES" : "NO")}\n" +
+            $"DASH: {(player.CanDash ? "AVAILABLE" : "SPENT")}";
+
+        Vector2 textSize = _font.MeasureString(text);
+        var background = new Rectangle(
+            HudMargin,
+            HudMargin,
+            (int)textSize.X + HudPadding * 2 + 1,
+            (int)textSize.Y + HudPadding * 2 + 1);
+        var textPosition = new Vector2(HudMargin + HudPadding, HudMargin + HudPadding);
+
+        spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        spriteBatch.Draw(_pixel, background, Color.Black * 0.75f);
+        spriteBatch.DrawString(_font, text, textPosition, Color.White);
+        spriteBatch.End();
     }
 
     public void DrawWorld(
