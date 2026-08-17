@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -52,6 +53,12 @@ public class Player
     private float _dashDuration = 0.18f;
     private double _dashTimer;
 
+    private const int MaximumDashTrailPositions = 12;
+    private const float MinimumDashTrailSpacingSquared = 16.0f;
+    private readonly List<Vector2> _dashTrailPositions = new List<Vector2>();
+    private const double SurfaceContactFlashDuration = 0.12;
+    private double _surfaceContactFlashTimer;
+
     public PlayerState State { get; private set; } = PlayerState.Idle;
 
     private readonly PlayerInput _input = new PlayerInput();
@@ -97,9 +104,10 @@ public class Player
         get { return new Rectangle((int)_player.X, (int)_player.Y, _widthPlayer, _heightPlayer); }
     }
 
-    public void Update(double deltaTime)
-    {
-        _input.Update();
+public void Update(double deltaTime)
+{
+    UpdateSurfaceContactFlash(deltaTime);
+    _input.Update();
         int horizontalInput = _input.Horizontal;
 
         UpdateCoyoteTimer(deltaTime);
@@ -198,16 +206,19 @@ public class Player
 
         direction.Normalize();
 
-        _dashDirection = direction;
-        _dashTimer = _dashDuration;
-        State = PlayerState.Dashing;
+    _dashDirection = direction;
+    _dashTimer = _dashDuration;
+    _dashTrailPositions.Clear();
+    RecordDashTrailPosition();
+    State = PlayerState.Dashing;
         CanDash = false;
         ShowsDashAsAvailable = false;
     }
 
-    private void UpdateDash(double deltaTime)
-    {
-        _velocity = _dashDirection * _dashSpeed;
+private void UpdateDash(double deltaTime)
+{
+    RecordDashTrailPosition();
+    _velocity = _dashDirection * _dashSpeed;
         _dashTimer -= deltaTime;
 
         if (_dashTimer <= 0f)
@@ -221,13 +232,58 @@ public class Player
         EndDash();
     }
 
-    public void EndDash()
-    {
-        _dashTimer = 0f;
-        State = _isGrounded ? PlayerState.Idle : PlayerState.Falling;
+public void EndDash()
+{
+    _dashTimer = 0f;
+    _dashTrailPositions.Clear();
+    State = _isGrounded ? PlayerState.Idle : PlayerState.Falling;
 
-        _velocity = _velocity * 0.5f;
+    _velocity = _velocity * 0.5f;
+}
+
+private void RecordDashTrailPosition()
+{
+    if (_dashTrailPositions.Count > 0)
+    {
+        Vector2 lastPosition =
+            _dashTrailPositions[_dashTrailPositions.Count - 1];
+
+        if (Vector2.DistanceSquared(lastPosition, _player) <
+            MinimumDashTrailSpacingSquared)
+        {
+            return;
+        }
     }
+
+    _dashTrailPositions.Add(_player);
+
+    if (_dashTrailPositions.Count > MaximumDashTrailPositions)
+    {
+        _dashTrailPositions.RemoveAt(0);
+    }
+}
+
+private void UpdateSurfaceContactFlash(double deltaTime)
+{
+    if (_surfaceContactFlashTimer <= 0.0)
+    {
+        return;
+    }
+
+    _surfaceContactFlashTimer = Math.Max(
+        0.0,
+        _surfaceContactFlashTimer - deltaTime);
+}
+
+public void StartSurfaceContactFlash()
+{
+    _surfaceContactFlashTimer = SurfaceContactFlashDuration;
+}
+
+public void ClearSurfaceContactFlash()
+{
+    _surfaceContactFlashTimer = 0.0;
+}
 
     private void ApplyNormalMovement(int horizontalInput, double deltaTime)
     {
@@ -336,9 +392,44 @@ public class Player
         CanDash = true;
     }
 
-    public void Draw(SpriteBatch spriteBatch)
+public void Draw(
+    SpriteBatch spriteBatch,
+    SolutionVisualModule visualModules)
+{
+    if ((visualModules & SolutionVisualModule.PLAYER_DASH_TRAIL) != 0 &&
+        State == PlayerState.Dashing)
     {
-        Color color = ShowsDashAsAvailable ? DashAvailableColor : DashSpentColor;
-        spriteBatch.Draw(_texture, HitBox, color);
+        DrawDashTrail(spriteBatch);
     }
+
+    Color color = ShowsDashAsAvailable ? DashAvailableColor : DashSpentColor;
+
+    if ((visualModules &
+         SolutionVisualModule.PLAYER_SURFACE_CONTACT_FLASH) != 0 &&
+        _surfaceContactFlashTimer > 0.0)
+    {
+        color = Color.White;
+    }
+
+    spriteBatch.Draw(_texture, HitBox, color);
+}
+
+private void DrawDashTrail(SpriteBatch spriteBatch)
+{
+    for (int index = 0; index < _dashTrailPositions.Count; index++)
+    {
+        float progress =
+            (index + 1.0f) / (_dashTrailPositions.Count + 1.0f);
+        float opacity = 0.15f + 0.35f * progress;
+        Vector2 position = _dashTrailPositions[index];
+
+        var trailBounds = new Rectangle(
+            (int)position.X,
+            (int)position.Y,
+            _widthPlayer,
+            _heightPlayer);
+
+        spriteBatch.Draw(_texture, trailBounds, Color.White * opacity);
+    }
+}
 }

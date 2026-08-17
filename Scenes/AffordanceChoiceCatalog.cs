@@ -7,7 +7,7 @@ public static class AffordanceChoiceCatalog
 {
     public const string JustificationQuestion = "O que esta alteracao pretende resolver?";
 
-    public static IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
+    public static IReadOnlyList<InterventionSolutionDefinition> InitialInadequateSolutions { get; } =
         new List<InterventionSolutionDefinition>
         {
             new InterventionSolutionDefinition(
@@ -18,6 +18,28 @@ public static class AffordanceChoiceCatalog
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.PATH_INDICATOR |
                 SolutionVisualModule.DESTINATION_HIGHLIGHT),
+            new InterventionSolutionDefinition(
+                "I2",
+                "Reforcar a apresentacao do movimento",
+                "Aplicar a mesma decoracao a solidos e gelatinas e exibir um rastro durante todo o dash.",
+                SolutionQuality.INADEQUATE,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.PLATFORM_DECORATION |
+                SolutionVisualModule.PLAYER_DASH_TRAIL),
+            new InterventionSolutionDefinition(
+                "I3",
+                "Reforcar o contato com o cenario",
+                "Aplicar o mesmo contorno a solidos e gelatinas e exibir o mesmo flash no contato com qualquer superficie.",
+                SolutionQuality.INADEQUATE,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.PLATFORM_OUTLINE |
+                SolutionVisualModule.PLAYER_SURFACE_CONTACT_FLASH)
+        };
+
+    public static IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
+        new List<InterventionSolutionDefinition>
+        {
+            InitialInadequateSolutions[2],
             new InterventionSolutionDefinition(
                 "diferenciar_por_cor",
                 "Diferenciar as superficies especiais",
@@ -87,6 +109,14 @@ public static class AffordanceChoiceCatalog
 
     public static InterventionSolutionDefinition GetSolution(string solutionId)
     {
+        foreach (InterventionSolutionDefinition solution in InitialInadequateSolutions)
+        {
+            if (solution.Id == solutionId)
+            {
+                return solution;
+            }
+        }
+
         foreach (InterventionSolutionDefinition solution in InitialSolutions)
         {
             if (solution.Id == solutionId)

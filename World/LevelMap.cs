@@ -299,14 +299,18 @@ public class LevelMap
         bool verticalRouteRevealed,
         SolutionVisualModule visualModules)
     {
-        foreach (var platform in _platforms)
+        foreach (Rectangle platform in _platforms)
         {
             spriteBatch.Draw(_platformTexture, platform, Color.Purple);
+            DrawSharedPlatformDecoration(spriteBatch, platform, visualModules);
+            DrawSharedPlatformOutline(spriteBatch, platform, visualModules);
         }
 
         foreach (Rectangle gelatin in _gelatins)
         {
             DrawGelatin(spriteBatch, gelatin, visualModules);
+            DrawSharedPlatformDecoration(spriteBatch, gelatin, visualModules);
+            DrawSharedPlatformOutline(spriteBatch, gelatin, visualModules);
         }
 
         if (verticalRouteRevealed)
@@ -314,11 +318,15 @@ public class LevelMap
             foreach (Rectangle platform in _verticalRoutePlatforms)
             {
                 spriteBatch.Draw(_platformTexture, platform, Color.Purple);
+                DrawSharedPlatformDecoration(spriteBatch, platform, visualModules);
+                DrawSharedPlatformOutline(spriteBatch, platform, visualModules);
             }
 
             foreach (Rectangle gelatin in _verticalRouteGelatins)
             {
                 DrawGelatin(spriteBatch, gelatin, visualModules);
+                DrawSharedPlatformDecoration(spriteBatch, gelatin, visualModules);
+                DrawSharedPlatformOutline(spriteBatch, gelatin, visualModules);
             }
 
             if ((visualModules & SolutionVisualModule.PATH_INDICATOR) != 0)
@@ -734,6 +742,91 @@ private void ApplyObjectState(LevelMap candidate)
                 new Rectangle(x, gelatin.Top, 6, gelatin.Height),
                 Color.White * 0.65f);
         }
+    }
+
+    private void DrawSharedPlatformDecoration(
+        SpriteBatch spriteBatch,
+        Rectangle platform,
+        SolutionVisualModule visualModules)
+    {
+        if ((visualModules & SolutionVisualModule.PLATFORM_DECORATION) == 0)
+        {
+            return;
+        }
+
+        const int markerSize = 6;
+        const int markerSpacing = 32;
+        const int markerInset = 12;
+
+        for (int y = platform.Top + markerInset;
+             y + markerSize <= platform.Bottom;
+             y += markerSpacing)
+        {
+            for (int x = platform.Left + markerInset;
+                 x + markerSize <= platform.Right;
+                 x += markerSpacing)
+            {
+                spriteBatch.Draw(
+                    _platformTexture,
+                    new Rectangle(x, y, markerSize, markerSize),
+                    Color.White * 0.45f);
+            }
+        }
+    }
+
+    private void DrawSharedPlatformOutline(
+        SpriteBatch spriteBatch,
+        Rectangle platform,
+        SolutionVisualModule visualModules)
+    {
+        if ((visualModules & SolutionVisualModule.PLATFORM_OUTLINE) == 0)
+        {
+            return;
+        }
+
+        int thickness = Math.Min(
+            2,
+            Math.Min(platform.Width, platform.Height));
+
+        if (thickness <= 0)
+        {
+            return;
+        }
+
+        Color outlineColor = Color.White * 0.65f;
+
+        spriteBatch.Draw(
+            _platformTexture,
+            new Rectangle(
+                platform.Left,
+                platform.Top,
+                platform.Width,
+                thickness),
+            outlineColor);
+        spriteBatch.Draw(
+            _platformTexture,
+            new Rectangle(
+                platform.Left,
+                platform.Bottom - thickness,
+                platform.Width,
+                thickness),
+            outlineColor);
+        spriteBatch.Draw(
+            _platformTexture,
+            new Rectangle(
+                platform.Left,
+                platform.Top,
+                thickness,
+                platform.Height),
+            outlineColor);
+        spriteBatch.Draw(
+            _platformTexture,
+            new Rectangle(
+                platform.Right - thickness,
+                platform.Top,
+                thickness,
+                platform.Height),
+            outlineColor);
     }
 
     private void DrawPathIndicators(SpriteBatch spriteBatch)

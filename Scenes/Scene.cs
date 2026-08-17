@@ -33,9 +33,11 @@ public class Scene
 
     private Player _player;
     private readonly LevelMap _map;
-    private readonly PlayerCollision _playerCollision = new PlayerCollision();
-    private readonly HashSet<Rectangle> _usedGelatins = new HashSet<Rectangle>();
-    private Vector2 _checkpoint;
+private readonly PlayerCollision _playerCollision = new PlayerCollision();
+private readonly HashSet<Rectangle> _usedGelatins = new HashSet<Rectangle>();
+private bool _playerWasTouchingSolidSurface;
+private bool _playerWasTouchingGelatinSurface;
+private Vector2 _checkpoint;
     private bool _playerIsDead;
     private Vector2 _playerStart;
     private readonly Vector2 _fallbackPlayerStart;
@@ -125,6 +127,8 @@ public class Scene
         _interventionButtonActivationPending = false;
         _interventionButtonActivationIssued = false;
         _usedGelatins.Clear();
+        _playerWasTouchingSolidSurface = false;
+        _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
         _exitDoorPosition = GetExitDoorRestingPosition();
@@ -236,9 +240,10 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
             _usedGelatins.Clear();
         }
 
-        UpdateGelatinContact();
+    UpdateGelatinContact();
+    UpdateSurfaceContactFeedback();
 
-        if (PlayerFell())
+    if (PlayerFell())
         {
             KillPlayer();
             return;
@@ -376,8 +381,8 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
         }
     }
 
-    private void UpdateGelatinContact()
-    {
+private void UpdateGelatinContact()
+{
         foreach (Rectangle gelatin in _map.GetGelatinVolumes(
             _phaseState?.VerticalRouteRevealed == true))
         {
@@ -396,9 +401,88 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
                 _player.RestoreDashWithoutVisualFeedback();
             }
 
-            _usedGelatins.Add(gelatin);
+        _usedGelatins.Add(gelatin);
+    }
+}
+
+private void UpdateSurfaceContactFeedback()
+{
+    bool verticalRouteRevealed =
+        _phaseState?.VerticalRouteRevealed == true;
+
+    bool playerIsTouchingSolidSurface =
+        PlayerTouchesAnySurface(_map.Platforms) ||
+        (verticalRouteRevealed &&
+         PlayerTouchesAnySurface(_map.VerticalRoutePlatforms));
+
+    bool playerIsTouchingGelatinSurface =
+        PlayerTouchesAnySurface(
+            _map.GetGelatinVolumes(verticalRouteRevealed));
+
+    bool contactStarted =
+        playerIsTouchingSolidSurface &&
+        !_playerWasTouchingSolidSurface ||
+        playerIsTouchingGelatinSurface &&
+        !_playerWasTouchingGelatinSurface;
+
+    if (contactStarted &&
+        _phaseState?.AppliedSolutionUsesModule(
+            SolutionVisualModule.PLAYER_SURFACE_CONTACT_FLASH) == true)
+    {
+        _player.StartSurfaceContactFlash();
+    }
+
+    _playerWasTouchingSolidSurface =
+        playerIsTouchingSolidSurface;
+    _playerWasTouchingGelatinSurface =
+        playerIsTouchingGelatinSurface;
+}
+
+private bool PlayerTouchesAnySurface(
+    IEnumerable<Rectangle> surfaces)
+{
+    Rectangle playerBounds = _player.HitBox;
+
+    foreach (Rectangle surface in surfaces)
+    {
+        if (RectanglesTouchOrIntersect(playerBounds, surface))
+        {
+            return true;
         }
     }
+
+    return false;
+}
+
+private static bool RectanglesTouchOrIntersect(
+    Rectangle first,
+    Rectangle second)
+{
+    if (first.Intersects(second))
+    {
+        return true;
+    }
+
+    bool horizontalOverlap =
+        first.Left < second.Right &&
+        first.Right > second.Left;
+
+    bool verticalOverlap =
+        first.Top < second.Bottom &&
+        first.Bottom > second.Top;
+
+    bool touchesHorizontally =
+        verticalOverlap &&
+        (first.Right == second.Left ||
+         first.Left == second.Right);
+
+    bool touchesVertically =
+        horizontalOverlap &&
+        (first.Bottom == second.Top ||
+         first.Top == second.Bottom);
+
+    return touchesHorizontally || touchesVertically;
+}
 
     private bool PlayerTouchedCutsceneTrigger()
     {
@@ -414,7 +498,10 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
     {
         _playerIsDead = true;
         _usedGelatins.Clear();
+        _playerWasTouchingSolidSurface = false;
+        _playerWasTouchingGelatinSurface = false;
         _player.CancelDash();
+        _player.ClearSurfaceContactFlash();
         _player.ResetVelocity();
     }
 
@@ -422,8 +509,11 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
     {
         _playerIsDead = false;
         _usedGelatins.Clear();
+        _playerWasTouchingSolidSurface = false;
+        _playerWasTouchingGelatinSurface = false;
         _player.Move((int)_checkpoint.X, (int)_checkpoint.Y);
         _player.CancelDash();
+        _player.ClearSurfaceContactFlash();
         _player.ResetVelocity();
         _player.Grounded();
         _player.RestoreDash();
@@ -536,20 +626,22 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
     private void DrawWorld(SpriteBatch spriteBatch, Camera camera)
     {
         var cameraTransform = camera.GetTransform();
-        spriteBatch.Begin(
-            samplerState: SamplerState.PointClamp,
-            transformMatrix: cameraTransform);
+    spriteBatch.Begin(
+        samplerState: SamplerState.PointClamp,
+        transformMatrix: cameraTransform);
 
-        _player.Draw(spriteBatch);
+    SolutionVisualModule visualModules = GetAppliedVisualModules();
 
-        _map.Draw(
-            spriteBatch,
+    _player.Draw(spriteBatch, visualModules);
+
+    _map.Draw(
+        spriteBatch,
             GetActiveInterventionEntrancePlacement(),
             _interventionButtonPressOffset,
-            _exitDoorPosition,
-            _exitDoorIsOpen,
-            _phaseState?.VerticalRouteRevealed == true,
-            GetAppliedVisualModules());
+        _exitDoorPosition,
+        _exitDoorIsOpen,
+        _phaseState?.VerticalRouteRevealed == true,
+        visualModules);
 
         spriteBatch.End();
     }
