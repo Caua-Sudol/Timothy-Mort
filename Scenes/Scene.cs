@@ -225,9 +225,10 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
         return true;
     }
 
-    private void UpdatePlaying(Camera camera, double deltaTime)
-    {
-        bool wasGrounded = _player.IsGrounded;
+private void UpdatePlaying(Camera camera, double deltaTime)
+{
+    _map.UpdateVisualEffects(deltaTime);
+    bool wasGrounded = _player.IsGrounded;
         _player.Update(deltaTime);
         ApplyGelatinFallSpeed();
         UpdatePlayerPhysics(deltaTime);

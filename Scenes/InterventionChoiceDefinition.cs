@@ -28,7 +28,8 @@ public enum SolutionVisualModule
     PLATFORM_DECORATION = 64,
     PLAYER_DASH_TRAIL = 128,
     PLATFORM_OUTLINE = 256,
-    PLAYER_SURFACE_CONTACT_FLASH = 512
+    PLAYER_SURFACE_CONTACT_FLASH = 512,
+    GELATIN_GLOW_PULSE = 1024
 }
 
 public sealed class InterventionSolutionDefinition

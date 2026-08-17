@@ -43,6 +43,7 @@ public class LevelMap
     private List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
     private Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
     private Texture2D _platformTexture;
+    private double _visualEffectTime;
 
     public Vector2? PlayerSpawn { get; private set; }
     public DebugMeasurementPair DebugMeasurementPair { get; private set; }
@@ -126,11 +127,16 @@ public class LevelMap
         _mapPath = mapPath;
     }
 
-    public void LoadContent(GraphicsDevice graphicsDevice)
-    {
-        ReloadObjects();
-        LoadPlatformTexture(graphicsDevice);
-    }
+public void LoadContent(GraphicsDevice graphicsDevice)
+{
+    ReloadObjects();
+    LoadPlatformTexture(graphicsDevice);
+}
+
+public void UpdateVisualEffects(double deltaTime)
+{
+    _visualEffectTime += deltaTime;
+}
 
     public bool HasCutsceneTrigger(Rectangle hitBox)
     {
@@ -720,12 +726,21 @@ private void ApplyObjectState(LevelMap candidate)
 
         if ((visualModules & SolutionVisualModule.GELATIN_GLOW) != 0)
         {
+            float glowOpacity = 0.35f;
+
+            if ((visualModules & SolutionVisualModule.GELATIN_GLOW_PULSE) != 0)
+            {
+                double pulse =
+                    (Math.Sin(_visualEffectTime * 3.0) + 1.0) / 2.0;
+                glowOpacity = (float)(0.30 + 0.50 * pulse);
+            }
+
             var glow = new Rectangle(
                 gelatin.X - 8,
                 gelatin.Y - 8,
                 gelatin.Width + 16,
                 gelatin.Height + 16);
-            spriteBatch.Draw(_platformTexture, glow, Color.Cyan * 0.35f);
+            spriteBatch.Draw(_platformTexture, glow, Color.Cyan * glowOpacity);
         }
 
         spriteBatch.Draw(_platformTexture, gelatin, gelatinColor);
@@ -831,25 +846,46 @@ private void ApplyObjectState(LevelMap candidate)
 
     private void DrawPathIndicators(SpriteBatch spriteBatch)
     {
-        foreach (Rectangle platform in _verticalRoutePlatforms)
+        bool hasVerticalRoute =
+            _verticalRoutePlatforms.Count > 0 ||
+            _verticalRouteGelatins.Count > 0;
+
+        if (hasVerticalRoute)
         {
-            var marker = new Rectangle(
-                platform.Center.X - 24,
-                platform.Top - 20,
-                48,
-                8);
-            spriteBatch.Draw(_platformTexture, marker, Color.Gold);
+            foreach (Rectangle platform in _verticalRoutePlatforms)
+            {
+                DrawPathIndicator(spriteBatch, platform);
+            }
+
+            foreach (Rectangle gelatin in _verticalRouteGelatins)
+            {
+                DrawPathIndicator(spriteBatch, gelatin);
+            }
+
+            return;
         }
 
-        foreach (Rectangle gelatin in _verticalRouteGelatins)
+        foreach (Rectangle platform in _platforms)
         {
-            var marker = new Rectangle(
-                gelatin.Center.X - 24,
-                gelatin.Top - 20,
-                48,
-                8);
-            spriteBatch.Draw(_platformTexture, marker, Color.Gold);
+            DrawPathIndicator(spriteBatch, platform);
         }
+
+        foreach (Rectangle gelatin in _gelatins)
+        {
+            DrawPathIndicator(spriteBatch, gelatin);
+        }
+    }
+
+    private void DrawPathIndicator(
+        SpriteBatch spriteBatch,
+        Rectangle surface)
+    {
+        var marker = new Rectangle(
+            surface.Center.X - 24,
+            surface.Top - 20,
+            48,
+            8);
+        spriteBatch.Draw(_platformTexture, marker, Color.Gold);
     }
 
     private void DrawDestinationHighlights(SpriteBatch spriteBatch)

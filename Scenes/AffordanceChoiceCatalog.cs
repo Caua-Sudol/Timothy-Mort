@@ -13,7 +13,7 @@ public static class AffordanceChoiceCatalog
             new InterventionSolutionDefinition(
                 "I1",
                 "Percurso",
-                "Adicionar indicadores de caminho e destacar o destino.",
+                "Adicionar indicadores de caminho e destacar o destino",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.PATH_INDICATOR |
@@ -21,7 +21,7 @@ public static class AffordanceChoiceCatalog
             new InterventionSolutionDefinition(
                 "I2",
                 "Apresentacao",
-                "Aplicar decoracao nas plataformas e exibir um rastro visual para indicar o dash.",
+                "Aplicar decoracao nas plataformas e exibir um rastro visual para indicar o dash",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.PLATFORM_DECORATION |
@@ -29,7 +29,7 @@ public static class AffordanceChoiceCatalog
             new InterventionSolutionDefinition(
                 "I3",
                 "Contato",
-                "Adicionar contorno em plataformas e exibir flash de impacto.",
+                "Adicionar contorno em plataformas e exibir flash de impacto",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.PLATFORM_OUTLINE |
@@ -40,12 +40,29 @@ public static class AffordanceChoiceCatalog
         new List<InterventionSolutionDefinition>
         {
             new InterventionSolutionDefinition(
-                "diferenciar_por_cor",
-                "Diferenciar as superficies especiais",
-                "Aplicar uma cor exclusiva as superficies que possuem a propriedade.",
+                "P1",
+                "Superficies especiais e caminho",
+                "Aplicar uma cor exclusiva nas plataformas especiais e indicar o caminho",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.GELATIN_COLOR)
+                SolutionVisualModule.GELATIN_TEXTURE |
+                SolutionVisualModule.PATH_INDICATOR),
+            new InterventionSolutionDefinition(
+                "P2",
+                "Contraste e decoracao",
+                "Aplicar uma textura nas plataformas especiais e uma decoracao geral as plataformas",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.GELATIN_COLOR |
+                SolutionVisualModule.PLATFORM_DECORATION),
+            new InterventionSolutionDefinition(
+                "P3",
+                "Dash mais visual",
+                "Exibir a recarga e um rastro visual ao dash.",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR |
+                SolutionVisualModule.PLAYER_DASH_TRAIL)
         };
 
     public static IReadOnlyList<InterventionSolutionDefinition> InitialAdequateSolutions { get; } =
@@ -63,6 +80,19 @@ public static class AffordanceChoiceCatalog
 
     public static IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
         CreateInitialSolutions();
+
+    public static IReadOnlyList<InterventionSolutionDefinition> RevisionPartialSolutions { get; } =
+        new List<InterventionSolutionDefinition>
+        {
+            new InterventionSolutionDefinition(
+                "P4",
+                "Destaque e movimento",
+                "Aplicar brilho as plataformas especiais e adicionar uma pulsacao",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.REVISION,
+                SolutionVisualModule.GELATIN_GLOW |
+                SolutionVisualModule.GELATIN_GLOW_PULSE)
+        };
 
     public static IReadOnlyList<InterventionSolutionDefinition> RevisionSolutions { get; } =
         new List<InterventionSolutionDefinition>
@@ -89,6 +119,13 @@ public static class AffordanceChoiceCatalog
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.GELATIN_GLOW |
                 SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR)
+        };
+
+    public static IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions { get; } =
+        new List<InterventionSolutionDefinition>
+        {
+            RevisionPartialSolutions[0],
+            RevisionSolutions[2]
         };
 
     public static IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
@@ -153,6 +190,14 @@ public static class AffordanceChoiceCatalog
     public static InterventionSolutionDefinition GetSolution(string solutionId)
     {
         foreach (InterventionSolutionDefinition solution in InitialSolutions)
+        {
+            if (solution.Id == solutionId)
+            {
+                return solution;
+            }
+        }
+
+        foreach (InterventionSolutionDefinition solution in RevisionPartialSolutions)
         {
             if (solution.Id == solutionId)
             {

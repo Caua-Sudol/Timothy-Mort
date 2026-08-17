@@ -294,7 +294,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
             if (_phaseState.NeedsSolutionRevision)
             {
-                _interventionChoiceMenu.OpenRevision(AffordanceChoiceCatalog.RevisionSolutions);
+            _interventionChoiceMenu.OpenRevision(
+                AffordanceChoiceCatalog.AvailableRevisionSolutions);
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
