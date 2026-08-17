@@ -91,7 +91,8 @@ public static class AffordanceChoiceCatalog
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.GELATIN_GLOW |
-                SolutionVisualModule.GELATIN_GLOW_PULSE)
+                SolutionVisualModule.GELATIN_GLOW_PULSE |
+                SolutionVisualModule.GELATIN_JELLY_MOTION)
         };
 
     public static IReadOnlyList<InterventionSolutionDefinition> RevisionSolutions { get; } =

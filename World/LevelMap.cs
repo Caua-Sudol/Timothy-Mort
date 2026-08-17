@@ -716,6 +716,8 @@ private void ApplyObjectState(LevelMap candidate)
         Rectangle gelatin,
         SolutionVisualModule visualModules)
     {
+        gelatin = GetGelatinVisualBounds(gelatin, visualModules);
+
         Color gelatinColor = (visualModules & SolutionVisualModule.GELATIN_COLOR) != 0
             ? Color.DeepSkyBlue
             : (visualModules & SolutionVisualModule.GELATIN_TEXTURE) != 0
@@ -757,6 +759,38 @@ private void ApplyObjectState(LevelMap candidate)
                 new Rectangle(x, gelatin.Top, 6, gelatin.Height),
                 Color.White * 0.65f);
         }
+    }
+
+    private Rectangle GetGelatinVisualBounds(
+        Rectangle gelatin,
+        SolutionVisualModule visualModules)
+    {
+        if ((visualModules & SolutionVisualModule.GELATIN_JELLY_MOTION) == 0)
+        {
+            return gelatin;
+        }
+
+        const double motionSpeed = 4.7;
+        const double horizontalPhaseScale = 0.0125;
+        const double verticalPhaseScale = 0.0175;
+
+        double phase =
+            _visualEffectTime * motionSpeed +
+            gelatin.X * horizontalPhaseScale +
+            gelatin.Y * verticalPhaseScale;
+        double wave = Math.Sin(phase);
+        int horizontalAmplitude = Math.Min(4, gelatin.Width / 8);
+        int verticalAmplitude = Math.Min(3, gelatin.Height / 8);
+        int horizontalOffset =
+            (int)Math.Round(wave * horizontalAmplitude);
+        int verticalOffset =
+            (int)Math.Round(wave * verticalAmplitude);
+
+        return new Rectangle(
+            gelatin.X - horizontalOffset,
+            gelatin.Y + verticalOffset,
+            gelatin.Width + horizontalOffset * 2,
+            gelatin.Height - verticalOffset);
     }
 
     private void DrawSharedPlatformDecoration(
