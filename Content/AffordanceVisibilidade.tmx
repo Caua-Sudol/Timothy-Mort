@@ -16,29 +16,29 @@
   <object id="11" name="gelatina_plataforma_2" x="3424" y="704" width="160" height="32"/>
  </objectgroup>
  <objectgroup id="3" name="spawnJogador" color="#4fa3ff">
-  <object id="12" name="spawn_inicial" x="160" y="816" width="16" height="16"/>
+  <object id="12" name="spawn_inicial" type="SpawnJogador" x="160" y="816" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="4" name="saidaCena" color="#ffd84f">
-  <object id="17" name="concluir_affordance_visibilidade" x="4448" y="704" width="96" height="128">
+  <object id="17" name="concluir_affordance_visibilidade" type="SaidaCena" x="4448" y="704" width="96" height="128">
    <properties>
-    <property name="destino" value="simple_cutscene"/>
+    <property name="destino" propertytype="CenarioId" value="simple_cutscene"/>
     <property name="requerSolucaoAplicada" type="bool" value="true"/>
     <property name="spawnDestino" value="spawn_inicial"/>
    </properties>
   </object>
  </objectgroup>
  <objectgroup id="5" name="entradaIntervencao" color="#ff9f43">
-  <object id="15" name="entrada_antecipada" x="1760" y="704" width="64" height="128">
+  <object id="15" name="entrada_antecipada" type="EntradaIntervencao" x="1760" y="704" width="64" height="128">
    <properties>
-    <property name="destino" value="affordance_intervencao"/>
-    <property name="posicao" value="antecipada"/>
+    <property name="destino" propertytype="CenarioId" value="affordance_intervencao"/>
+    <property name="posicao" propertytype="PosicaoEntradaIntervencao" value="antecipada"/>
     <property name="spawnDestino" value="spawn_entrada"/>
    </properties>
   </object>
-  <object id="16" name="entrada_tardia" x="2944" y="704" width="64" height="128">
+  <object id="16" name="entrada_tardia" type="EntradaIntervencao" x="2944" y="704" width="64" height="128">
    <properties>
-    <property name="destino" value="affordance_intervencao"/>
-    <property name="posicao" value="tardia"/>
+    <property name="destino" propertytype="CenarioId" value="affordance_intervencao"/>
+    <property name="posicao" propertytype="PosicaoEntradaIntervencao" value="tardia"/>
     <property name="spawnDestino" value="spawn_entrada"/>
    </properties>
   </object>

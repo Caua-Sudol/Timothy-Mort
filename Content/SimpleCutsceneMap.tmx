@@ -74,14 +74,14 @@
  </objectgroup>
  <objectgroup id="4" name="triggerColision"/>
  <objectgroup id="5" name="saidaCena" color="#ffd84f">
-  <object id="28" name="saida_affordance_visibilidade" x="704" y="224" width="64" height="160">
+  <object id="28" name="saida_affordance_visibilidade" type="SaidaCena" x="704" y="224" width="64" height="160">
    <properties>
-    <property name="destino" value="affordance_visibilidade"/>
+    <property name="destino" propertytype="CenarioId" value="affordance_visibilidade"/>
     <property name="spawnDestino" value="spawn_inicial"/>
    </properties>
   </object>
  </objectgroup>
  <objectgroup id="6" name="spawnJogador" color="#4fa3ff">
-  <object id="29" name="spawn_inicial" x="10" y="552" width="16" height="16"/>
+  <object id="29" name="spawn_inicial" type="SpawnJogador" x="10" y="552" width="16" height="16"/>
  </objectgroup>
 </map>

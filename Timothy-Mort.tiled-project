@@ -1,0 +1,104 @@
+{
+    "automappingRulesFile": "",
+    "commands": [],
+    "compatibilityVersion": 1100,
+    "extensionsPath": "extensions",
+    "folders": [
+        "Content"
+    ],
+    "objectTypesFile": "",
+    "propertyTypes": [
+        {
+            "id": 1,
+            "name": "CenarioId",
+            "storageType": "string",
+            "type": "enum",
+            "values": [
+                "simple_cutscene",
+                "affordance_visibilidade",
+                "affordance_intervencao"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "id": 2,
+            "name": "PosicaoEntradaIntervencao",
+            "storageType": "string",
+            "type": "enum",
+            "values": [
+                "tardia",
+                "antecipada"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "color": "#ff9f43",
+            "drawFill": true,
+            "id": 3,
+            "members": [
+                {
+                    "name": "destino",
+                    "propertyType": "CenarioId",
+                    "type": "string",
+                    "value": "simple_cutscene"
+                },
+                {
+                    "name": "spawnDestino",
+                    "type": "string",
+                    "value": ""
+                },
+                {
+                    "name": "posicao",
+                    "propertyType": "PosicaoEntradaIntervencao",
+                    "type": "string",
+                    "value": "tardia"
+                }
+            ],
+            "name": "EntradaIntervencao",
+            "type": "class",
+            "useAs": [
+                "object"
+            ]
+        },
+        {
+            "color": "#ffd84f",
+            "drawFill": true,
+            "id": 4,
+            "members": [
+                {
+                    "name": "destino",
+                    "propertyType": "CenarioId",
+                    "type": "string",
+                    "value": "simple_cutscene"
+                },
+                {
+                    "name": "spawnDestino",
+                    "type": "string",
+                    "value": ""
+                },
+                {
+                    "name": "requerSolucaoAplicada",
+                    "type": "bool",
+                    "value": false
+                }
+            ],
+            "name": "SaidaCena",
+            "type": "class",
+            "useAs": [
+                "object"
+            ]
+        },
+        {
+            "color": "#4fa3ff",
+            "drawFill": true,
+            "id": 5,
+            "members": [],
+            "name": "SpawnJogador",
+            "type": "class",
+            "useAs": [
+                "object"
+            ]
+        }
+    ],
+    "type": "project"
+}
