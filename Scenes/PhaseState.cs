@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace DontLikePoetry;
 
@@ -14,6 +15,8 @@ public sealed class PhaseState
 
     private readonly string _deathCountingScenarioId;
     private bool _deathRegisteredInCurrentAttempt;
+    private IReadOnlyList<PresentedSolutionDefinition> _initialSolutionPresentation =
+        Array.Empty<PresentedSolutionDefinition>();
 
     public string PhaseId { get; }
     public string CurrentScenarioId { get; private set; }
@@ -25,6 +28,16 @@ public sealed class PhaseState
     public bool HasRevision { get; private set; }
     public bool VerticalRouteRevealed { get; private set; }
     public bool ExitDoorIsOpen { get; private set; }
+
+    public IReadOnlyList<PresentedSolutionDefinition> InitialSolutionPresentation
+    {
+        get { return _initialSolutionPresentation; }
+    }
+
+    public bool HasInitialSolutionPresentation
+    {
+        get { return _initialSolutionPresentation.Count > 0; }
+    }
 
     public bool HasFirstChoice
     {
@@ -97,6 +110,68 @@ public sealed class PhaseState
         VerticalRouteRevealed = false;
         ExitDoorIsOpen = false;
         _deathRegisteredInCurrentAttempt = false;
+        _initialSolutionPresentation = Array.Empty<PresentedSolutionDefinition>();
+    }
+
+    public void RegisterInitialSolutionPresentation(
+        IReadOnlyList<PresentedSolutionDefinition> presentation)
+    {
+        if (presentation == null)
+        {
+            throw new ArgumentNullException(nameof(presentation));
+        }
+
+        if (HasInitialSolutionPresentation)
+        {
+            throw new InvalidOperationException(
+                "A apresentacao inicial da fase ja foi registrada.");
+        }
+
+        if (presentation.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "A apresentacao inicial deve possuir ao menos uma solucao.");
+        }
+
+        var entriesByPosition =
+            new PresentedSolutionDefinition[presentation.Count];
+        var registeredSolutionIds =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (PresentedSolutionDefinition entry in presentation)
+        {
+            if (entry == null || string.IsNullOrEmpty(entry.SolutionId))
+            {
+                throw new InvalidOperationException(
+                    "A apresentacao inicial possui uma solucao sem ID.");
+            }
+
+            if (entry.Position < 1 || entry.Position > presentation.Count)
+            {
+                throw new InvalidOperationException(
+                    "As posicoes da apresentacao inicial devem formar o intervalo 1..N.");
+            }
+
+            if (!registeredSolutionIds.Add(entry.SolutionId))
+            {
+                throw new InvalidOperationException(
+                    $"A solucao {entry.SolutionId} foi apresentada mais de uma vez.");
+            }
+
+            int positionIndex = entry.Position - 1;
+
+            if (entriesByPosition[positionIndex] != null)
+            {
+                throw new InvalidOperationException(
+                    $"A posicao {entry.Position} foi registrada mais de uma vez.");
+            }
+
+            entriesByPosition[positionIndex] = new PresentedSolutionDefinition(
+                entry.SolutionId,
+                entry.Position);
+        }
+
+        _initialSolutionPresentation = Array.AsReadOnly(entriesByPosition);
     }
 
     public void RegisterFallDeath()

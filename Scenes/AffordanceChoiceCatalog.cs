@@ -12,7 +12,7 @@ public static class AffordanceChoiceCatalog
         {
             new InterventionSolutionDefinition(
                 "I1",
-                "Orientar o percurso",
+                "Percurso",
                 "Adicionar indicadores de caminho e destacar o destino.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
@@ -20,33 +20,37 @@ public static class AffordanceChoiceCatalog
                 SolutionVisualModule.DESTINATION_HIGHLIGHT),
             new InterventionSolutionDefinition(
                 "I2",
-                "Reforcar a apresentacao do movimento",
-                "Aplicar a mesma decoracao a solidos e gelatinas e exibir um rastro durante todo o dash.",
+                "Apresentacao",
+                "Aplicar decoracao nas plataformas e exibir um rastro visual para indicar o dash.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.PLATFORM_DECORATION |
                 SolutionVisualModule.PLAYER_DASH_TRAIL),
             new InterventionSolutionDefinition(
                 "I3",
-                "Reforcar o contato com o cenario",
-                "Aplicar o mesmo contorno a solidos e gelatinas e exibir o mesmo flash no contato com qualquer superficie.",
+                "Contato",
+                "Adicionar contorno em plataformas e exibir flash de impacto.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.PLATFORM_OUTLINE |
                 SolutionVisualModule.PLAYER_SURFACE_CONTACT_FLASH)
         };
 
-    public static IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
+    public static IReadOnlyList<InterventionSolutionDefinition> InitialPartialSolutions { get; } =
         new List<InterventionSolutionDefinition>
         {
-            InitialInadequateSolutions[2],
             new InterventionSolutionDefinition(
                 "diferenciar_por_cor",
                 "Diferenciar as superficies especiais",
                 "Aplicar uma cor exclusiva as superficies que possuem a propriedade.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.GELATIN_COLOR),
+                SolutionVisualModule.GELATIN_COLOR)
+        };
+
+    public static IReadOnlyList<InterventionSolutionDefinition> InitialAdequateSolutions { get; } =
+        new List<InterventionSolutionDefinition>
+        {
             new InterventionSolutionDefinition(
                 "textura_e_feedback_de_recarga",
                 "Diferenciar e mostrar a recuperacao",
@@ -56,6 +60,9 @@ public static class AffordanceChoiceCatalog
                 SolutionVisualModule.GELATIN_TEXTURE |
                 SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR)
         };
+
+    public static IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
+        CreateInitialSolutions();
 
     public static IReadOnlyList<InterventionSolutionDefinition> RevisionSolutions { get; } =
         new List<InterventionSolutionDefinition>
@@ -107,16 +114,44 @@ public static class AffordanceChoiceCatalog
                 "Tornar o caminho ate o objetivo mais evidente.")
         };
 
-    public static InterventionSolutionDefinition GetSolution(string solutionId)
+    public static IReadOnlyList<PresentedSolutionDefinition> CreateInitialSolutionPresentation(
+        Random random)
     {
-        foreach (InterventionSolutionDefinition solution in InitialInadequateSolutions)
+        if (random == null)
         {
-            if (solution.Id == solutionId)
-            {
-                return solution;
-            }
+            throw new ArgumentNullException(nameof(random));
         }
 
+        var selectedSolutions = new List<InterventionSolutionDefinition>
+        {
+            PickSolution(InitialInadequateSolutions, random, "inadequado"),
+            PickSolution(InitialPartialSolutions, random, "parcial"),
+            PickSolution(InitialAdequateSolutions, random, "adequado")
+        };
+
+        for (int index = selectedSolutions.Count - 1; index > 0; index--)
+        {
+            int swapIndex = random.Next(index + 1);
+            InterventionSolutionDefinition temporary = selectedSolutions[index];
+            selectedSolutions[index] = selectedSolutions[swapIndex];
+            selectedSolutions[swapIndex] = temporary;
+        }
+
+        var presentation =
+            new List<PresentedSolutionDefinition>(selectedSolutions.Count);
+
+        for (int index = 0; index < selectedSolutions.Count; index++)
+        {
+            presentation.Add(new PresentedSolutionDefinition(
+                selectedSolutions[index].Id,
+                index + 1));
+        }
+
+        return presentation.AsReadOnly();
+    }
+
+    public static InterventionSolutionDefinition GetSolution(string solutionId)
+    {
         foreach (InterventionSolutionDefinition solution in InitialSolutions)
         {
             if (solution.Id == solutionId)
@@ -134,6 +169,45 @@ public static class AffordanceChoiceCatalog
         }
 
         throw new InvalidOperationException($"Solucao nao registrada: {solutionId}");
+    }
+
+    private static IReadOnlyList<InterventionSolutionDefinition> CreateInitialSolutions()
+    {
+        var solutions = new List<InterventionSolutionDefinition>(
+            InitialInadequateSolutions.Count +
+            InitialPartialSolutions.Count +
+            InitialAdequateSolutions.Count);
+
+        foreach (InterventionSolutionDefinition solution in InitialInadequateSolutions)
+        {
+            solutions.Add(solution);
+        }
+
+        foreach (InterventionSolutionDefinition solution in InitialPartialSolutions)
+        {
+            solutions.Add(solution);
+        }
+
+        foreach (InterventionSolutionDefinition solution in InitialAdequateSolutions)
+        {
+            solutions.Add(solution);
+        }
+
+        return solutions.AsReadOnly();
+    }
+
+    private static InterventionSolutionDefinition PickSolution(
+        IReadOnlyList<InterventionSolutionDefinition> pool,
+        Random random,
+        string qualityName)
+    {
+        if (pool == null || pool.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"O pool inicial {qualityName} nao possui solucoes.");
+        }
+
+        return pool[random.Next(pool.Count)];
     }
 
     public static InterventionJustificationDefinition GetJustification(string justificationId)

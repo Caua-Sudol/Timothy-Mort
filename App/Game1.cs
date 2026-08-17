@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -28,6 +29,7 @@ public class Game1 : Game
         AffordanceVisibilityPhaseId,
         ScenarioCatalog.InitialScenarioId,
         ScenarioCatalog.AffordanceVisibilityScenarioId);
+    private readonly Random _initialSolutionRandom = new Random();
     private AppScreen _activeScreen = AppScreen.START_MENU;
     private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
@@ -285,7 +287,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             if (!_phaseState.HasFirstChoice)
             {
-                _interventionChoiceMenu.OpenInitial(AffordanceChoiceCatalog.InitialSolutions);
+                _interventionChoiceMenu.OpenInitial(GetOrCreateInitialSolutions());
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
@@ -311,6 +313,30 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _phaseState.RegisterFallDeath();
             OpenDeathMenu();
         }
+    }
+
+    private IReadOnlyList<InterventionSolutionDefinition> GetOrCreateInitialSolutions()
+    {
+        if (!_phaseState.HasInitialSolutionPresentation)
+        {
+            IReadOnlyList<PresentedSolutionDefinition> presentation =
+                AffordanceChoiceCatalog.CreateInitialSolutionPresentation(
+                    _initialSolutionRandom);
+            _phaseState.RegisterInitialSolutionPresentation(presentation);
+        }
+
+        IReadOnlyList<PresentedSolutionDefinition> registeredPresentation =
+            _phaseState.InitialSolutionPresentation;
+        var solutionsByPosition =
+            new InterventionSolutionDefinition[registeredPresentation.Count];
+
+        foreach (PresentedSolutionDefinition entry in registeredPresentation)
+        {
+            solutionsByPosition[entry.Position - 1] =
+                AffordanceChoiceCatalog.GetSolution(entry.SolutionId);
+        }
+
+        return Array.AsReadOnly(solutionsByPosition);
     }
 
     private void BeginScenarioTransition(
