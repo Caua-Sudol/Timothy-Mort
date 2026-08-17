@@ -747,6 +747,16 @@ private void ApplyObjectState(LevelMap candidate)
 
         spriteBatch.Draw(_platformTexture, gelatin, gelatinColor);
 
+        if ((visualModules & SolutionVisualModule.GELATIN_DASH_SYMBOL) != 0)
+        {
+            DrawGelatinDashSymbol(spriteBatch, gelatin);
+        }
+
+        if ((visualModules & SolutionVisualModule.GELATIN_DIRECTIONAL_ANIMATION) != 0)
+        {
+            DrawGelatinEnergyChannels(spriteBatch, gelatin);
+        }
+
         if ((visualModules & SolutionVisualModule.GELATIN_TEXTURE) == 0)
         {
             return;
@@ -758,6 +768,61 @@ private void ApplyObjectState(LevelMap candidate)
                 _platformTexture,
                 new Rectangle(x, gelatin.Top, 6, gelatin.Height),
                 Color.White * 0.65f);
+        }
+    }
+
+    private void DrawGelatinDashSymbol(
+        SpriteBatch spriteBatch,
+        Rectangle gelatin)
+    {
+        const int stroke = 4;
+        int centerX = gelatin.Center.X;
+        int centerY = gelatin.Center.Y;
+        Color symbolColor = Color.White * 0.85f;
+
+        spriteBatch.Draw(
+            _platformTexture,
+            new Rectangle(centerX - 10, centerY - 2, 12, stroke),
+            symbolColor);
+        spriteBatch.Draw(
+            _platformTexture,
+            new Rectangle(centerX, centerY - 6, stroke, 12),
+            symbolColor);
+        spriteBatch.Draw(
+            _platformTexture,
+            new Rectangle(centerX + 4, centerY - 2, stroke, stroke),
+            symbolColor);
+    }
+
+    private void DrawGelatinEnergyChannels(
+        SpriteBatch spriteBatch,
+        Rectangle gelatin)
+    {
+        const int channelRowSpacing = 10;
+        const int segmentSpacing = 22;
+        const int segmentWidth = 12;
+        const int segmentHeight = 3;
+
+        for (int y = gelatin.Top + 5;
+             y < gelatin.Bottom - segmentHeight;
+             y += channelRowSpacing)
+        {
+            for (int x = gelatin.Left + 6;
+                 x < gelatin.Right - 4;
+                 x += segmentSpacing)
+            {
+                double phase =
+                    _visualEffectTime * 5.0 +
+                    (x - gelatin.Left) * 0.18 +
+                    (y - gelatin.Top) * 0.45;
+                float pulse = (float)((Math.Sin(phase) + 1.0) * 0.5);
+                Color channelColor = Color.Aquamarine * (0.25f + pulse * 0.60f);
+
+                spriteBatch.Draw(
+                    _platformTexture,
+                    new Rectangle(x, y, segmentWidth, segmentHeight),
+                    channelColor);
+            }
         }
     }
 

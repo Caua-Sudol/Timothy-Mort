@@ -57,7 +57,7 @@ public static class AffordanceChoiceCatalog
                 SolutionVisualModule.PLATFORM_DECORATION),
             new InterventionSolutionDefinition(
                 "P3",
-                "Dash mais visual",
+                "Recarga e visual do dash",
                 "Exibir a recarga e um rastro visual ao dash.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
@@ -69,13 +69,29 @@ public static class AffordanceChoiceCatalog
         new List<InterventionSolutionDefinition>
         {
             new InterventionSolutionDefinition(
-                "textura_e_feedback_de_recarga",
-                "Diferenciar e mostrar a recuperacao",
-                "Aplicar textura as superficies e restaurar a cor do jogador ao recuperar o dash.",
+                "A1",
+                "Contraste e recarga de dash",
+                "Diferenciar plataformas especiais e restaurar a cor do jogador ao recuperar o dash",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.GELATIN_TEXTURE |
-                SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR)
+                SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR),
+            new InterventionSolutionDefinition(
+                "A2",
+                "Icone e recarga",
+                "Adicionar icone que indique dash nas plataformas especiais e confirmacao de recarga do dash",
+                SolutionQuality.ADEQUATE,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.GELATIN_DASH_SYMBOL |
+                SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL),
+            new InterventionSolutionDefinition(
+                "A3",
+                "Absorcao de energia e destaque",
+                "Aplicar cor exclusiva nas plataformas especiais e comunicar a absorcao de energia ao recuperar o dash",
+                SolutionQuality.ADEQUATE,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.GELATIN_COLOR |
+                SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION)
         };
 
     public static IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
@@ -101,32 +117,45 @@ public static class AffordanceChoiceCatalog
             new InterventionSolutionDefinition(
                 "diferenciar_por_textura",
                 "Aplicar uma textura exclusiva",
-                "Usar uma textura diferente apenas nas superficies especiais.",
+                "Usar uma textura diferente apenas nas superficies especiais",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.GELATIN_TEXTURE),
             new InterventionSolutionDefinition(
                 "diferenciar_por_brilho",
                 "Adicionar brilho as superficies",
-                "Aplicar um brilho apenas nas superficies especiais.",
+                "Aplicar um brilho apenas nas superficies especiais",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.GELATIN_GLOW),
             new InterventionSolutionDefinition(
                 "brilho_e_feedback_de_recarga",
                 "Destacar e confirmar a recuperacao",
-                "Combinar brilho nas superficies com a recuperacao da cor do jogador.",
+                "Combinar brilho nas superficies com a recuperacao da cor do jogador",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.GELATIN_GLOW |
                 SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR)
         };
 
+    public static IReadOnlyList<InterventionSolutionDefinition> RevisionAdequateSolutions { get; } =
+        new List<InterventionSolutionDefinition>
+        {
+            new InterventionSolutionDefinition(
+                "A4",
+                "Canais e disponibilidade",
+                "Canais energizados nas plataformas especiais e um contorno quando o dash estiver disponivel",
+                SolutionQuality.ADEQUATE,
+                SolutionChoiceRound.REVISION,
+                SolutionVisualModule.GELATIN_DIRECTIONAL_ANIMATION |
+                SolutionVisualModule.PLAYER_DASH_AVAILABLE_OUTLINE)
+        };
+
     public static IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions { get; } =
         new List<InterventionSolutionDefinition>
         {
             RevisionPartialSolutions[0],
-            RevisionSolutions[2]
+            RevisionAdequateSolutions[0]
         };
 
     public static IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
@@ -207,6 +236,14 @@ public static class AffordanceChoiceCatalog
         }
 
         foreach (InterventionSolutionDefinition solution in RevisionSolutions)
+        {
+            if (solution.Id == solutionId)
+            {
+                return solution;
+            }
+        }
+
+        foreach (InterventionSolutionDefinition solution in RevisionAdequateSolutions)
         {
             if (solution.Id == solutionId)
             {

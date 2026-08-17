@@ -231,8 +231,26 @@ private void UpdatePlaying(Camera camera, double deltaTime)
     bool wasGrounded = _player.IsGrounded;
         _player.Update(deltaTime);
         ApplyGelatinFallSpeed();
+        bool dashWasAvailableBeforePhysics = _player.CanDash;
         UpdatePlayerPhysics(deltaTime);
         ApplyGelatinFallSpeed();
+
+        if (!dashWasAvailableBeforePhysics && _player.CanDash &&
+            _phaseState?.AppliedSolutionUsesModule(
+                SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL) == true)
+        {
+            _player.StartDashRechargeSymbol();
+        }
+
+        if (!dashWasAvailableBeforePhysics && _player.CanDash &&
+            _phaseState?.AppliedSolutionUsesModule(
+                SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION) == true)
+        {
+            _player.StartDashEnergyAbsorption(new Vector2(
+                _player.HitBox.Center.X,
+                _player.HitBox.Bottom + 8));
+        }
+
         UpdateInterventionButton(deltaTime);
         UpdateExitDoorRise(deltaTime);
 
@@ -387,20 +405,38 @@ private void UpdateGelatinContact()
         foreach (Rectangle gelatin in _map.GetGelatinVolumes(
             _phaseState?.VerticalRouteRevealed == true))
         {
-            if (!_player.HitBox.Intersects(gelatin) || _usedGelatins.Contains(gelatin))
-            {
-                continue;
-            }
+        if (!_player.HitBox.Intersects(gelatin) || _usedGelatins.Contains(gelatin))
+        {
+            continue;
+        }
 
-            if (_phaseState?.AppliedSolutionUsesModule(
-                SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) == true)
+        bool dashWasAvailable = _player.CanDash;
+
+        if (_phaseState?.AppliedSolutionUsesModule(
+            SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) == true)
             {
                 _player.RestoreDash();
             }
             else
-            {
-                _player.RestoreDashWithoutVisualFeedback();
-            }
+        {
+            _player.RestoreDashWithoutVisualFeedback();
+        }
+
+        if (!dashWasAvailable &&
+            _phaseState?.AppliedSolutionUsesModule(
+                SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL) == true)
+        {
+            _player.StartDashRechargeSymbol();
+        }
+
+        if (!dashWasAvailable &&
+            _phaseState?.AppliedSolutionUsesModule(
+                SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION) == true)
+        {
+            _player.StartDashEnergyAbsorption(new Vector2(
+                gelatin.Center.X,
+                gelatin.Center.Y));
+        }
 
         _usedGelatins.Add(gelatin);
     }
@@ -503,6 +539,8 @@ private static bool RectanglesTouchOrIntersect(
         _playerWasTouchingGelatinSurface = false;
         _player.CancelDash();
         _player.ClearSurfaceContactFlash();
+        _player.ClearDashRechargeSymbol();
+        _player.ClearDashEnergyAbsorption();
         _player.ResetVelocity();
     }
 
@@ -515,6 +553,8 @@ private static bool RectanglesTouchOrIntersect(
         _player.Move((int)_checkpoint.X, (int)_checkpoint.Y);
         _player.CancelDash();
         _player.ClearSurfaceContactFlash();
+        _player.ClearDashRechargeSymbol();
+        _player.ClearDashEnergyAbsorption();
         _player.ResetVelocity();
         _player.Grounded();
         _player.RestoreDash();
@@ -643,6 +683,9 @@ private static bool RectanglesTouchOrIntersect(
         _exitDoorIsOpen,
         _phaseState?.VerticalRouteRevealed == true,
         visualModules);
+
+    _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
+    _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
 
         spriteBatch.End();
     }

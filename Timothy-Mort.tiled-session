@@ -1,6 +1,7 @@
 {
-    "activeFile": "",
+    "activeFile": "Content/AffordanceVisibilidade.tmx",
     "expandedProjectPaths": [
+        "Content"
     ],
     "fileStates": {
         "Content/AffordanceIntervencao.tmx": {
@@ -13,10 +14,10 @@
         },
         "Content/AffordanceVisibilidade.tmx": {
             "scale": 0.25,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 484,
-                "y": 836
+                "x": 1202,
+                "y": 1412
             }
         },
         "Content/SimpleCutsceneMap.tmx": {
@@ -53,10 +54,14 @@
         }
     },
     "openFiles": [
+        "Content/AffordanceIntervencao.tmx",
+        "Content/SimpleCutsceneMap.tmx",
+        "Content/AffordanceVisibilidade.tmx"
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
         "Content/AffordanceIntervencao.tmx",
+        "Content/SimpleCutsceneMap.tmx",
         "Content/AffordanceVisibilidade.tmx"
     ]
 }

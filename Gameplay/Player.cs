@@ -58,6 +58,11 @@ public class Player
     private readonly List<Vector2> _dashTrailPositions = new List<Vector2>();
     private const double SurfaceContactFlashDuration = 0.12;
     private double _surfaceContactFlashTimer;
+    private const double DashRechargeSymbolDuration = 0.45;
+    private double _dashRechargeSymbolTimer;
+    private const double DashEnergyAbsorptionDuration = 0.36;
+    private double _dashEnergyAbsorptionTimer;
+    private Vector2 _dashEnergyAbsorptionSource;
 
     public PlayerState State { get; private set; } = PlayerState.Idle;
 
@@ -107,6 +112,8 @@ public class Player
 public void Update(double deltaTime)
 {
     UpdateSurfaceContactFlash(deltaTime);
+    UpdateDashRechargeSymbol(deltaTime);
+    UpdateDashEnergyAbsorption(deltaTime);
     _input.Update();
         int horizontalInput = _input.Horizontal;
 
@@ -285,6 +292,51 @@ public void ClearSurfaceContactFlash()
     _surfaceContactFlashTimer = 0.0;
 }
 
+private void UpdateDashRechargeSymbol(double deltaTime)
+{
+    if (_dashRechargeSymbolTimer <= 0.0)
+    {
+        return;
+    }
+
+    _dashRechargeSymbolTimer = Math.Max(
+        0.0,
+        _dashRechargeSymbolTimer - deltaTime);
+}
+
+public void StartDashRechargeSymbol()
+{
+    _dashRechargeSymbolTimer = DashRechargeSymbolDuration;
+}
+
+public void ClearDashRechargeSymbol()
+{
+    _dashRechargeSymbolTimer = 0.0;
+}
+
+private void UpdateDashEnergyAbsorption(double deltaTime)
+{
+    if (_dashEnergyAbsorptionTimer <= 0.0)
+    {
+        return;
+    }
+
+    _dashEnergyAbsorptionTimer = Math.Max(
+        0.0,
+        _dashEnergyAbsorptionTimer - deltaTime);
+}
+
+public void StartDashEnergyAbsorption(Vector2 source)
+{
+    _dashEnergyAbsorptionSource = source;
+    _dashEnergyAbsorptionTimer = DashEnergyAbsorptionDuration;
+}
+
+public void ClearDashEnergyAbsorption()
+{
+    _dashEnergyAbsorptionTimer = 0.0;
+}
+
     private void ApplyNormalMovement(int horizontalInput, double deltaTime)
     {
         float targetVelocityX = horizontalInput * _maxVelocity.X;
@@ -402,7 +454,14 @@ public void Draw(
         DrawDashTrail(spriteBatch);
     }
 
-    Color color = ShowsDashAsAvailable ? DashAvailableColor : DashSpentColor;
+    bool usesAlternativeDashRechargeFeedback =
+        (visualModules &
+         (SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL |
+          SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION |
+          SolutionVisualModule.PLAYER_DASH_AVAILABLE_OUTLINE)) != 0;
+    Color color = usesAlternativeDashRechargeFeedback || ShowsDashAsAvailable
+        ? DashAvailableColor
+        : DashSpentColor;
 
     if ((visualModules &
          SolutionVisualModule.PLAYER_SURFACE_CONTACT_FLASH) != 0 &&
@@ -411,7 +470,82 @@ public void Draw(
         color = Color.White;
     }
 
+    if ((visualModules & SolutionVisualModule.PLAYER_DASH_AVAILABLE_OUTLINE) != 0 &&
+        CanDash)
+    {
+        spriteBatch.Draw(
+            _texture,
+            new Rectangle(
+                HitBox.X - 2,
+                HitBox.Y - 2,
+                HitBox.Width + 4,
+                HitBox.Height + 4),
+            Color.Aquamarine * 0.85f);
+    }
+
     spriteBatch.Draw(_texture, HitBox, color);
+
+}
+
+public void DrawDashRechargeSymbol(
+    SpriteBatch spriteBatch,
+    SolutionVisualModule visualModules)
+{
+    if ((visualModules & SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL) == 0 ||
+        _dashRechargeSymbolTimer <= 0.0)
+    {
+        return;
+    }
+
+    float progress = (float)(1.0 -
+        _dashRechargeSymbolTimer / DashRechargeSymbolDuration);
+    float opacity = 1.0f - progress * 0.35f;
+    int rise = (int)(progress * 4.0f);
+    int centerX = HitBox.Center.X;
+    int top = HitBox.Top - 12 - rise;
+    Color symbolColor = Color.LimeGreen * opacity;
+
+    spriteBatch.Draw(
+        _texture,
+        new Rectangle(centerX - 4, top + 3, 8, 2),
+        symbolColor);
+    spriteBatch.Draw(
+        _texture,
+        new Rectangle(centerX - 1, top, 2, 8),
+        symbolColor);
+}
+
+public void DrawDashEnergyAbsorption(
+    SpriteBatch spriteBatch,
+    SolutionVisualModule visualModules)
+{
+    if ((visualModules & SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION) == 0 ||
+        _dashEnergyAbsorptionTimer <= 0.0)
+    {
+        return;
+    }
+
+    float progress = (float)(1.0 -
+        _dashEnergyAbsorptionTimer / DashEnergyAbsorptionDuration);
+    Vector2 target = new Vector2(HitBox.Center.X, HitBox.Center.Y);
+    Color particleColor = Color.Aquamarine * (0.9f - progress * 0.3f);
+
+    for (int index = 0; index < 3; index++)
+    {
+        float laneOffset = (index - 1) * 6.0f;
+        float particleProgress = MathHelper.Clamp(
+            progress * 1.15f - index * 0.06f,
+            0.0f,
+            1.0f);
+        Vector2 source = _dashEnergyAbsorptionSource +
+            new Vector2(0.0f, laneOffset);
+        Vector2 position = Vector2.Lerp(source, target, particleProgress);
+
+        spriteBatch.Draw(
+            _texture,
+            new Rectangle((int)position.X - 2, (int)position.Y - 2, 4, 4),
+            particleColor);
+    }
 }
 
 private void DrawDashTrail(SpriteBatch spriteBatch)
