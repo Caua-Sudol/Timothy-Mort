@@ -11,12 +11,13 @@ public static class AffordanceChoiceCatalog
         new List<InterventionSolutionDefinition>
         {
             new InterventionSolutionDefinition(
-                "indicar_caminho_objetivo",
-                "Indicar o caminho ate o objetivo",
-                "Adicionar marcadores apontando para a direcao do objetivo.",
+                "I1",
+                "Orientar o percurso",
+                "Adicionar indicadores de caminho e destacar o destino.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.PATH_INDICATOR),
+                SolutionVisualModule.PATH_INDICATOR |
+                SolutionVisualModule.DESTINATION_HIGHLIGHT),
             new InterventionSolutionDefinition(
                 "diferenciar_por_cor",
                 "Diferenciar as superficies especiais",

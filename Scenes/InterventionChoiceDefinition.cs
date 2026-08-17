@@ -23,7 +23,8 @@ public enum SolutionVisualModule
     GELATIN_COLOR = 2,
     GELATIN_TEXTURE = 4,
     GELATIN_GLOW = 8,
-    PLAYER_DASH_RECOVERY_COLOR = 16
+    PLAYER_DASH_RECOVERY_COLOR = 16,
+    DESTINATION_HIGHLIGHT = 32
 }
 
 public sealed class InterventionSolutionDefinition

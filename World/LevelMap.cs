@@ -352,12 +352,15 @@ public class LevelMap
             exitDoorIsOpen,
             exitDoorPosition);
 
-        if (!exitDoorCollider.HasValue)
+        if (exitDoorCollider.HasValue)
         {
-            return;
+            spriteBatch.Draw(_platformTexture, exitDoorCollider.Value, Color.Red);
         }
 
-        spriteBatch.Draw(_platformTexture, exitDoorCollider.Value, Color.Red);
+        if ((visualModules & SolutionVisualModule.DESTINATION_HIGHLIGHT) != 0)
+        {
+            DrawDestinationHighlights(spriteBatch);
+        }
     }
 
 public void ReloadObjects()
@@ -753,6 +756,32 @@ private void ApplyObjectState(LevelMap candidate)
                 48,
                 8);
             spriteBatch.Draw(_platformTexture, marker, Color.Gold);
+        }
+    }
+
+    private void DrawDestinationHighlights(SpriteBatch spriteBatch)
+    {
+        const int thickness = 4;
+
+        foreach (SceneExit sceneExit in _sceneExits)
+        {
+            Rectangle bounds = sceneExit.Bounds;
+            spriteBatch.Draw(
+                _platformTexture,
+                new Rectangle(bounds.Left, bounds.Top, bounds.Width, thickness),
+                Color.Gold);
+            spriteBatch.Draw(
+                _platformTexture,
+                new Rectangle(bounds.Left, bounds.Bottom - thickness, bounds.Width, thickness),
+                Color.Gold);
+            spriteBatch.Draw(
+                _platformTexture,
+                new Rectangle(bounds.Left, bounds.Top, thickness, bounds.Height),
+                Color.Gold);
+            spriteBatch.Draw(
+                _platformTexture,
+                new Rectangle(bounds.Right - thickness, bounds.Top, thickness, bounds.Height),
+                Color.Gold);
         }
     }
 }
