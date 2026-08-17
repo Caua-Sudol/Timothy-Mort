@@ -25,7 +25,6 @@ public class Scene
     private const float GelatinMaximumFallSpeed = 96.0f;
     private const float InterventionButtonPressedOffset = 8.0f;
     private const float InterventionButtonPressSpeed = 64.0f;
-    private const float ExitDoorInitialDrop = 576.0f;
     private const float ExitDoorRiseSpeed = 768.0f;
 
     private Texture2D _fadeTexture;
@@ -45,7 +44,7 @@ public class Scene
     private string _requestedScenarioId;
     private string _requestedSpawnId;
     private float _interventionButtonPressOffset;
-    private float _exitDoorRiseOffset;
+    private Vector2 _exitDoorPosition;
     private bool _exitDoorIsOpen;
     private bool _interventionButtonActivationPending;
     private bool _interventionButtonActivationIssued;
@@ -122,13 +121,13 @@ public class Scene
         _requestedSpawnId = null;
         InterventionButtonPressed = false;
         _interventionButtonPressOffset = 0.0f;
-        _exitDoorRiseOffset = ExitDoorInitialDrop;
         SyncInterventionState();
         _interventionButtonActivationPending = false;
         _interventionButtonActivationIssued = false;
         _usedGelatins.Clear();
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
+        _exitDoorPosition = GetExitDoorRestingPosition();
         _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
             ?? _map.PlayerSpawn
             ?? _fallbackPlayerStart;
@@ -168,6 +167,26 @@ public class Scene
     public void Restart(Camera camera)
     {
         _requestedScenarioId = null;
+        RespawnPlayer(camera);
+    }
+
+    public void ReloadMap(Camera camera)
+    {
+        _map.ReloadObjects();
+        _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
+            ?? _map.PlayerSpawn
+            ?? _fallbackPlayerStart;
+        _checkpoint = _playerStart;
+
+        _requestedScenarioId = null;
+        _requestedSpawnId = null;
+        InterventionButtonPressed = false;
+        _interventionButtonPressOffset = 0.0f;
+        SyncInterventionState();
+        _exitDoorPosition = GetExitDoorRestingPosition();
+        _interventionButtonActivationPending = false;
+        _interventionButtonActivationIssued = false;
+
         RespawnPlayer(camera);
     }
 
@@ -257,7 +276,7 @@ public class Scene
             _map.GetSolidColliders(
                 _exitDoorIsOpen,
                 _phaseState?.VerticalRouteRevealed == true,
-                _exitDoorRiseOffset),
+                _exitDoorPosition),
             deltaTime);
     }
 
@@ -303,19 +322,38 @@ public class Scene
 
     private void UpdateExitDoorRise(double deltaTime)
     {
-        if (!InterventionButtonPressed || _exitDoorRiseOffset <= 0.0f)
+        bool doorShouldMove = InterventionButtonPressed ||
+            _phaseState?.VerticalRouteRevealed == true;
+
+        if (!doorShouldMove || _exitDoorIsOpen)
         {
             return;
         }
 
-        _exitDoorRiseOffset = MathHelper.Max(
-            0.0f,
-            _exitDoorRiseOffset - ExitDoorRiseSpeed * (float)deltaTime);
+        Vector2 delta = _map.ExitDoorDestination - _exitDoorPosition;
+        float distance = delta.Length();
+
+        if (distance <= 0.0f)
+        {
+            return;
+        }
+
+        float step = ExitDoorRiseSpeed * (float)deltaTime;
+        _exitDoorPosition = distance <= step
+            ? _map.ExitDoorDestination
+            : _exitDoorPosition + delta / distance * step;
     }
 
     public void SyncInterventionState()
     {
         _exitDoorIsOpen = _phaseState?.ExitDoorIsOpen == true;
+    }
+
+    private Vector2 GetExitDoorRestingPosition()
+    {
+        return _phaseState?.VerticalRouteRevealed == true
+            ? _map.ExitDoorDestination
+            : _map.ExitDoorStartPosition;
     }
 
     private void ApplyGelatinFallSpeed()
@@ -484,7 +522,7 @@ public class Scene
             _map.SceneExits,
             _map.InterventionEntrances,
             _map.InterventionButtons,
-            _map.ExitDoors,
+            _map.GetExitDoorCollider(_exitDoorIsOpen, _exitDoorPosition),
             _map.DebugMeasurementPair,
             GetActiveInterventionEntrancePlacement(),
             _checkpoint);
@@ -503,7 +541,7 @@ public class Scene
             spriteBatch,
             GetActiveInterventionEntrancePlacement(),
             _interventionButtonPressOffset,
-            _exitDoorRiseOffset,
+            _exitDoorPosition,
             _exitDoorIsOpen,
             _phaseState?.VerticalRouteRevealed == true,
             GetAppliedVisualModules());

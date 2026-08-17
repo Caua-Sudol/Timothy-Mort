@@ -221,6 +221,15 @@ public class Game1 : Game
             return;
         }
 
+        if (keyboardState.IsKeyDown(Keys.LeftControl) &&
+            KeyWasPressed(keyboardState, Keys.R) &&
+            (_overlayState == OverlayState.NONE || _overlayState == OverlayState.PAUSED) &&
+            _scene.SceneMode == SceneMode.PLAYING)
+        {
+            _scene.ReloadMap(_camera);
+            return;
+        }
+
         if (_overlayState == OverlayState.DEATH_MENU)
         {
             UpdateDeathMenu(keyboardState);

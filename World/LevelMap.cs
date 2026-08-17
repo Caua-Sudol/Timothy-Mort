@@ -17,6 +17,7 @@ public class LevelMap
     private const string InterventionEntranceLayerName = "entradaIntervencao";
     private const string InterventionButtonLayerName = "botaoIntervencao";
     private const string ExitDoorLayerName = "portaSaida";
+    private const string ExitDoorDestinationLayerName = "destinoPortaSaida";
     private const string VerticalRoutePlatformLayerName = "rotaVerticalSolida";
     private const string VerticalRouteGelatinLayerName = "rotaVerticalGelatina";
     private const string DebugMeasurementLayerName = "medicaoDebug";
@@ -37,7 +38,6 @@ public class LevelMap
     private readonly List<SceneExit> _sceneExits = new List<SceneExit>();
     private readonly List<InterventionEntrance> _interventionEntrances = new List<InterventionEntrance>();
     private readonly List<Rectangle> _interventionButtons = new List<Rectangle>();
-    private readonly List<Rectangle> _exitDoors = new List<Rectangle>();
     private readonly List<Rectangle> _verticalRoutePlatforms = new List<Rectangle>();
     private readonly List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
     private readonly Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
@@ -45,6 +45,8 @@ public class LevelMap
 
     public Vector2? PlayerSpawn { get; private set; }
     public DebugMeasurementPair DebugMeasurementPair { get; private set; }
+    public Rectangle? ExitDoorBounds { get; private set; }
+    public Vector2 ExitDoorDestination { get; private set; }
 
     public IEnumerable<Rectangle> Platforms
     {
@@ -94,11 +96,17 @@ public class LevelMap
         }
     }
 
-    public IEnumerable<Rectangle> ExitDoors
+    public Vector2 ExitDoorStartPosition
     {
         get
         {
-            return _exitDoors;
+            if (!ExitDoorBounds.HasValue)
+            {
+                return Vector2.Zero;
+            }
+
+            Rectangle bounds = ExitDoorBounds.Value;
+            return new Vector2(bounds.X, bounds.Y);
         }
     }
 
@@ -119,7 +127,7 @@ public class LevelMap
 
     public void LoadContent(GraphicsDevice graphicsDevice)
     {
-        LoadObjects();
+        ReloadObjects();
         LoadPlatformTexture(graphicsDevice);
     }
 
@@ -152,7 +160,7 @@ public class LevelMap
         bool exitDoorIsOpen,
         bool appliedSolutionAllowsExit)
     {
-        if (!exitDoorIsOpen && _exitDoors.Count > 0)
+        if (!exitDoorIsOpen && ExitDoorBounds.HasValue)
         {
             return null;
         }
@@ -221,7 +229,7 @@ public class LevelMap
     public IEnumerable<Rectangle> GetSolidColliders(
         bool exitDoorIsOpen,
         bool verticalRouteRevealed,
-        float exitDoorRiseOffset)
+        Vector2 exitDoorPosition)
     {
         foreach (Rectangle platform in _platforms)
         {
@@ -236,19 +244,31 @@ public class LevelMap
             }
         }
 
-        if (exitDoorIsOpen)
+        Rectangle? exitDoorCollider = GetExitDoorCollider(
+            exitDoorIsOpen,
+            exitDoorPosition);
+
+        if (exitDoorCollider.HasValue)
         {
-            yield break;
+            yield return exitDoorCollider.Value;
+        }
+    }
+
+    public Rectangle? GetExitDoorCollider(
+        bool exitDoorIsOpen,
+        Vector2 exitDoorPosition)
+    {
+        if (exitDoorIsOpen || !ExitDoorBounds.HasValue)
+        {
+            return null;
         }
 
-        foreach (Rectangle door in _exitDoors)
-        {
-            yield return new Rectangle(
-                door.X,
-                door.Y + (int)exitDoorRiseOffset,
-                door.Width,
-                door.Height);
-        }
+        Rectangle bounds = ExitDoorBounds.Value;
+        return new Rectangle(
+            (int)exitDoorPosition.X,
+            (int)exitDoorPosition.Y,
+            bounds.Width,
+            bounds.Height);
     }
 
     public IEnumerable<Rectangle> GetGelatinVolumes(bool verticalRouteRevealed)
@@ -273,7 +293,7 @@ public class LevelMap
         SpriteBatch spriteBatch,
         InterventionEntrancePlacement? activeInterventionEntrancePlacement,
         float interventionButtonPressOffset,
-        float exitDoorRiseOffset,
+        Vector2 exitDoorPosition,
         bool exitDoorIsOpen,
         bool verticalRouteRevealed,
         SolutionVisualModule visualModules)
@@ -327,23 +347,19 @@ public class LevelMap
             spriteBatch.Draw(_platformTexture, pressedButton, Color.Orange);
         }
 
-        if (exitDoorIsOpen)
+        Rectangle? exitDoorCollider = GetExitDoorCollider(
+            exitDoorIsOpen,
+            exitDoorPosition);
+
+        if (!exitDoorCollider.HasValue)
         {
             return;
         }
 
-        foreach (Rectangle door in _exitDoors)
-        {
-            var raisedDoor = new Rectangle(
-                door.X,
-                door.Y + (int)exitDoorRiseOffset,
-                door.Width,
-                door.Height);
-            spriteBatch.Draw(_platformTexture, raisedDoor, Color.Red);
-        }
+        spriteBatch.Draw(_platformTexture, exitDoorCollider.Value, Color.Red);
     }
 
-    private void LoadObjects()
+    public void ReloadObjects()
     {
         _platforms.Clear();
         _gelatins.Clear();
@@ -351,12 +367,13 @@ public class LevelMap
         _sceneExits.Clear();
         _interventionEntrances.Clear();
         _interventionButtons.Clear();
-        _exitDoors.Clear();
         _verticalRoutePlatforms.Clear();
         _verticalRouteGelatins.Clear();
         _playerSpawns.Clear();
         PlayerSpawn = null;
         DebugMeasurementPair = null;
+        ExitDoorBounds = null;
+        ExitDoorDestination = Vector2.Zero;
 
         var map = new TmxMap(_mapPath);
 
@@ -470,10 +487,40 @@ public class LevelMap
         }
 
         LoadRectanglesFromOptionalLayer(map, InterventionButtonLayerName, _interventionButtons);
-        LoadRectanglesFromOptionalLayer(map, ExitDoorLayerName, _exitDoors);
+        LoadExitDoor(map);
         LoadRectanglesFromOptionalLayer(map, VerticalRoutePlatformLayerName, _verticalRoutePlatforms);
         LoadRectanglesFromOptionalLayer(map, VerticalRouteGelatinLayerName, _verticalRouteGelatins);
         LoadDebugMeasurementPair(map);
+    }
+
+    private void LoadExitDoor(TmxMap map)
+    {
+        var doorLayer = map.ObjectGroups.FirstOrDefault(
+            group => group.Name == ExitDoorLayerName);
+        var doorObject = doorLayer?.Objects.FirstOrDefault();
+
+        if (doorObject == null)
+        {
+            return;
+        }
+
+        ExitDoorBounds = new Rectangle(
+            (int)doorObject.X,
+            (int)doorObject.Y,
+            (int)doorObject.Width,
+            (int)doorObject.Height);
+        ExitDoorDestination = ExitDoorStartPosition;
+
+        var destinationLayer = map.ObjectGroups.FirstOrDefault(
+            group => group.Name == ExitDoorDestinationLayerName);
+        var destinationObject = destinationLayer?.Objects.FirstOrDefault();
+
+        if (destinationObject != null)
+        {
+            ExitDoorDestination = new Vector2(
+                (float)destinationObject.X,
+                (float)destinationObject.Y);
+        }
     }
 
     private void LoadDebugMeasurementPair(TmxMap map)

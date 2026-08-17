@@ -76,7 +76,7 @@ public class DebugView
         IEnumerable<SceneExit> sceneExits,
         IEnumerable<InterventionEntrance> interventionEntrances,
         IEnumerable<Rectangle> interventionButtons,
-        IEnumerable<Rectangle> exitDoors,
+        Rectangle? exitDoor,
         DebugMeasurementPair measurementPair,
         InterventionEntrancePlacement? activeInterventionEntrancePlacement,
         Vector2 checkpoint)
@@ -143,9 +143,9 @@ public class DebugView
             DrawOutline(spriteBatch, button, Color.Orange);
         }
 
-        foreach (Rectangle door in exitDoors)
+        if (exitDoor.HasValue)
         {
-            DrawOutline(spriteBatch, door, Color.Red);
+            DrawOutline(spriteBatch, exitDoor.Value, Color.Red);
         }
 
         DrawMeasurementPair(spriteBatch, measurementPair);
