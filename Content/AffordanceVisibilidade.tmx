@@ -1,24 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="18">
- <objectgroup id="1" name="mapaGeral" color="#57d957">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="18">
+ <objectgroup color="#57d957" id="1" name="mapaGeral">
   <object id="1" name="inicio" x="0" y="832" width="640" height="256"/>
-  <!-- <object id="2" name="distrator_plataforma_1" x="704" y="608" width="96" height="32"/> -->
   <object id="3" name="plataforma_intermediaria" x="1472" y="832" width="448" height="256"/>
-  <!-- <object id="4" name="distrator_parede" x="2048" y="608" width="64" height="224"/> -->
   <object id="5" name="plataforma_apos_parede" x="2688" y="832" width="384" height="256"/>
-  <!-- <object id="6" name="distrator_plataforma_2" x="3136" y="640" width="128" height="32"/> -->
   <object id="7" name="plataforma_final" x="3968" y="832" width="640" height="256"/>
-  <!-- <object id="8" name="distrator_plataforma_3" x="4160" y="640" width="128" height="32"/> -->
  </objectgroup>
- <objectgroup id="2" name="gelatina" color="#ff4fd8">
-  <object id="9" name="gelatina_plataforma_1" x="960" y="768" width="160" height="32"/>
+ <objectgroup color="#ff4fd8" id="2" name="gelatina">
+  <object id="9" name="gelatina_plataforma_1" x="968" y="756" width="160" height="32"/>
   <object id="10" name="gelatina_parede_1" x="2240" y="608" width="64" height="224"/>
   <object id="11" name="gelatina_plataforma_2" x="3424" y="704" width="160" height="32"/>
  </objectgroup>
- <objectgroup id="3" name="spawnJogador" color="#4fa3ff">
+ <objectgroup color="#4fa3ff" id="3" name="spawnJogador">
   <object id="12" name="spawn_inicial" type="SpawnJogador" x="160" y="816" width="16" height="16"/>
  </objectgroup>
- <objectgroup id="4" name="saidaCena" color="#ffd84f">
+ <objectgroup color="#ffd84f" id="4" name="saidaCena">
   <object id="17" name="concluir_affordance_visibilidade" type="SaidaCena" x="4448" y="704" width="96" height="128">
    <properties>
     <property name="destino" propertytype="CenarioId" value="simple_cutscene"/>
@@ -27,7 +23,7 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup id="5" name="entradaIntervencao" color="#ff9f43">
+ <objectgroup color="#ff9f43" id="5" name="entradaIntervencao">
   <object id="15" name="entrada_antecipada" type="EntradaIntervencao" x="1760" y="704" width="64" height="128">
    <properties>
     <property name="destino" propertytype="CenarioId" value="affordance_intervencao"/>

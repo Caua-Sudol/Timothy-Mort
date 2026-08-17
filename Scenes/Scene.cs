@@ -170,12 +170,16 @@ public class Scene
         RespawnPlayer(camera);
     }
 
-    public void ReloadMap(Camera camera)
+public bool TryReloadMap(Camera camera, out string errorMessage)
+{
+    if (!_map.TryReloadObjects(out errorMessage))
     {
-        _map.ReloadObjects();
-        _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
-            ?? _map.PlayerSpawn
-            ?? _fallbackPlayerStart;
+        return false;
+    }
+
+    _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
+        ?? _map.PlayerSpawn
+        ?? _fallbackPlayerStart;
         _checkpoint = _playerStart;
 
         _requestedScenarioId = null;
@@ -187,8 +191,9 @@ public class Scene
         _interventionButtonActivationPending = false;
         _interventionButtonActivationIssued = false;
 
-        RespawnPlayer(camera);
-    }
+    RespawnPlayer(camera);
+    return true;
+}
 
     public bool TryTakeScenarioTransition(out string scenarioId, out string spawnId)
     {

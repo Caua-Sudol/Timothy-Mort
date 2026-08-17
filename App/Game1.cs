@@ -32,10 +32,11 @@ public class Game1 : Game
     private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
     private Texture2D _scenarioFadeTexture;
-    private float _scenarioFadeAlpha;
-    private string _pendingScenarioId;
-    private string _pendingScenarioSpawnId;
-    private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionState.NONE;
+private float _scenarioFadeAlpha;
+private string _pendingScenarioId;
+private string _pendingScenarioSpawnId;
+private string _mapReloadErrorMessage;
+private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionState.NONE;
 
     private enum ScenarioTransitionState
     {
@@ -221,14 +222,22 @@ public class Game1 : Game
             return;
         }
 
-        if (keyboardState.IsKeyDown(Keys.LeftControl) &&
-            KeyWasPressed(keyboardState, Keys.R) &&
-            (_overlayState == OverlayState.NONE || _overlayState == OverlayState.PAUSED) &&
-            _scene.SceneMode == SceneMode.PLAYING)
+    if (keyboardState.IsKeyDown(Keys.LeftControl) &&
+        KeyWasPressed(keyboardState, Keys.R) &&
+        (_overlayState == OverlayState.NONE || _overlayState == OverlayState.PAUSED) &&
+        _scene.SceneMode == SceneMode.PLAYING)
+    {
+        if (_scene.TryReloadMap(_camera, out string errorMessage))
         {
-            _scene.ReloadMap(_camera);
-            return;
+            _mapReloadErrorMessage = null;
         }
+        else
+        {
+            _mapReloadErrorMessage = errorMessage;
+        }
+
+        return;
+    }
 
         if (_overlayState == OverlayState.DEATH_MENU)
         {
@@ -358,9 +367,10 @@ public class Game1 : Game
         }
 
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
-        _scene = new Scene(scenario, spawnId, _phaseState);
-        _scene.LoadContent(GraphicsDevice);
-        _overlayState = OverlayState.NONE;
+    _scene = new Scene(scenario, spawnId, _phaseState);
+    _scene.LoadContent(GraphicsDevice);
+    _overlayState = OverlayState.NONE;
+    _mapReloadErrorMessage = null;
     }
 
     private void UpdatePauseMenu(KeyboardState keyboardState)
@@ -446,8 +456,9 @@ public class Game1 : Game
             _interventionChoiceMenu.Draw(_spriteBatch);
         }
 
-        DrawScenarioTransition();
-    }
+    DrawScenarioTransition();
+    _debugView.DrawReloadError(_spriteBatch, _mapReloadErrorMessage);
+}
 
     private void DrawScenarioTransition()
     {

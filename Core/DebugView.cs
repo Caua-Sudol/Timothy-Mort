@@ -32,8 +32,8 @@ public class DebugView
         IsEnabled = !IsEnabled;
     }
 
-    public void DrawHud(SpriteBatch spriteBatch, string scenarioId, Player player)
-    {
+public void DrawHud(SpriteBatch spriteBatch, string scenarioId, Player player)
+{
         if (!IsEnabled)
         {
             return;
@@ -59,9 +59,37 @@ public class DebugView
 
         spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         spriteBatch.Draw(_pixel, background, Color.Black * 0.75f);
-        spriteBatch.DrawString(_font, text, textPosition, Color.White);
-        spriteBatch.End();
+    spriteBatch.DrawString(_font, text, textPosition, Color.White);
+    spriteBatch.End();
+}
+
+public void DrawReloadError(SpriteBatch spriteBatch, string errorMessage)
+{
+    if (string.IsNullOrWhiteSpace(errorMessage))
+    {
+        return;
     }
+
+    string text =
+        "TMX RELOAD FAILED\n" +
+        $"{errorMessage}\n" +
+        "Last valid map kept. Fix the file and press Ctrl+R.";
+    Vector2 textSize = _font.MeasureString(text);
+    int backgroundHeight = (int)textSize.Y + HudPadding * 2 + 1;
+    var background = new Rectangle(
+        HudMargin,
+        spriteBatch.GraphicsDevice.Viewport.Height - backgroundHeight - HudMargin,
+        (int)textSize.X + HudPadding * 2 + 1,
+        backgroundHeight);
+    var textPosition = new Vector2(
+        background.X + HudPadding,
+        background.Y + HudPadding);
+
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+    spriteBatch.Draw(_pixel, background, Color.DarkRed * 0.9f);
+    spriteBatch.DrawString(_font, text, textPosition, Color.White);
+    spriteBatch.End();
+}
 
     public void DrawWorld(
         SpriteBatch spriteBatch,

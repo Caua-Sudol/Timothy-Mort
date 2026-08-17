@@ -3,6 +3,14 @@
     "expandedProjectPaths": [
     ],
     "fileStates": {
+        "Content/AffordanceIntervencao.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 5,
+            "viewCenter": {
+                "x": 447,
+                "y": 526
+            }
+        },
         "Content/AffordanceVisibilidade.tmx": {
             "scale": 0.25,
             "selectedLayer": 2,
@@ -10,11 +18,45 @@
                 "x": 484,
                 "y": 836
             }
+        },
+        "Content/SimpleCutsceneMap.tmx": {
+            "scale": 0.3052864583333333,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 961.3921351189971,
+                "y": 404.5380875202594
+            }
+        },
+        "Content/SimpleCutsceneMap.tmx#grass": {
+            "scaleInDock": 1
+        },
+        "Content/SimpleCutsceneMap.tmx#grassCenter_rounded": {
+            "scaleInDock": 1
+        },
+        "Content/SimpleCutsceneMap.tmx#grassHalf": {
+            "scaleInDock": 1
+        },
+        "Content/SimpleCutsceneMap.tmx#grassLeft": {
+            "scaleInDock": 1
+        },
+        "Content/SimpleCutsceneMap.tmx#grassMid": {
+            "scaleInDock": 1
+        },
+        "Content/SimpleCutsceneMap.tmx#grassRight": {
+            "scaleInDock": 1
+        },
+        "Content/SimpleCutsceneMap.tmx#stoneWall": {
+            "scaleInDock": 1
+        },
+        "Content/SimpleCutsceneMap.tmx#window": {
+            "scaleInDock": 1
         }
     },
     "openFiles": [
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
+        "Content/AffordanceIntervencao.tmx",
+        "Content/AffordanceVisibilidade.tmx"
     ]
 }

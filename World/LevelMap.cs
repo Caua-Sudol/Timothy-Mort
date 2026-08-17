@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -32,15 +33,15 @@ public class LevelMap
     private const string DebugMeasurementDestinationRole = "destino";
 
     private readonly string _mapPath;
-    private readonly List<Rectangle> _platforms = new List<Rectangle>();
-    private readonly List<Rectangle> _gelatins = new List<Rectangle>();
-    private readonly List<Rectangle> _cutsceneTriggers = new List<Rectangle>();
-    private readonly List<SceneExit> _sceneExits = new List<SceneExit>();
-    private readonly List<InterventionEntrance> _interventionEntrances = new List<InterventionEntrance>();
-    private readonly List<Rectangle> _interventionButtons = new List<Rectangle>();
-    private readonly List<Rectangle> _verticalRoutePlatforms = new List<Rectangle>();
-    private readonly List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
-    private readonly Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
+    private List<Rectangle> _platforms = new List<Rectangle>();
+    private List<Rectangle> _gelatins = new List<Rectangle>();
+    private List<Rectangle> _cutsceneTriggers = new List<Rectangle>();
+    private List<SceneExit> _sceneExits = new List<SceneExit>();
+    private List<InterventionEntrance> _interventionEntrances = new List<InterventionEntrance>();
+    private List<Rectangle> _interventionButtons = new List<Rectangle>();
+    private List<Rectangle> _verticalRoutePlatforms = new List<Rectangle>();
+    private List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
+    private Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
     private Texture2D _platformTexture;
 
     public Vector2? PlayerSpawn { get; private set; }
@@ -359,23 +360,40 @@ public class LevelMap
         spriteBatch.Draw(_platformTexture, exitDoorCollider.Value, Color.Red);
     }
 
-    public void ReloadObjects()
+public void ReloadObjects()
+{
+    if (!TryReloadObjects(out string errorMessage))
     {
-        _platforms.Clear();
-        _gelatins.Clear();
-        _cutsceneTriggers.Clear();
-        _sceneExits.Clear();
-        _interventionEntrances.Clear();
-        _interventionButtons.Clear();
-        _verticalRoutePlatforms.Clear();
-        _verticalRouteGelatins.Clear();
-        _playerSpawns.Clear();
-        PlayerSpawn = null;
-        DebugMeasurementPair = null;
-        ExitDoorBounds = null;
-        ExitDoorDestination = Vector2.Zero;
+        throw new InvalidOperationException(errorMessage);
+    }
+}
 
-        var map = new TmxMap(_mapPath);
+public bool TryReloadObjects(out string errorMessage)
+{
+    if (!TmxMapValidator.TryLoad(_mapPath, out TmxMap map, out errorMessage))
+    {
+        return false;
+    }
+
+    var candidate = new LevelMap(_mapPath);
+
+    try
+    {
+        candidate.LoadObjects(map);
+    }
+    catch (Exception)
+    {
+        errorMessage = "TMX reload failed while reading map objects.";
+        return false;
+    }
+
+    ApplyObjectState(candidate);
+    errorMessage = null;
+    return true;
+}
+
+private void LoadObjects(TmxMap map)
+{
 
         foreach (var row in map.ObjectGroups[PlatformLayerName].Objects)
         {
@@ -406,11 +424,16 @@ public class LevelMap
 
         var playerSpawnLayer = map.ObjectGroups.FirstOrDefault(
             layer => layer.Name == PlayerSpawnLayerName);
-        if (playerSpawnLayer != null)
+    if (playerSpawnLayer != null)
+    {
+        foreach (var row in playerSpawnLayer.Objects)
         {
-            foreach (var row in playerSpawnLayer.Objects)
+            if (!TmxMapValidator.IsValidPosition(row.X, row.Y))
             {
-                var spawn = new Vector2((float)row.X, (float)row.Y);
+                continue;
+            }
+
+            var spawn = new Vector2((float)row.X, (float)row.Y);
 
                 if (!PlayerSpawn.HasValue)
                 {
@@ -489,9 +512,26 @@ public class LevelMap
         LoadRectanglesFromOptionalLayer(map, InterventionButtonLayerName, _interventionButtons);
         LoadExitDoor(map);
         LoadRectanglesFromOptionalLayer(map, VerticalRoutePlatformLayerName, _verticalRoutePlatforms);
-        LoadRectanglesFromOptionalLayer(map, VerticalRouteGelatinLayerName, _verticalRouteGelatins);
-        LoadDebugMeasurementPair(map);
-    }
+    LoadRectanglesFromOptionalLayer(map, VerticalRouteGelatinLayerName, _verticalRouteGelatins);
+    LoadDebugMeasurementPair(map);
+}
+
+private void ApplyObjectState(LevelMap candidate)
+{
+    _platforms = candidate._platforms;
+    _gelatins = candidate._gelatins;
+    _cutsceneTriggers = candidate._cutsceneTriggers;
+    _sceneExits = candidate._sceneExits;
+    _interventionEntrances = candidate._interventionEntrances;
+    _interventionButtons = candidate._interventionButtons;
+    _verticalRoutePlatforms = candidate._verticalRoutePlatforms;
+    _verticalRouteGelatins = candidate._verticalRouteGelatins;
+    _playerSpawns = candidate._playerSpawns;
+    PlayerSpawn = candidate.PlayerSpawn;
+    DebugMeasurementPair = candidate.DebugMeasurementPair;
+    ExitDoorBounds = candidate.ExitDoorBounds;
+    ExitDoorDestination = candidate.ExitDoorDestination;
+}
 
     private void LoadExitDoor(TmxMap map)
     {
