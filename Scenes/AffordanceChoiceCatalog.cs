@@ -97,7 +97,7 @@ public static class AffordanceChoiceCatalog
     public static IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
         CreateInitialSolutions();
 
-    public static IReadOnlyList<InterventionSolutionDefinition> RevisionPartialSolutions { get; } =
+    public static IReadOnlyList<InterventionSolutionDefinition> RevisionSolutions { get; } =
         new List<InterventionSolutionDefinition>
         {
             new InterventionSolutionDefinition(
@@ -108,39 +108,7 @@ public static class AffordanceChoiceCatalog
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.GELATIN_GLOW |
                 SolutionVisualModule.GELATIN_GLOW_PULSE |
-                SolutionVisualModule.GELATIN_JELLY_MOTION)
-        };
-
-    public static IReadOnlyList<InterventionSolutionDefinition> RevisionSolutions { get; } =
-        new List<InterventionSolutionDefinition>
-        {
-            new InterventionSolutionDefinition(
-                "diferenciar_por_textura",
-                "Aplicar uma textura exclusiva",
-                "Usar uma textura diferente apenas nas superficies especiais",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.REVISION,
-                SolutionVisualModule.GELATIN_TEXTURE),
-            new InterventionSolutionDefinition(
-                "diferenciar_por_brilho",
-                "Adicionar brilho as superficies",
-                "Aplicar um brilho apenas nas superficies especiais",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.REVISION,
-                SolutionVisualModule.GELATIN_GLOW),
-            new InterventionSolutionDefinition(
-                "brilho_e_feedback_de_recarga",
-                "Destacar e confirmar a recuperacao",
-                "Combinar brilho nas superficies com a recuperacao da cor do jogador",
-                SolutionQuality.ADEQUATE,
-                SolutionChoiceRound.REVISION,
-                SolutionVisualModule.GELATIN_GLOW |
-                SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR)
-        };
-
-    public static IReadOnlyList<InterventionSolutionDefinition> RevisionAdequateSolutions { get; } =
-        new List<InterventionSolutionDefinition>
-        {
+                SolutionVisualModule.GELATIN_JELLY_MOTION),
             new InterventionSolutionDefinition(
                 "A4",
                 "Canais e disponibilidade",
@@ -152,11 +120,7 @@ public static class AffordanceChoiceCatalog
         };
 
     public static IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions { get; } =
-        new List<InterventionSolutionDefinition>
-        {
-            RevisionPartialSolutions[0],
-            RevisionAdequateSolutions[0]
-        };
+        RevisionSolutions;
 
     public static IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
         new List<InterventionJustificationDefinition>
@@ -227,23 +191,7 @@ public static class AffordanceChoiceCatalog
             }
         }
 
-        foreach (InterventionSolutionDefinition solution in RevisionPartialSolutions)
-        {
-            if (solution.Id == solutionId)
-            {
-                return solution;
-            }
-        }
-
         foreach (InterventionSolutionDefinition solution in RevisionSolutions)
-        {
-            if (solution.Id == solutionId)
-            {
-                return solution;
-            }
-        }
-
-        foreach (InterventionSolutionDefinition solution in RevisionAdequateSolutions)
         {
             if (solution.Id == solutionId)
             {

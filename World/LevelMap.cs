@@ -112,10 +112,7 @@ public class LevelMap
         }
     }
 
-    public IEnumerable<Rectangle> VerticalRoutePlatforms
-    {
-        get { return _verticalRoutePlatforms; }
-    }
+    public IEnumerable<Rectangle> VerticalRoutePlatforms => _verticalRoutePlatforms; // Isso é equivalente a public...{get{return _verticalRoutePlatforms}}
 
     public IEnumerable<Rectangle> VerticalRouteGelatins
     {
