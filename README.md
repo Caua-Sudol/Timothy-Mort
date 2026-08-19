@@ -1,71 +1,74 @@
-# DumpPlatformerGame
+# Timothy & Mort
 
-Base de estudo em MonoGame para jogos de plataforma 2D. O projeto tem movimento, pulo com coyote time e jump buffer, dash em oito direcoes, colisao simples, camera, cutscene, checkpoint, pause e menu de morte.
+Protótipo de um jogo sério de plataforma 2D sobre princípios de design.
 
-Ele e um dump inicial: a intencao e copiar a estrutura e evoluir cada jogo sem precisar reconstruir a base de movimento.
+## O projeto foca em testar o ciclo:
+   > Problema, intervenção, justificativa, consequência e revisão
 
+### Affordance e Visibilidade
+
+```text
+  Cenário como seletor de mapas (entrada)
+  affordance_visibilidade (problema)
+  affordance_intervencao (escolha e teste)
+  affordance_visibilidade (aplicação da solução)
+  Volta ao seletor (conclusão e reset da fase)
+```
 ## Controles
 
-- `A` e `D`: mover.
-- `W` e `S`: escolher direcao vertical do dash e navegar nos menus.
-- `Space`: pular.
-- `LeftShift`: dash.
-- `Escape`: abrir ou fechar o pause.
-- `Enter`: confirmar uma opcao de menu.
-- `Ctrl esquerdo + P`: ativar ou desativar o debug visual.
+| Controle            | Ação                                                     |
+|---------------------|----------------------------------------------------------|
+| `A` / `D`           | Mover e navegar horizontalmente nos menus.               |
+| `W` / `S`           | Direção vertical do dash e navegação vertical nos menus. |
+| `Space`             | Pular.                                                   |
+| `LeftShift`         | Impulso (Dash) em oito direções.                         |
+| `Enter`             | Confirmar uma escolha.                                   |
+| `Escape`            | Abrir ou fechar pause.                                   |
+| `Ctrl esquerdo + P` | Ativar ou desativar o debug visual.                      |
+| `Ctrl esquerdo + R` | Recarregar o TMX atual durante jogo ou pause.            |
 
-## Estrutura
+## Mapas e edição no Tiled
 
-| Pasta | Responsabilidade |
-| --- | --- |
-| `App` | Loop principal, tela ativa e overlays. |
-| `Core` | Camera e debug visual reutilizaveis. |
-| `Gameplay` | Player, leitura de input e colisao do player. |
-| `Scenes` | Fluxo da fase: jogo, fade, cutscene, respawn e camera. |
-| `UI` | Menus de inicio, pause e morte. |
-| `World` | Dados do TMX, plataformas e triggers. |
-| `docs` | Metricas de movimento e guias do template. |
+Abra [Timothy-Mort.tiled-project](Timothy-Mort.tiled-project) no Tiled. Ele aponta para a pasta `Content` e fornece classes/propriedades para spawns, entradas de intervenção e saídas.
 
-`Game1` decide qual tela esta ativa. `Scene` coordena a fase, mas nao interpreta o TMX nem resolve a colisao diretamente. `LevelMap` le os objetos do mapa e `PlayerCollision` aplica a colisao contra as plataformas.
+Os cenários atuais são:
 
-## Criar uma fase
+| ID                        | TMX                                  | Papel                                      |
+|---------------------------|--------------------------------------|--------------------------------------------|
+| `simple_cutscene`         | `Content/SimpleCutsceneMap.tmx`      | Entrada e retorno de conclusão da fase.    |
+| `affordance_visibilidade` | `Content/AffordanceVisibilidade.tmx` | Percurso com o problema de affordance.     |
+| `affordance_intervencao`  | `Content/AffordanceIntervencao.tmx`  | Seleção, teste e revisão das intervenções. |
 
-O construtor de `Scene` aceita o caminho do TMX e o spawn inicial:
+O contrato completo de layers, objetos, propriedades e reload está em [docs/convencoes_cenarios.md](docs/convencoes_cenarios.md). As medidas de movimento e os marcadores de alcance estão em [docs/metricas_mov.md](docs/metricas_mov.md).
 
-```csharp
-new Scene("Content/MinhaFase.tmx", new Vector2(32, 544));
-```
+## LM-GM da fase
 
-O TMX precisa manter estas object layers:
+O mapeamento pedagógico da fase de affordance está em [docs/lm_gm_affordance_visibilidade.md](docs/lm_gm_affordance_visibilidade.md). 
 
-- `mapaGeral`: retangulos solidos usados pela colisao e pelo desenho de teste.
-- `triggerColision`: retangulos que iniciam a cutscene de exemplo.
+Ele adapta o modelo Learning-Game Mechanics de (Arnab et al., 2015) 
 
-As medidas atuais de movimento e uma regua para desenhar no Tiled estao em [docs/metricas_mov.md](docs/metricas_mov.md).
+> DOI: [10.1111/bjet.12113](https://doi.org/10.1111/bjet.12113)
 
-## Debug visual
+Embora os próprios autores comentem sobre as limitações do modelo, a ideia é ter uma base estruturada
+para formalizar uma documentação relacionando mecânicas de jogo e atividades de apoio a compreensão
+para facilitar a replicação por outros profissionais e pesquisadores, caso tenham interesse.
 
-Com `Ctrl esquerdo + P` ativo, o jogo mostra dados do mundo sem abrir console ou imprimir varios textos:
+## Estrutura de código
 
-- contorno verde das plataformas;
-- trigger da cutscene em vermelho;
-- checkpoint em magenta e alvo da camera em ciano;
-- hitbox do player em verde no chao, amarelo no ar e laranja durante o dash.
+| Pasta      | Responsabilidade                                         |
+|------------|----------------------------------------------------------|
+| `App`      | Loop principal, transições, telas e overlays.            |
+| `Core`     | Câmera e debug visual.                                   |
+| `Gameplay` | Player, input e colisão.                                 |
+| `Scenes`   | Estado da fase, cenários, escolhas e fluxo de jogo.      |
+| `UI`       | Menus e interface de escolhas.                           |
+| `World`    | Leitura e desenho dos TMX, objetos e validação de mapa.  |
+| `docs`     | Contratos de cenário, métricas e documentação de design. |
 
-## Pontos especificos do exemplo
-
-O mapa padrao, spawn e valores da cutscene atual existem apenas para demonstrar o fluxo. Ao criar outro jogo, ajuste primeiro o caminho do TMX e o spawn; depois revise os valores da cutscene em `Scene` conforme a fase nova.
-
-## Limites atuais
-
-- O jogo usa `1920x1080` como resolucao logica e escala esse quadro para a janela atual, inclusive ao redimensionar a janela.
-- Telas com outra proporcao podem mostrar barras pretas para preservar as medidas do jogo.
-- A cutscene atual e unica e usa uma trigger simples.
-- Nao existe sistema de vida ou dano, apenas menu de morte por queda.
+`Game1` controla telas, overlays e transições. `PhaseState` preserva as decisões e apresentações sorteadas da fase. `Scene` coordena o cenário jogável. `LevelMap` lê os objetos TMX e fornece geometria, entradas, saídas, gelatinas e marcadores de medição.
 
 ## Executar
 
 ```bash
-dotnet restore
 dotnet run
 ```
