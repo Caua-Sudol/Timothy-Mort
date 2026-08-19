@@ -5,7 +5,7 @@ namespace DontLikePoetry;
 
 public static class AffordanceChoiceCatalog
 {
-    public const string JustificationQuestion = "O que esta alteracao pretende resolver?";
+    public const string JustificationQuestion = "Que resultado voce espera obter com essa intervencao?";
 
     public static IReadOnlyList<InterventionSolutionDefinition> InitialInadequateSolutions { get; } =
         new List<InterventionSolutionDefinition>
@@ -21,7 +21,7 @@ public static class AffordanceChoiceCatalog
             new InterventionSolutionDefinition(
                 "I2",
                 "Apresentacao",
-                "Aplicar decoracao nas plataformas e exibir um rastro visual para indicar o dash",
+                "Aplicar decoracao nas plataformas e exibir um rastro visual para indicar o impulso",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.PLATFORM_DECORATION |
@@ -57,8 +57,8 @@ public static class AffordanceChoiceCatalog
                 SolutionVisualModule.PLATFORM_DECORATION),
             new InterventionSolutionDefinition(
                 "P3",
-                "Recarga e visual do dash",
-                "Exibir a recarga e um rastro visual ao dash.",
+                "Recarga e visual do impulso",
+                "Exibir a recarga e um rastro visual ao impulso",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR |
@@ -70,8 +70,8 @@ public static class AffordanceChoiceCatalog
         {
             new InterventionSolutionDefinition(
                 "A1",
-                "Contraste e recarga de dash",
-                "Diferenciar plataformas especiais e restaurar a cor do jogador ao recuperar o dash",
+                "Contraste e recarga de impulso",
+                "Diferenciar plataformas especiais e restaurar a cor do jogador ao recuperar o impulso",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.GELATIN_TEXTURE |
@@ -79,7 +79,7 @@ public static class AffordanceChoiceCatalog
             new InterventionSolutionDefinition(
                 "A2",
                 "Icone e recarga",
-                "Adicionar icone que indique dash nas plataformas especiais e confirmacao de recarga do dash",
+                "Adicionar icone que indique impulso nas plataformas especiais e confirmacao de recarga do impulso",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.GELATIN_DASH_SYMBOL |
@@ -87,7 +87,7 @@ public static class AffordanceChoiceCatalog
             new InterventionSolutionDefinition(
                 "A3",
                 "Absorcao de energia e destaque",
-                "Aplicar cor exclusiva nas plataformas especiais e comunicar a absorcao de energia ao recuperar o dash",
+                "Aplicar cor exclusiva nas plataformas especiais e comunicar a absorcao de energia ao recuperar o impulso",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.GELATIN_COLOR |
@@ -112,7 +112,7 @@ public static class AffordanceChoiceCatalog
             new InterventionSolutionDefinition(
                 "A4",
                 "Canais e disponibilidade",
-                "Canais energizados nas plataformas especiais e um contorno quando o dash estiver disponivel",
+                "Canais energizados nas plataformas especiais e um contorno quando o impulso estiver disponivel",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.GELATIN_DIRECTIONAL_ANIMATION |
@@ -126,23 +126,23 @@ public static class AffordanceChoiceCatalog
         new List<InterventionJustificationDefinition>
         {
             new InterventionJustificationDefinition(
-                "embelezar_cenario",
-                "Deixar o cenario mais bonito."),
+                "J1",
+                "Facilitar a orientacao ate o objetivo e tornar o destino mais evidente"),
             new InterventionJustificationDefinition(
-                "chamar_atencao_regiao",
-                "Chamar atencao para aquela regiao."),
+                "J2",
+                "Tornar o cenario e os efeitos das interacoes visualmente mais atraentes"),
             new InterventionJustificationDefinition(
-                "mostrar_propriedade_diferente",
-                "Mostrar que determinadas superficies possuem uma propriedade diferente."),
+                "J3",
+                "Destacar plataformas especiais e chamar atencao para elas"),
             new InterventionJustificationDefinition(
-                "indicar_comportamento_especial",
-                "Indicar que existe uma acao ou comportamento especial associado aquelas superficies."),
+                "J4",
+                "Tornar perceptivel quando o impulso foi usado e quando pode ser usado novamente"),
             new InterventionJustificationDefinition(
-                "indicar_como_usar_acao",
-                "Indicar como essa acao pode ser utilizada."),
+                "J5",
+                "Permitir reconhecer quais plataformas sao especiais e indicar recarga do impulso"),
             new InterventionJustificationDefinition(
-                "evidenciar_caminho_objetivo",
-                "Tornar o caminho ate o objetivo mais evidente.")
+                "J6",
+                "Permitir associar as plataformas especiais ao impulso e indicar sua recarga")
         };
 
     public static IReadOnlyList<PresentedSolutionDefinition> CreateInitialSolutionPresentation(
