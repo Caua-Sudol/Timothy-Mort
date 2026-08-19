@@ -17,6 +17,8 @@ public sealed class PhaseState
     private bool _deathRegisteredInCurrentAttempt;
     private IReadOnlyList<PresentedSolutionDefinition> _initialSolutionPresentation =
         Array.Empty<PresentedSolutionDefinition>();
+    private IReadOnlyList<PresentedJustificationDefinition> _initialJustificationPresentation =
+        Array.Empty<PresentedJustificationDefinition>();
 
     public string PhaseId { get; }
     public string CurrentScenarioId { get; private set; }
@@ -37,6 +39,16 @@ public sealed class PhaseState
     public bool HasInitialSolutionPresentation
     {
         get { return _initialSolutionPresentation.Count > 0; }
+    }
+
+    public IReadOnlyList<PresentedJustificationDefinition> InitialJustificationPresentation
+    {
+        get { return _initialJustificationPresentation; }
+    }
+
+    public bool HasInitialJustificationPresentation
+    {
+        get { return _initialJustificationPresentation.Count > 0; }
     }
 
     public bool HasFirstChoice
@@ -111,6 +123,8 @@ public sealed class PhaseState
         ExitDoorIsOpen = false;
         _deathRegisteredInCurrentAttempt = false;
         _initialSolutionPresentation = Array.Empty<PresentedSolutionDefinition>();
+        _initialJustificationPresentation =
+            Array.Empty<PresentedJustificationDefinition>();
     }
 
     public void RegisterInitialSolutionPresentation(
@@ -174,6 +188,68 @@ public sealed class PhaseState
         _initialSolutionPresentation = Array.AsReadOnly(entriesByPosition);
     }
 
+    public void RegisterInitialJustificationPresentation(
+        IReadOnlyList<PresentedJustificationDefinition> presentation)
+    {
+        if (presentation == null)
+        {
+            throw new ArgumentNullException(nameof(presentation));
+        }
+
+        if (HasInitialJustificationPresentation)
+        {
+            throw new InvalidOperationException(
+                "A apresentacao inicial de justificativas ja foi registrada.");
+        }
+
+        if (presentation.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "A apresentacao inicial deve possuir ao menos uma justificativa.");
+        }
+
+        var entriesByPosition =
+            new PresentedJustificationDefinition[presentation.Count];
+        var registeredJustificationIds =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (PresentedJustificationDefinition entry in presentation)
+        {
+            if (entry == null || string.IsNullOrEmpty(entry.JustificationId))
+            {
+                throw new InvalidOperationException(
+                    "A apresentacao inicial possui uma justificativa sem ID.");
+            }
+
+            if (entry.Position < 1 || entry.Position > presentation.Count)
+            {
+                throw new InvalidOperationException(
+                    "As posicoes da apresentacao inicial devem formar o intervalo 1..N.");
+            }
+
+            if (!registeredJustificationIds.Add(entry.JustificationId))
+            {
+                throw new InvalidOperationException(
+                    $"A justificativa {entry.JustificationId} foi apresentada mais de uma vez.");
+            }
+
+            int positionIndex = entry.Position - 1;
+
+            if (entriesByPosition[positionIndex] != null)
+            {
+                throw new InvalidOperationException(
+                    $"A posicao {entry.Position} foi registrada mais de uma vez.");
+            }
+
+            entriesByPosition[positionIndex] =
+                new PresentedJustificationDefinition(
+                    entry.JustificationId,
+                    entry.Position);
+        }
+
+        _initialJustificationPresentation = Array.AsReadOnly(entriesByPosition);
+    }
+
     public void RegisterFallDeath()
     {
         if (CurrentScenarioId != _deathCountingScenarioId ||
@@ -210,12 +286,37 @@ public sealed class PhaseState
             throw new InvalidOperationException("A primeira escolha deve usar uma solucao inicial.");
         }
 
+        if (!HasInitialJustificationPresentation)
+        {
+            throw new InvalidOperationException(
+                "A apresentacao inicial de justificativas ainda nao foi registrada.");
+        }
+
+        if (!InitialJustificationPresentationContains(justification.Id))
+        {
+            throw new InvalidOperationException(
+                $"A justificativa {justification.Id} nao pertence a apresentacao inicial da fase.");
+        }
+
         FirstSolutionId = solution.Id;
         FirstJustificationId = justification.Id;
         AppliedSolutionId = solution.Id;
         SolutionSelectionCount = 1;
         VerticalRouteRevealed = true;
         ExitDoorIsOpen = solution.OpensExitDoor;
+    }
+
+    private bool InitialJustificationPresentationContains(string justificationId)
+    {
+        foreach (PresentedJustificationDefinition entry in _initialJustificationPresentation)
+        {
+            if (entry.JustificationId == justificationId)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void ApplyRevision(InterventionSolutionDefinition solution)

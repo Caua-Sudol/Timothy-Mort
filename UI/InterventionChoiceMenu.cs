@@ -52,22 +52,28 @@ public sealed class InterventionChoiceMenu
         _pixel.SetData(new[] { Color.White });
     }
 
-    public void OpenInitial(IReadOnlyList<InterventionSolutionDefinition> solutions)
+    public void OpenInitial(
+        IReadOnlyList<InterventionSolutionDefinition> solutions,
+        IReadOnlyList<InterventionJustificationDefinition> justifications)
     {
-        Open(solutions, true);
+        Open(solutions, justifications, true);
     }
 
     public void OpenRevision(IReadOnlyList<InterventionSolutionDefinition> solutions)
     {
-        Open(solutions, false);
+        Open(
+            solutions,
+            Array.Empty<InterventionJustificationDefinition>(),
+            false);
     }
 
     private void Open(
         IReadOnlyList<InterventionSolutionDefinition> solutions,
+        IReadOnlyList<InterventionJustificationDefinition> justifications,
         bool requiresJustification)
     {
         _solutions = solutions;
-        _justifications = AffordanceChoiceCatalog.Justifications;
+        _justifications = justifications;
         _selectedIndex = 0;
         _pendingSolution = null;
         _completedSolution = null;

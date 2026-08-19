@@ -181,6 +181,45 @@ public static class AffordanceChoiceCatalog
         return presentation.AsReadOnly();
     }
 
+    public static IReadOnlyList<PresentedJustificationDefinition>
+        CreateInitialJustificationPresentation(Random random)
+    {
+        if (random == null)
+        {
+            throw new ArgumentNullException(nameof(random));
+        }
+
+        if (Justifications.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "Nao existem justificativas iniciais registradas.");
+        }
+
+        var shuffledJustifications =
+            new List<InterventionJustificationDefinition>(Justifications);
+
+        for (int index = shuffledJustifications.Count - 1; index > 0; index--)
+        {
+            int swapIndex = random.Next(index + 1);
+            InterventionJustificationDefinition temporary =
+                shuffledJustifications[index];
+            shuffledJustifications[index] = shuffledJustifications[swapIndex];
+            shuffledJustifications[swapIndex] = temporary;
+        }
+
+        var presentation =
+            new List<PresentedJustificationDefinition>(shuffledJustifications.Count);
+
+        for (int index = 0; index < shuffledJustifications.Count; index++)
+        {
+            presentation.Add(new PresentedJustificationDefinition(
+                shuffledJustifications[index].Id,
+                index + 1));
+        }
+
+        return presentation.AsReadOnly();
+    }
+
     public static InterventionSolutionDefinition GetSolution(string solutionId)
     {
         foreach (InterventionSolutionDefinition solution in InitialSolutions)

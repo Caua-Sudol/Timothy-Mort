@@ -81,6 +81,18 @@ public sealed class PresentedSolutionDefinition
     }
 }
 
+public sealed class PresentedJustificationDefinition
+{
+    public string JustificationId { get; }
+    public int Position { get; }
+
+    public PresentedJustificationDefinition(string justificationId, int position)
+    {
+        JustificationId = justificationId;
+        Position = position;
+    }
+}
+
 public sealed class InterventionJustificationDefinition
 {
     public string Id { get; }

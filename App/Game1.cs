@@ -29,7 +29,7 @@ public class Game1 : Game
         AffordanceVisibilityPhaseId,
         ScenarioCatalog.InitialScenarioId,
         ScenarioCatalog.AffordanceVisibilityScenarioId);
-    private readonly Random _initialSolutionRandom = new Random();
+    private readonly Random _choicePresentationRandom = new Random();
     private AppScreen _activeScreen = AppScreen.START_MENU;
     private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
@@ -287,7 +287,9 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             if (!_phaseState.HasFirstChoice)
             {
-                _interventionChoiceMenu.OpenInitial(GetOrCreateInitialSolutions());
+                _interventionChoiceMenu.OpenInitial(
+                    GetOrCreateInitialSolutions(),
+                    GetOrCreateInitialJustifications());
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
@@ -322,7 +324,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             IReadOnlyList<PresentedSolutionDefinition> presentation =
                 AffordanceChoiceCatalog.CreateInitialSolutionPresentation(
-                    _initialSolutionRandom);
+                    _choicePresentationRandom);
             _phaseState.RegisterInitialSolutionPresentation(presentation);
         }
 
@@ -338,6 +340,31 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         }
 
         return Array.AsReadOnly(solutionsByPosition);
+    }
+
+    private IReadOnlyList<InterventionJustificationDefinition>
+        GetOrCreateInitialJustifications()
+    {
+        if (!_phaseState.HasInitialJustificationPresentation)
+        {
+            IReadOnlyList<PresentedJustificationDefinition> presentation =
+                AffordanceChoiceCatalog.CreateInitialJustificationPresentation(
+                    _choicePresentationRandom);
+            _phaseState.RegisterInitialJustificationPresentation(presentation);
+        }
+
+        IReadOnlyList<PresentedJustificationDefinition> registeredPresentation =
+            _phaseState.InitialJustificationPresentation;
+        var justificationsByPosition =
+            new InterventionJustificationDefinition[registeredPresentation.Count];
+
+        foreach (PresentedJustificationDefinition entry in registeredPresentation)
+        {
+            justificationsByPosition[entry.Position - 1] =
+                AffordanceChoiceCatalog.GetJustification(entry.JustificationId);
+        }
+
+        return Array.AsReadOnly(justificationsByPosition);
     }
 
     private void BeginScenarioTransition(
