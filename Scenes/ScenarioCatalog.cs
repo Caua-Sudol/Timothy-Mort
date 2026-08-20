@@ -9,22 +9,30 @@ public static class ScenarioCatalog
     public const string InitialScenarioId = "simple_cutscene";
     public const string AffordanceVisibilityScenarioId = "affordance_visibilidade";
     public const string AffordanceInterventionScenarioId = "affordance_intervencao";
+    public const string PropVisualScenarioId = "prop_visual";
 
-    private static readonly IReadOnlyDictionary<string, ScenarioDefinition> Scenarios =
-        new Dictionary<string, ScenarioDefinition>(StringComparer.Ordinal)
+    private static readonly IReadOnlyDictionary<string, ScenarioDefinition> Scenarios = new Dictionary<string, ScenarioDefinition>(StringComparer.Ordinal)
         {
             [InitialScenarioId] = new ScenarioDefinition(
                 InitialScenarioId,
                 "Content/SimpleCutsceneMap.tmx",
-                new Vector2(10, 552)),
+                new Vector2(10, 552)
+            ),
             [AffordanceVisibilityScenarioId] = new ScenarioDefinition(
                 AffordanceVisibilityScenarioId,
                 "Content/AffordanceVisibilidade.tmx",
-                new Vector2(160, 816)),
+                new Vector2(160, 816)
+            ),
             [AffordanceInterventionScenarioId] = new ScenarioDefinition(
                 AffordanceInterventionScenarioId,
                 "Content/AffordanceIntervencao.tmx",
-                new Vector2(160, 816))
+                new Vector2(160, 816)
+            ),
+            [PropVisualScenarioId] = new ScenarioDefinition(
+                PropVisualScenarioId,
+                "Content/PropVisual.tmx",
+                new Vector2(160, 816)
+            )
         };
 
     public static ScenarioDefinition Initial

@@ -1,31 +1,50 @@
 {
-    "activeFile": "Content/AffordanceVisibilidade.tmx",
+    "activeFile": "Content/SimpleCutsceneMap.tmx",
     "expandedProjectPaths": [
         "Content"
     ],
     "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
         "Content/AffordanceIntervencao.tmx": {
             "scale": 0.5,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 447,
-                "y": 526
+                "x": 766,
+                "y": 542
             }
         },
         "Content/AffordanceVisibilidade.tmx": {
-            "scale": 0.25,
-            "selectedLayer": 1,
+            "scale": 0.33,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 1202,
-                "y": 1412
+                "x": 1121.2121212121212,
+                "y": 890.909090909091
+            }
+        },
+        "Content/PropVisual.tmx": {
+            "expandedObjectLayers": [
+                5,
+                1,
+                2
+            ],
+            "scale": 0.33,
+            "selectedLayer": 4,
+            "viewCenter": {
+                "x": 2304.5454545454545,
+                "y": 543.9393939393939
             }
         },
         "Content/SimpleCutsceneMap.tmx": {
-            "scale": 0.3052864583333333,
+            "expandedObjectLayers": [
+                7
+            ],
+            "scale": 0.5,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 961.3921351189971,
-                "y": 404.5380875202594
+                "x": 678,
+                "y": 652
             }
         },
         "Content/SimpleCutsceneMap.tmx#grass": {
@@ -54,14 +73,14 @@
         }
     },
     "openFiles": [
-        "Content/AffordanceIntervencao.tmx",
-        "Content/SimpleCutsceneMap.tmx",
-        "Content/AffordanceVisibilidade.tmx"
+        "Content/PropVisual.tmx",
+        "Content/SimpleCutsceneMap.tmx"
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
-        "Content/AffordanceIntervencao.tmx",
+        "Content/PropVisual.tmx",
         "Content/SimpleCutsceneMap.tmx",
+        "Content/AffordanceIntervencao.tmx",
         "Content/AffordanceVisibilidade.tmx"
     ]
 }

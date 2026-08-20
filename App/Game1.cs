@@ -8,7 +8,6 @@ namespace DontLikePoetry;
 
 public class Game1 : Game
 {
-    private const string AffordanceVisibilityPhaseId = "affordance_visibilidade";
     private const int LogicalWidth = 1920;
     private const int LogicalHeight = 1080;
     private const int WindowMargin = 64;
@@ -26,9 +25,10 @@ public class Game1 : Game
     private DeathMenu _deathMenu;
     private InterventionChoiceMenu _interventionChoiceMenu;
     private readonly PhaseState _phaseState = new PhaseState(
-        AffordanceVisibilityPhaseId,
+        ScenarioCatalog.AffordanceVisibilityScenarioId,
         ScenarioCatalog.InitialScenarioId,
-        ScenarioCatalog.AffordanceVisibilityScenarioId);
+        ScenarioCatalog.AffordanceVisibilityScenarioId
+    );
     private readonly Random _choicePresentationRandom = new Random();
     private AppScreen _activeScreen = AppScreen.START_MENU;
     private OverlayState _overlayState = OverlayState.NONE;
@@ -342,8 +342,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         return Array.AsReadOnly(solutionsByPosition);
     }
 
-    private IReadOnlyList<InterventionJustificationDefinition>
-        GetOrCreateInitialJustifications()
+    private IReadOnlyList<InterventionJustificationDefinition> GetOrCreateInitialJustifications()
     {
         if (!_phaseState.HasInitialJustificationPresentation)
         {
@@ -421,10 +420,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         }
 
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
-    _scene = new Scene(scenario, spawnId, _phaseState);
-    _scene.LoadContent(GraphicsDevice);
-    _overlayState = OverlayState.NONE;
-    _mapReloadErrorMessage = null;
+        _scene = new Scene(scenario, spawnId, _phaseState);
+        _scene.LoadContent(GraphicsDevice);
+        _overlayState = OverlayState.NONE;
+        _mapReloadErrorMessage = null;
     }
 
     private void UpdatePauseMenu(KeyboardState keyboardState)

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="60" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="7" nextobjectid="30">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="60" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="8" nextobjectid="32">
  <tileset firstgid="1" name="grass" tilewidth="32" tileheight="32" tilecount="0" columns="2">
   <image source="../../assets/SimpleCutscene/Tiles/grass.png" width="70" height="70"/>
  </tileset>
@@ -65,18 +65,25 @@
  <objectgroup id="2" name="mapaGeral">
   <object id="5" x="0" y="568" width="192" height="32"/>
   <object id="6" x="192" y="512" width="160" height="32"/>
-  <object id="7" x="384" y="448" width="160" height="32"/>
-  <object id="8" x="608" y="384" width="160" height="32"/>
+  <object id="7" x="366" y="632" width="160" height="32"/>
+  <object id="8" x="560" y="734" width="160" height="32"/>
+  <object id="30" x="608" y="386" width="160" height="32"/>
   <object id="9" x="832" y="320" width="160" height="32"/>
   <object id="10" x="1056" y="256" width="160" height="32"/>
   <object id="11" x="1280" y="192" width="160" height="32"/>
   <object id="12" x="1504" y="128" width="224" height="32"/>
  </objectgroup>
  <objectgroup id="4" name="triggerColision"/>
- <objectgroup color="#ffd84f" id="5" name="saidaCena">
-  <object id="28" name="saida_affordance_visibilidade" type="SaidaCena" x="704" y="224" width="64" height="160">
+ <objectgroup color="#ffd84f" id="7" name="saidaCena">
+  <object id="31" name="saida_affordance_visibilidade" type="SaidaCena" x="694" y="224" width="64" height="160">
    <properties>
     <property name="destino" propertytype="CenarioId" value="affordance_visibilidade"/>
+    <property name="spawnDestino" value="spawn_inicial"/>
+   </properties>
+  </object>
+  <object id="28" name="saida_prop_visual" type="SaidaCena" x="646" y="572" width="64" height="160">
+   <properties>
+    <property name="destino" propertytype="CenarioId" value="prop_visual"/>
     <property name="spawnDestino" value="spawn_inicial"/>
    </properties>
   </object>
