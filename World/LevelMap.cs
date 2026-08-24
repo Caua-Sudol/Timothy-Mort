@@ -21,6 +21,8 @@ public class LevelMap
     private const string ExitDoorDestinationLayerName = "destinoPortaSaida";
     private const string VerticalRoutePlatformLayerName = "rotaVerticalSolida";
     private const string VerticalRouteGelatinLayerName = "rotaVerticalGelatina";
+    private const string DamageLayerName = "dano";
+    private const string VerticalRouteDamageLayerName = "rotaVerticalDano";
     private const string DebugMeasurementLayerName = "medicaoDebug";
     private const string SceneDestinationPropertyName = "destino";
     private const string SceneDestinationSpawnPropertyName = "spawnDestino";
@@ -41,6 +43,8 @@ public class LevelMap
     private List<Rectangle> _interventionButtons = new List<Rectangle>();
     private List<Rectangle> _verticalRoutePlatforms = new List<Rectangle>();
     private List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
+    private List<DamageVolume> _damageVolumes = new List<DamageVolume>();
+    private List<DamageVolume> _verticalRouteDamageVolumes = new List<DamageVolume>();
     private Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
     private Texture2D _platformTexture;
     private double _visualEffectTime;
@@ -117,6 +121,16 @@ public class LevelMap
     public IEnumerable<Rectangle> VerticalRouteGelatins
     {
         get { return _verticalRouteGelatins; }
+    }
+
+    public IEnumerable<DamageVolume> DamageVolumes
+    {
+        get { return _damageVolumes; }
+    }
+
+    public IEnumerable<DamageVolume> VerticalRouteDamageVolumes
+    {
+        get { return _verticalRouteDamageVolumes; }
     }
 
     public LevelMap(string mapPath)
@@ -293,6 +307,34 @@ public void UpdateVisualEffects(double deltaTime)
         }
     }
 
+    public DamageVolume GetDamageVolume(
+        Rectangle hitBox,
+        bool verticalRouteRevealed)
+    {
+        foreach (DamageVolume damageVolume in _damageVolumes)
+        {
+            if (hitBox.Intersects(damageVolume.Bounds))
+            {
+                return damageVolume;
+            }
+        }
+
+        if (!verticalRouteRevealed)
+        {
+            return null;
+        }
+
+        foreach (DamageVolume damageVolume in _verticalRouteDamageVolumes)
+        {
+            if (hitBox.Intersects(damageVolume.Bounds))
+            {
+                return damageVolume;
+            }
+        }
+
+        return null;
+    }
+
     public void Draw(
         SpriteBatch spriteBatch,
         InterventionEntrancePlacement? activeInterventionEntrancePlacement,
@@ -336,6 +378,13 @@ public void UpdateVisualEffects(double deltaTime)
             {
                 DrawPathIndicators(spriteBatch);
             }
+        }
+
+        DrawDamageVolumes(spriteBatch, _damageVolumes);
+
+        if (verticalRouteRevealed)
+        {
+            DrawDamageVolumes(spriteBatch, _verticalRouteDamageVolumes);
         }
 
         if (activeInterventionEntrancePlacement.HasValue)
@@ -527,6 +576,11 @@ private void LoadObjects(TmxMap map)
         LoadExitDoor(map);
         LoadRectanglesFromOptionalLayer(map, VerticalRoutePlatformLayerName, _verticalRoutePlatforms);
     LoadRectanglesFromOptionalLayer(map, VerticalRouteGelatinLayerName, _verticalRouteGelatins);
+    LoadDamageVolumesFromOptionalLayer(map, DamageLayerName, _damageVolumes);
+    LoadDamageVolumesFromOptionalLayer(
+        map,
+        VerticalRouteDamageLayerName,
+        _verticalRouteDamageVolumes);
     LoadDebugMeasurementPair(map);
 }
 
@@ -540,6 +594,8 @@ private void ApplyObjectState(LevelMap candidate)
     _interventionButtons = candidate._interventionButtons;
     _verticalRoutePlatforms = candidate._verticalRoutePlatforms;
     _verticalRouteGelatins = candidate._verticalRouteGelatins;
+    _damageVolumes = candidate._damageVolumes;
+    _verticalRouteDamageVolumes = candidate._verticalRouteDamageVolumes;
     _playerSpawns = candidate._playerSpawns;
     PlayerSpawn = candidate.PlayerSpawn;
     DebugMeasurementPair = candidate.DebugMeasurementPair;
@@ -678,6 +734,67 @@ private void ApplyObjectState(LevelMap candidate)
                 (int)row.Y,
                 (int)row.Width,
                 (int)row.Height));
+        }
+    }
+
+    private void LoadDamageVolumesFromOptionalLayer(
+        TmxMap map,
+        string layerName,
+        List<DamageVolume> damageVolumes)
+    {
+        var layer = map.ObjectGroups.FirstOrDefault(group => group.Name == layerName);
+
+        if (layer == null)
+        {
+            return;
+        }
+
+        foreach (var row in layer.Objects)
+        {
+            damageVolumes.Add(new DamageVolume(
+                new Rectangle(
+                    (int)row.X,
+                    (int)row.Y,
+                    (int)row.Width,
+                    (int)row.Height)));
+        }
+    }
+
+    private void DrawDamageVolumes(
+        SpriteBatch spriteBatch,
+        IEnumerable<DamageVolume> damageVolumes)
+    {
+        const int spikeWidth = 16;
+        const int spikeStepHeight = 4;
+
+        foreach (DamageVolume damageVolume in damageVolumes)
+        {
+            Rectangle bounds = damageVolume.Bounds;
+
+            for (int spikeLeft = bounds.Left;
+                 spikeLeft < bounds.Right;
+                 spikeLeft += spikeWidth)
+            {
+                int currentSpikeWidth = Math.Min(
+                    spikeWidth,
+                    bounds.Right - spikeLeft);
+                int stepCount = Math.Min(
+                    bounds.Height / spikeStepHeight,
+                    currentSpikeWidth / (spikeStepHeight * 2));
+
+                for (int step = 0; step < stepCount; step++)
+                {
+                    int inset = step * spikeStepHeight;
+                    spriteBatch.Draw(
+                        _platformTexture,
+                        new Rectangle(
+                            spikeLeft + inset,
+                            bounds.Bottom - (step + 1) * spikeStepHeight,
+                            currentSpikeWidth - inset * 2,
+                            spikeStepHeight),
+                        Color.OrangeRed);
+                }
+            }
         }
     }
 

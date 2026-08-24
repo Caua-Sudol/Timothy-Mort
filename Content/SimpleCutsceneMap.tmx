@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="60" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="8" nextobjectid="32">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="60" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="8" nextobjectid="33">
  <tileset firstgid="1" name="grass" tilewidth="32" tileheight="32" tilecount="0" columns="2">
   <image source="../../assets/SimpleCutscene/Tiles/grass.png" width="70" height="70"/>
  </tileset>
@@ -84,6 +84,12 @@
   <object id="28" name="saida_prop_visual" type="SaidaCena" x="646" y="572" width="64" height="160">
    <properties>
     <property name="destino" propertytype="CenarioId" value="prop_visual"/>
+    <property name="spawnDestino" value="spawn_inicial"/>
+   </properties>
+  </object>
+  <object id="32" name="saida_feedback_dano" type="SaidaCena" x="414" y="520" width="64" height="64">
+   <properties>
+    <property name="destino" propertytype="CenarioId" value="feedback_dano"/>
     <property name="spawnDestino" value="spawn_inicial"/>
    </properties>
   </object>

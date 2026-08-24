@@ -32,6 +32,7 @@ public sealed class InterventionChoiceMenu
     private InterventionSolutionDefinition _pendingSolution;
     private InterventionSolutionDefinition _completedSolution;
     private InterventionJustificationDefinition _completedJustification;
+    private string _justificationQuestion;
     private ChoiceStep _choiceStep;
     private bool _requiresJustification;
 
@@ -54,9 +55,10 @@ public sealed class InterventionChoiceMenu
 
     public void OpenInitial(
         IReadOnlyList<InterventionSolutionDefinition> solutions,
-        IReadOnlyList<InterventionJustificationDefinition> justifications)
+        IReadOnlyList<InterventionJustificationDefinition> justifications,
+        string justificationQuestion)
     {
-        Open(solutions, justifications, true);
+        Open(solutions, justifications, justificationQuestion, true);
     }
 
     public void OpenRevision(IReadOnlyList<InterventionSolutionDefinition> solutions)
@@ -64,12 +66,14 @@ public sealed class InterventionChoiceMenu
         Open(
             solutions,
             Array.Empty<InterventionJustificationDefinition>(),
+            null,
             false);
     }
 
     private void Open(
         IReadOnlyList<InterventionSolutionDefinition> solutions,
         IReadOnlyList<InterventionJustificationDefinition> justifications,
+        string justificationQuestion,
         bool requiresJustification)
     {
         _solutions = solutions;
@@ -78,6 +82,7 @@ public sealed class InterventionChoiceMenu
         _pendingSolution = null;
         _completedSolution = null;
         _completedJustification = null;
+        _justificationQuestion = justificationQuestion;
         _choiceStep = ChoiceStep.SOLUTION;
         _requiresJustification = requiresJustification;
     }
@@ -265,7 +270,7 @@ public sealed class InterventionChoiceMenu
     {
         DrawCenteredText(
             spriteBatch,
-            AffordanceChoiceCatalog.JustificationQuestion,
+            _justificationQuestion,
             new Vector2(LogicalWidth / 2.0f, 180.0f),
             Color.White,
             TitleScale);

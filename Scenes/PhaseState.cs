@@ -13,6 +13,7 @@ public sealed class PhaseState
 {
     private const int EarlyEntranceDeathThreshold = 2;
 
+    private readonly PhaseDefinition _definition;
     private readonly string _deathCountingScenarioId;
     private bool _deathRegisteredInCurrentAttempt;
     private IReadOnlyList<PresentedSolutionDefinition> _initialSolutionPresentation =
@@ -22,7 +23,9 @@ public sealed class PhaseState
 
     public string PhaseId { get; }
     public string CurrentScenarioId { get; private set; }
-    public int FallDeathCount { get; private set; }
+    public int DeathCount { get; private set; }
+    public int CurrentHealth { get; private set; }
+    public double DamageInvulnerabilityRemainingSeconds { get; private set; }
     public string FirstSolutionId { get; private set; }
     public string FirstJustificationId { get; private set; }
     public string AppliedSolutionId { get; private set; }
@@ -30,6 +33,16 @@ public sealed class PhaseState
     public bool HasRevision { get; private set; }
     public bool VerticalRouteRevealed { get; private set; }
     public bool ExitDoorIsOpen { get; private set; }
+
+    public int MaximumHealth
+    {
+        get { return _definition.MaximumHealth; }
+    }
+
+    public bool HasDamageSystem
+    {
+        get { return _definition.HasDamageSystem; }
+    }
 
     public IReadOnlyList<PresentedSolutionDefinition> InitialSolutionPresentation
     {
@@ -68,35 +81,67 @@ public sealed class PhaseState
 
     public bool AppliedSolutionUsesModule(SolutionVisualModule module)
     {
-        if (string.IsNullOrEmpty(AppliedSolutionId))
+        if (!_definition.AppliesSolutionVisualModules ||
+            string.IsNullOrEmpty(AppliedSolutionId))
         {
             return false;
         }
 
         InterventionSolutionDefinition solution =
-            AffordanceChoiceCatalog.GetSolution(AppliedSolutionId);
+            _definition.ChoiceCatalog.GetSolution(AppliedSolutionId);
 
         return (solution.VisualModules & module) == module;
+    }
+
+    public SolutionVisualModule AppliedVisualModules
+    {
+        get
+        {
+            if (!_definition.AppliesSolutionVisualModules ||
+                string.IsNullOrEmpty(AppliedSolutionId))
+            {
+                return SolutionVisualModule.NONE;
+            }
+
+            return _definition.ChoiceCatalog
+                .GetSolution(AppliedSolutionId)
+                .VisualModules;
+        }
+    }
+
+    public IInterventionChoiceCatalog ChoiceCatalog
+    {
+        get { return _definition.ChoiceCatalog; }
     }
 
     public InterventionEntrancePlacement InterventionEntrancePlacement
     {
         get
         {
-            return FallDeathCount >= EarlyEntranceDeathThreshold
+            return DeathCount >= EarlyEntranceDeathThreshold
                 ? InterventionEntrancePlacement.EARLY
                 : InterventionEntrancePlacement.LATE;
         }
     }
 
     public PhaseState(
-        string phaseId,
-        string initialScenarioId,
-        string deathCountingScenarioId)
+        PhaseDefinition definition,
+        string initialScenarioId)
     {
-        PhaseId = phaseId;
+        _definition = definition ??
+            throw new ArgumentNullException(nameof(definition));
+
+        if (!definition.ContainsScenario(initialScenarioId))
+        {
+            throw new ArgumentException(
+                "O cenario inicial nao pertence a fase.",
+                nameof(initialScenarioId));
+        }
+
+        PhaseId = definition.Id;
         CurrentScenarioId = initialScenarioId;
-        _deathCountingScenarioId = deathCountingScenarioId;
+        _deathCountingScenarioId = definition.ProblemScenarioId;
+        RestoreDamageState();
     }
 
     public void EnterScenario(string scenarioId)
@@ -108,12 +153,13 @@ public sealed class PhaseState
     public void BeginAttempt()
     {
         _deathRegisteredInCurrentAttempt = false;
+        RestoreDamageState();
     }
 
     public void Reset(string initialScenarioId)
     {
         CurrentScenarioId = initialScenarioId;
-        FallDeathCount = 0;
+        DeathCount = 0;
         FirstSolutionId = null;
         FirstJustificationId = null;
         AppliedSolutionId = null;
@@ -125,6 +171,7 @@ public sealed class PhaseState
         _initialSolutionPresentation = Array.Empty<PresentedSolutionDefinition>();
         _initialJustificationPresentation =
             Array.Empty<PresentedJustificationDefinition>();
+        RestoreDamageState();
     }
 
     public void RegisterInitialSolutionPresentation(
@@ -250,7 +297,7 @@ public sealed class PhaseState
         _initialJustificationPresentation = Array.AsReadOnly(entriesByPosition);
     }
 
-    public void RegisterFallDeath()
+    public void RegisterDeath()
     {
         if (CurrentScenarioId != _deathCountingScenarioId ||
             _deathRegisteredInCurrentAttempt)
@@ -258,8 +305,40 @@ public sealed class PhaseState
             return;
         }
 
-        FallDeathCount++;
+        DeathCount++;
         _deathRegisteredInCurrentAttempt = true;
+    }
+
+    public void UpdateDamageInvulnerability(double deltaTime)
+    {
+        if (DamageInvulnerabilityRemainingSeconds <= 0.0)
+        {
+            return;
+        }
+
+        DamageInvulnerabilityRemainingSeconds = Math.Max(
+            0.0,
+            DamageInvulnerabilityRemainingSeconds - deltaTime);
+    }
+
+    public bool TryApplyDamage()
+    {
+        if (!HasDamageSystem || CurrentHealth <= 0 ||
+            DamageInvulnerabilityRemainingSeconds > 0.0)
+        {
+            return false;
+        }
+
+        CurrentHealth--;
+        DamageInvulnerabilityRemainingSeconds =
+            _definition.DamageInvulnerabilitySeconds;
+        return true;
+    }
+
+    private void RestoreDamageState()
+    {
+        CurrentHealth = MaximumHealth;
+        DamageInvulnerabilityRemainingSeconds = 0.0;
     }
 
     public void ApplyFirstChoice(

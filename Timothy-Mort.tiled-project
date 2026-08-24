@@ -17,6 +17,8 @@
                 "simple_cutscene",
                 "affordance_visibilidade",
                 "affordance_intervencao",
+                "feedback_dano",
+                "feedback_intervencao",
                 "prop_visual"
             ],
             "valuesAsFlags": false

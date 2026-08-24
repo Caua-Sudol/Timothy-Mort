@@ -228,12 +228,19 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
 private void UpdatePlaying(Camera camera, double deltaTime)
 {
     _map.UpdateVisualEffects(deltaTime);
+    _phaseState?.UpdateDamageInvulnerability(deltaTime);
     bool wasGrounded = _player.IsGrounded;
         _player.Update(deltaTime);
         ApplyGelatinFallSpeed();
         bool dashWasAvailableBeforePhysics = _player.CanDash;
         UpdatePlayerPhysics(deltaTime);
         ApplyGelatinFallSpeed();
+        UpdateDamage();
+
+        if (_playerIsDead)
+        {
+            return;
+        }
 
         if (!dashWasAvailableBeforePhysics && _player.CanDash &&
             _phaseState?.AppliedSolutionUsesModule(
@@ -307,6 +314,29 @@ private void UpdatePlaying(Camera camera, double deltaTime)
                 _phaseState?.VerticalRouteRevealed == true,
                 _exitDoorPosition),
             deltaTime);
+    }
+
+    private void UpdateDamage()
+    {
+        if (_phaseState?.HasDamageSystem != true)
+        {
+            return;
+        }
+
+        DamageVolume damageVolume = _map.GetDamageVolume(
+            _player.HitBox,
+            _phaseState.VerticalRouteRevealed);
+
+        if (damageVolume == null ||
+            !_phaseState.TryApplyDamage())
+        {
+            return;
+        }
+
+        if (_phaseState.CurrentHealth <= 0)
+        {
+            KillPlayer();
+        }
     }
 
     private void UpdateInterventionButton(double deltaTime)
@@ -697,9 +727,7 @@ private static bool RectanglesTouchOrIntersect(
             return SolutionVisualModule.NONE;
         }
 
-        return AffordanceChoiceCatalog
-            .GetSolution(_phaseState.AppliedSolutionId)
-            .VisualModules;
+        return _phaseState.AppliedVisualModules;
     }
 
     private InterventionEntrancePlacement? GetActiveInterventionEntrancePlacement()

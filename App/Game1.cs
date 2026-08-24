@@ -23,12 +23,10 @@ public class Game1 : Game
     private StartMenu _startMenu;
     private PauseMenu _pauseMenu;
     private DeathMenu _deathMenu;
+    private DamageHud _damageHud;
     private InterventionChoiceMenu _interventionChoiceMenu;
-    private readonly PhaseState _phaseState = new PhaseState(
-        ScenarioCatalog.AffordanceVisibilityScenarioId,
-        ScenarioCatalog.InitialScenarioId,
-        ScenarioCatalog.AffordanceVisibilityScenarioId
-    );
+    private PhaseState _phaseState;
+    private string _currentScenarioId = ScenarioCatalog.InitialScenarioId;
     private readonly Random _choicePresentationRandom = new Random();
     private AppScreen _activeScreen = AppScreen.START_MENU;
     private OverlayState _overlayState = OverlayState.NONE;
@@ -73,6 +71,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _startMenu = new StartMenu(font, menuCenter);
         _pauseMenu = new PauseMenu(font, menuCenter);
         _deathMenu = new DeathMenu(font, menuCenter);
+        _damageHud = new DamageHud();
         _interventionChoiceMenu = new InterventionChoiceMenu(font);
 
         Vector2 cameraPosition = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
@@ -89,6 +88,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _gameRenderTarget = new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
         _scenarioFadeTexture = new Texture2D(GraphicsDevice, 1, 1);
         _scenarioFadeTexture.SetData(new[] { Color.White });
+        _damageHud.LoadContent(GraphicsDevice);
         _interventionChoiceMenu.LoadContent(GraphicsDevice);
         _debugView.LoadContent(GraphicsDevice);
         _scene.LoadContent(GraphicsDevice);
@@ -285,11 +285,17 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (_scene.TryTakeInterventionButtonActivation())
         {
+            if (_phaseState == null)
+            {
+                return;
+            }
+
             if (!_phaseState.HasFirstChoice)
             {
                 _interventionChoiceMenu.OpenInitial(
                     GetOrCreateInitialSolutions(),
-                    GetOrCreateInitialJustifications());
+                    GetOrCreateInitialJustifications(),
+                    _phaseState.ChoiceCatalog.JustificationQuestion);
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
@@ -297,7 +303,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             if (_phaseState.NeedsSolutionRevision)
             {
             _interventionChoiceMenu.OpenRevision(
-                AffordanceChoiceCatalog.AvailableRevisionSolutions);
+                _phaseState.ChoiceCatalog.AvailableRevisionSolutions);
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
@@ -313,7 +319,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (_scene.PlayerIsDead)
         {
-            _phaseState.RegisterFallDeath();
+            _phaseState?.RegisterDeath();
             OpenDeathMenu();
         }
     }
@@ -323,7 +329,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         if (!_phaseState.HasInitialSolutionPresentation)
         {
             IReadOnlyList<PresentedSolutionDefinition> presentation =
-                AffordanceChoiceCatalog.CreateInitialSolutionPresentation(
+                _phaseState.ChoiceCatalog.CreateInitialSolutionPresentation(
                     _choicePresentationRandom);
             _phaseState.RegisterInitialSolutionPresentation(presentation);
         }
@@ -336,7 +342,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         foreach (PresentedSolutionDefinition entry in registeredPresentation)
         {
             solutionsByPosition[entry.Position - 1] =
-                AffordanceChoiceCatalog.GetSolution(entry.SolutionId);
+                _phaseState.ChoiceCatalog.GetSolution(entry.SolutionId);
         }
 
         return Array.AsReadOnly(solutionsByPosition);
@@ -347,7 +353,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         if (!_phaseState.HasInitialJustificationPresentation)
         {
             IReadOnlyList<PresentedJustificationDefinition> presentation =
-                AffordanceChoiceCatalog.CreateInitialJustificationPresentation(
+                _phaseState.ChoiceCatalog.CreateInitialJustificationPresentation(
                     _choicePresentationRandom);
             _phaseState.RegisterInitialJustificationPresentation(presentation);
         }
@@ -360,7 +366,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         foreach (PresentedJustificationDefinition entry in registeredPresentation)
         {
             justificationsByPosition[entry.Position - 1] =
-                AffordanceChoiceCatalog.GetJustification(entry.JustificationId);
+                _phaseState.ChoiceCatalog.GetJustification(entry.JustificationId);
         }
 
         return Array.AsReadOnly(justificationsByPosition);
@@ -405,19 +411,24 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private void ChangeScenario(string scenarioId, string spawnId)
     {
-        bool completedAffordanceVisibilityPhase =
-            scenarioId == ScenarioCatalog.InitialScenarioId &&
-            _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId &&
-            _phaseState.ExitDoorIsOpen;
+        PhaseDefinition destinationPhase =
+            PhaseCatalog.GetForScenario(scenarioId);
 
-        if (completedAffordanceVisibilityPhase)
+        if (destinationPhase == null)
         {
-            _phaseState.Reset(scenarioId);
+            _phaseState = null;
+        }
+        else if (_phaseState == null ||
+                 _phaseState.PhaseId != destinationPhase.Id)
+        {
+            _phaseState = new PhaseState(destinationPhase, scenarioId);
         }
         else
         {
             _phaseState.EnterScenario(scenarioId);
         }
+
+        _currentScenarioId = scenarioId;
 
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
         _scene = new Scene(scenario, spawnId, _phaseState);
@@ -434,7 +445,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _overlayState = OverlayState.NONE;
         else if (selectedOption == PauseOption.RESTART)
         {
-            _phaseState.BeginAttempt();
+            _phaseState?.BeginAttempt();
             _scene.Restart(_camera);
             _overlayState = OverlayState.NONE;
         }
@@ -448,7 +459,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (selectedOption == DeathOption.RETRY)
         {
-            _phaseState.BeginAttempt();
+            _phaseState?.BeginAttempt();
             _scene.Restart(_camera);
             _overlayState = OverlayState.NONE;
         }
@@ -494,7 +505,15 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         _scene.Draw(_spriteBatch, _camera);
         _scene.DrawDebug(_spriteBatch, _camera, _debugView);
-        _debugView.DrawHud(_spriteBatch, _phaseState.CurrentScenarioId, _scene.Player);
+        _debugView.DrawHud(_spriteBatch, _currentScenarioId, _scene.Player);
+
+        if (_phaseState?.HasDamageSystem == true)
+        {
+            _damageHud.Draw(
+                _spriteBatch,
+                _phaseState.CurrentHealth,
+                _phaseState.MaximumHealth);
+        }
 
         if (_overlayState == OverlayState.PAUSED)
         {
