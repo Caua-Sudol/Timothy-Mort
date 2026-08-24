@@ -247,7 +247,7 @@ public sealed class InterventionChoiceMenu
     {
         DrawCenteredText(
             spriteBatch,
-            _requiresJustification ? "Escolha uma solucao" : "Revise a solucao",
+            _requiresJustification ? "Que intervenção você aplicaria para resolver esse problema?" : "Como você revisaria a intervenção para resolver o problema?",
             new Vector2(LogicalWidth / 2.0f, 180.0f),
             Color.White,
             TitleScale);

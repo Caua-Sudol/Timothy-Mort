@@ -25,7 +25,7 @@ public static class PhaseCatalog
                 ScenarioCatalog.DamageFeedbackScenarioId,
                 ScenarioCatalog.DamageFeedbackInterventionScenarioId
             },
-            AffordanceChoiceCatalogAdapter.Instance,
+            FeedbackDamageChoiceCatalog.Instance,
             false,
             5,
             1.5);
