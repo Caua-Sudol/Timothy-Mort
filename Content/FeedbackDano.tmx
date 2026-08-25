@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="21">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="7" nextobjectid="34">
  <objectgroup color="#57d957" id="1" name="mapaGeral">
   <object id="1" name="inicio" x="0" y="832" width="640" height="256"/>
   <object id="3" name="plataforma_intermediaria" x="1472" y="832" width="448" height="256"/>
@@ -41,5 +41,20 @@
     <property name="spawnDestino" value="spawn_entrada"/>
    </properties>
   </object>
+ </objectgroup>
+ <objectgroup id="6" name="rotaSeguraSolida">
+  <object id="21" x="608" y="896" width="224" height="32"/>
+  <object id="22" x="800" y="928" width="224" height="32"/>
+  <object id="23" x="1000" y="928" width="224" height="32"/>
+  <object id="24" x="1200" y="896" width="272" height="32"/>
+  <object id="25" x="1888" y="896" width="224" height="32"/>
+  <object id="26" x="2080" y="928" width="224" height="32"/>
+  <object id="27" x="2280" y="928" width="224" height="32"/>
+  <object id="28" x="2472" y="896" width="216" height="32"/>
+  <object id="29" x="3040" y="896" width="224" height="32"/>
+  <object id="30" x="3232" y="928" width="224" height="32"/>
+  <object id="31" x="3424" y="928" width="224" height="32"/>
+  <object id="32" x="3616" y="912" width="224" height="32"/>
+  <object id="33" x="3808" y="880" width="160" height="32"/>
  </objectgroup>
 </map>

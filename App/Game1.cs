@@ -512,7 +512,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _damageHud.Draw(
                 _spriteBatch,
                 _phaseState.CurrentHealth,
-                _phaseState.MaximumHealth);
+                _phaseState.MaximumHealth,
+                _phaseState.AppliedVisualModules);
         }
 
         if (_overlayState == OverlayState.PAUSED)

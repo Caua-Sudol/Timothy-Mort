@@ -6,8 +6,10 @@ namespace DontLikePoetry;
 public sealed class DamageHud
 {
     private const int Margin = 32;
-    private const int CellSize = 6;
-    private const int HeartSpacing = 12;
+    private const int DefaultCellSize = 6;
+    private const int DefaultHeartSpacing = 12;
+    private int _cellSize = DefaultCellSize;
+    private int _heartSpacing = DefaultHeartSpacing;
 
     private static readonly string[] HeartShape =
     {
@@ -27,23 +29,30 @@ public sealed class DamageHud
         _pixel.SetData(new[] { Color.White });
     }
 
-    public void Draw(SpriteBatch spriteBatch, int currentHealth, int maximumHealth)
+    public void Draw(
+        SpriteBatch spriteBatch,
+        int currentHealth,
+        int maximumHealth,
+        SolutionVisualModule visualModules)
     {
+        bool emphasizeHud = visualModules.HasFlag(SolutionVisualModule.DAMAGE_HUD_EMPHASIS);
+        _cellSize = emphasizeHud ? 8 : DefaultCellSize;
+        _heartSpacing = emphasizeHud ? 16 : DefaultHeartSpacing;
         if (_pixel == null || maximumHealth <= 0)
         {
             return;
         }
 
-        int heartWidth = HeartShape[0].Length * CellSize;
+        int heartWidth = HeartShape[0].Length * _cellSize;
 
         spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
         for (int heartIndex = 0; heartIndex < maximumHealth; heartIndex++)
         {
             Color color = heartIndex < currentHealth
-                ? Color.Crimson
+                ? (emphasizeHud ? Color.Red : Color.Crimson)
                 : new Color(70, 55, 65);
-            int left = Margin + heartIndex * (heartWidth + HeartSpacing);
+            int left = Margin + heartIndex * (heartWidth + _heartSpacing);
             DrawHeart(spriteBatch, left, Margin, color);
         }
 
@@ -68,10 +77,10 @@ public sealed class DamageHud
                 spriteBatch.Draw(
                     _pixel,
                     new Rectangle(
-                        left + column * CellSize,
-                        top + row * CellSize,
-                        CellSize,
-                        CellSize),
+                        left + column * _cellSize,
+                        top + row * _cellSize,
+                        _cellSize,
+                        _cellSize),
                     color);
             }
         }

@@ -26,9 +26,9 @@ public static class PhaseCatalog
                 ScenarioCatalog.DamageFeedbackInterventionScenarioId
             },
             FeedbackDamageChoiceCatalog.Instance,
-            false,
-            5,
-            1.5);
+            true,
+            DamageFeedbackSettings.MaximumHealth,
+            DamageFeedbackSettings.InvulnerabilityDurationSeconds);
 
     private static readonly IReadOnlyList<PhaseDefinition> Phases =
         new[]

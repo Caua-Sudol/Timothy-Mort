@@ -60,6 +60,7 @@ public class Player
     private double _surfaceContactFlashTimer;
     private const double DashRechargeSymbolDuration = 0.45;
     private double _dashRechargeSymbolTimer;
+    private double _damageCompressionTimer;
     private const double DashEnergyAbsorptionDuration = 0.36;
     private double _dashEnergyAbsorptionTimer;
     private Vector2 _dashEnergyAbsorptionSource;
@@ -111,8 +112,9 @@ public class Player
 
 public void Update(double deltaTime)
 {
-    UpdateSurfaceContactFlash(deltaTime);
-    UpdateDashRechargeSymbol(deltaTime);
+        UpdateSurfaceContactFlash(deltaTime);
+        UpdateDashRechargeSymbol(deltaTime);
+        _damageCompressionTimer = Math.Max(0, _damageCompressionTimer - deltaTime);
     UpdateDashEnergyAbsorption(deltaTime);
     _input.Update();
         int horizontalInput = _input.Horizontal;
@@ -444,9 +446,35 @@ public void ClearDashEnergyAbsorption()
         CanDash = true;
     }
 
-public void Draw(
+    public void ApplyDamageKnockback(int horizontalDirection)
+    {
+        if (horizontalDirection == 0)
+        {
+            horizontalDirection = _direction == Direction.Left ? -1 : 1;
+        }
+
+        CancelDash();
+        _velocity = new Vector2(
+            horizontalDirection * DamageFeedbackSettings.KnockbackHorizontalSpeed,
+            DamageFeedbackSettings.KnockbackVerticalSpeed);
+        NotGrounded();
+        State = PlayerState.Jumping;
+    }
+
+    public void StartDamageCompression()
+    {
+        _damageCompressionTimer = DamageFeedbackSettings.CompressionDurationSeconds;
+    }
+
+    public void ClearDamageFeedback()
+    {
+        _damageCompressionTimer = 0;
+    }
+
+    public void Draw(
     SpriteBatch spriteBatch,
-    SolutionVisualModule visualModules)
+        SolutionVisualModule visualModules,
+        double damageInvulnerabilityRemainingSeconds)
 {
     if ((visualModules & SolutionVisualModule.PLAYER_DASH_TRAIL) != 0 &&
         State == PlayerState.Dashing)
@@ -483,11 +511,105 @@ public void Draw(
             Color.Aquamarine * 0.85f);
     }
 
-    spriteBatch.Draw(_texture, HitBox, color);
+    DrawDamageFeedback(
+        spriteBatch,
+        visualModules,
+        damageInvulnerabilityRemainingSeconds,
+        color);
 
 }
 
-public void DrawDashRechargeSymbol(
+    private void DrawDamageFeedback(
+        SpriteBatch spriteBatch,
+        SolutionVisualModule visualModules,
+        double invulnerabilityRemainingSeconds,
+        Color color)
+    {
+        bool isInvulnerable = invulnerabilityRemainingSeconds > 0;
+        bool alternatePhaseIsVisible =
+            ((int)(invulnerabilityRemainingSeconds / DamageFeedbackSettings.BlinkIntervalSeconds) & 1) == 0;
+
+        Rectangle drawBounds = HitBox;
+        if (_damageCompressionTimer > 0 &&
+            visualModules.HasFlag(SolutionVisualModule.DAMAGE_COMPRESSION))
+        {
+            int compressedHeight = (int)(drawBounds.Height * 0.7f);
+            drawBounds = new Rectangle(
+                drawBounds.X,
+                drawBounds.Bottom - compressedHeight,
+                drawBounds.Width,
+                compressedHeight);
+        }
+
+        if (isInvulnerable &&
+            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_TRANSPARENCY) &&
+            !alternatePhaseIsVisible)
+        {
+            color *= 0.35f;
+        }
+
+        if (isInvulnerable &&
+            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_OUTLINE))
+        {
+            DrawDamageOutline(spriteBatch, drawBounds, Color.White, 2);
+        }
+
+        if (isInvulnerable &&
+            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_OUTLINE_PULSE))
+        {
+            int thickness = 2 + (int)Math.Round(
+                (Math.Sin(invulnerabilityRemainingSeconds * 12) + 1) * 1.5);
+            DrawDamageOutline(spriteBatch, drawBounds, Color.Cyan, thickness);
+        }
+
+        if (isInvulnerable &&
+            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_SILHOUETTE) &&
+            alternatePhaseIsVisible)
+        {
+            Rectangle silhouetteBounds = new(
+                drawBounds.X - 4,
+                drawBounds.Y,
+                drawBounds.Width,
+                drawBounds.Height);
+            spriteBatch.Draw(_texture, silhouetteBounds, Color.White * 0.35f);
+        }
+
+        bool hideForBlink =
+            isInvulnerable &&
+            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_BLINK) &&
+            !alternatePhaseIsVisible;
+
+        if (!hideForBlink)
+        {
+            spriteBatch.Draw(_texture, drawBounds, color);
+        }
+    }
+
+    private void DrawDamageOutline(
+        SpriteBatch spriteBatch,
+        Rectangle bounds,
+        Color color,
+        int thickness)
+    {
+        spriteBatch.Draw(
+            _texture,
+            new Rectangle(bounds.X - thickness, bounds.Y - thickness, bounds.Width + thickness * 2, thickness),
+            color);
+        spriteBatch.Draw(
+            _texture,
+            new Rectangle(bounds.X - thickness, bounds.Bottom, bounds.Width + thickness * 2, thickness),
+            color);
+        spriteBatch.Draw(
+            _texture,
+            new Rectangle(bounds.X - thickness, bounds.Y, thickness, bounds.Height),
+            color);
+        spriteBatch.Draw(
+            _texture,
+            new Rectangle(bounds.Right, bounds.Y, thickness, bounds.Height),
+            color);
+    }
+
+    public void DrawDashRechargeSymbol(
     SpriteBatch spriteBatch,
     SolutionVisualModule visualModules)
 {

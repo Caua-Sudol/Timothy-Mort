@@ -20,21 +20,21 @@ public sealed class FeedbackDamageChoiceCatalog : IInterventionChoiceCatalog
                 "Aumentar os corações e diferenciar com mais contraste os corações cheios e vazios.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE),
+                SolutionVisualModule.DAMAGE_HUD_EMPHASIS),
             new InterventionSolutionDefinition(
                 "I2",
                 "Perigo sinalizado",
                 "Aplicar uma cor de perigo e adicionar símbolos de alerta às plataformas com espinhos.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE),
+                SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT),
             new InterventionSolutionDefinition(
                 "I3",
                 "Rota alternativa",
                 "Criar plataformas seguras próximas às perigosas e destacá-las como uma rota segura.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE)
+                SolutionVisualModule.SAFE_ROUTE)
         };
 
     public IReadOnlyList<InterventionSolutionDefinition> InitialPartialSolutions { get; } =
@@ -46,21 +46,24 @@ public sealed class FeedbackDamageChoiceCatalog : IInterventionChoiceCatalog
                 "Aplicar um recuo pequeno e partículas no ponto em que o personagem recebe dano.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE),
+                SolutionVisualModule.DAMAGE_KNOCKBACK |
+                SolutionVisualModule.DAMAGE_PARTICLES),
             new InterventionSolutionDefinition(
                 "P2",
                 "Proteção visível",
                 "Fazer o personagem piscar e exibir um contorno enquanto estiver invulnerável.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE),
+                SolutionVisualModule.INVULNERABILITY_BLINK |
+                SolutionVisualModule.INVULNERABILITY_OUTLINE),
             new InterventionSolutionDefinition(
                 "P3",
                 "Recuo e alerta",
                 "Aplicar um recuo pequeno e destacar visualmente as plataformas perigosas.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE)
+                SolutionVisualModule.DAMAGE_KNOCKBACK |
+                SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT)
         };
 
     public IReadOnlyList<InterventionSolutionDefinition> InitialAdequateSolutions { get; } =
@@ -72,21 +75,25 @@ public sealed class FeedbackDamageChoiceCatalog : IInterventionChoiceCatalog
                 "Aplicar um recuo pequeno e fazer o personagem piscar durante toda a invulnerabilidade.",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE),
+                SolutionVisualModule.DAMAGE_KNOCKBACK |
+                SolutionVisualModule.INVULNERABILITY_BLINK),
             new InterventionSolutionDefinition(
                 "A2",
                 "Recuo e pulso",
                 "Aplicar um recuo pequeno e pulsar o contorno do personagem enquanto a proteção estiver ativa.",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE),
+                SolutionVisualModule.DAMAGE_KNOCKBACK |
+                SolutionVisualModule.INVULNERABILITY_OUTLINE_PULSE),
             new InterventionSolutionDefinition(
                 "A3",
                 "Compressão e transparência",
                 "Comprimir o personagem durante o recuo e alternar sua transparência durante a invulnerabilidade.",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.NONE)
+                SolutionVisualModule.DAMAGE_KNOCKBACK |
+                SolutionVisualModule.DAMAGE_COMPRESSION |
+                SolutionVisualModule.INVULNERABILITY_TRANSPARENCY)
         };
 
     public IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; }
@@ -100,14 +107,16 @@ public sealed class FeedbackDamageChoiceCatalog : IInterventionChoiceCatalog
                 "Aplicar um recuo pequeno e manter brevemente uma marca visual no ponto de contato.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.REVISION,
-                SolutionVisualModule.NONE),
+                SolutionVisualModule.DAMAGE_KNOCKBACK |
+                SolutionVisualModule.DAMAGE_IMPACT_MARK),
             new InterventionSolutionDefinition(
                 "A4",
                 "Impacto e proteção",
                 "Aplicar um recuo pequeno e exibir uma silhueta intermitente durante toda a invulnerabilidade.",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.REVISION,
-                SolutionVisualModule.NONE)
+                SolutionVisualModule.DAMAGE_KNOCKBACK |
+                SolutionVisualModule.INVULNERABILITY_SILHOUETTE)
         };
 
     public IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -28,6 +29,9 @@ public class Scene
     private const float ExitDoorRiseSpeed = 768.0f;
 
     private Texture2D _fadeTexture;
+    private double _damageParticlesTimer;
+    private double _damageImpactMarkTimer;
+    private Vector2 _damageContactPoint;
     private Rectangle _fadeRectangle;
     private float _fadeAlpha;
 
@@ -235,6 +239,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         bool dashWasAvailableBeforePhysics = _player.CanDash;
         UpdatePlayerPhysics(deltaTime);
         ApplyGelatinFallSpeed();
+        _damageParticlesTimer = Math.Max(0, _damageParticlesTimer - deltaTime);
+        _damageImpactMarkTimer = Math.Max(0, _damageImpactMarkTimer - deltaTime);
         UpdateDamage();
 
         if (_playerIsDead)
@@ -312,6 +318,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             _map.GetSolidColliders(
                 _exitDoorIsOpen,
                 _phaseState?.VerticalRouteRevealed == true,
+                GetAppliedVisualModules().HasFlag(SolutionVisualModule.SAFE_ROUTE),
                 _exitDoorPosition),
             deltaTime);
     }
@@ -332,6 +339,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         {
             return;
         }
+
+        ApplyDamageFeedback(damageVolume);
 
         if (_phaseState.CurrentHealth <= 0)
         {
@@ -403,9 +412,49 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             : _exitDoorPosition + delta / distance * step;
     }
 
+    private void ApplyDamageFeedback(DamageVolume damageVolume)
+    {
+        SolutionVisualModule visualModules = GetAppliedVisualModules();
+        Rectangle damageBounds = damageVolume.Bounds;
+        int playerCenterX = _player.HitBox.Center.X;
+        int horizontalDirection = playerCenterX.CompareTo(damageBounds.Center.X);
+
+        _damageContactPoint = new Vector2(
+            Math.Clamp(playerCenterX, damageBounds.Left, damageBounds.Right),
+            Math.Clamp(_player.HitBox.Center.Y, damageBounds.Top, damageBounds.Bottom));
+
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_KNOCKBACK))
+        {
+            _player.ApplyDamageKnockback(horizontalDirection);
+        }
+
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_PARTICLES))
+        {
+            _damageParticlesTimer = DamageFeedbackSettings.ImpactEffectDurationSeconds;
+        }
+
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_IMPACT_MARK))
+        {
+            _damageImpactMarkTimer = DamageFeedbackSettings.ImpactEffectDurationSeconds;
+        }
+
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_COMPRESSION))
+        {
+            _player.StartDamageCompression();
+        }
+    }
+
+    private void ClearDamageFeedbackEffects()
+    {
+        _damageParticlesTimer = 0;
+        _damageImpactMarkTimer = 0;
+        _player?.ClearDamageFeedback();
+    }
+
     public void SyncInterventionState()
     {
         _exitDoorIsOpen = _phaseState?.ExitDoorIsOpen == true;
+        ClearDamageFeedbackEffects();
     }
 
     private Vector2 GetExitDoorRestingPosition()
@@ -563,6 +612,7 @@ private static bool RectanglesTouchOrIntersect(
 
     private void KillPlayer()
     {
+        ClearDamageFeedbackEffects();
         _playerIsDead = true;
         _usedGelatins.Clear();
         _playerWasTouchingSolidSurface = false;
@@ -694,6 +744,55 @@ private static bool RectanglesTouchOrIntersect(
             _checkpoint);
     }
 
+    private void DrawDamageEventEffects(
+        SpriteBatch spriteBatch,
+        SolutionVisualModule visualModules)
+    {
+        if (_damageParticlesTimer > 0 &&
+            visualModules.HasFlag(SolutionVisualModule.DAMAGE_PARTICLES))
+        {
+            float progress = 1f - (float)(
+                _damageParticlesTimer / DamageFeedbackSettings.ImpactEffectDurationSeconds);
+            Vector2[] directions =
+            [
+                new(-1f, -1f),
+                new(0f, -1.3f),
+                new(1f, -1f),
+                new(-1.2f, 0f),
+                new(1.2f, 0f),
+                new(0f, 1f)
+            ];
+
+            foreach (Vector2 direction in directions)
+            {
+                Vector2 position = _damageContactPoint + direction * (8f + 18f * progress);
+                spriteBatch.Draw(
+                    _fadeTexture,
+                    new Rectangle((int)position.X - 2, (int)position.Y - 2, 4, 4),
+                    Color.OrangeRed * (1f - progress));
+            }
+        }
+
+        if (_damageImpactMarkTimer > 0 &&
+            visualModules.HasFlag(SolutionVisualModule.DAMAGE_IMPACT_MARK))
+        {
+            float opacity = (float)(
+                _damageImpactMarkTimer / DamageFeedbackSettings.ImpactEffectDurationSeconds);
+            int centerX = (int)_damageContactPoint.X;
+            int centerY = (int)_damageContactPoint.Y;
+            Color markColor = Color.Gold * opacity;
+
+            spriteBatch.Draw(
+                _fadeTexture,
+                new Rectangle(centerX - 10, centerY - 2, 20, 4),
+                markColor);
+            spriteBatch.Draw(
+                _fadeTexture,
+                new Rectangle(centerX - 2, centerY - 10, 4, 20),
+                markColor);
+        }
+    }
+
     private void DrawWorld(SpriteBatch spriteBatch, Camera camera)
     {
         var cameraTransform = camera.GetTransform();
@@ -703,8 +802,10 @@ private static bool RectanglesTouchOrIntersect(
 
     SolutionVisualModule visualModules = GetAppliedVisualModules();
 
-    _player.Draw(spriteBatch, visualModules);
-
+    _player.Draw(
+        spriteBatch,
+        visualModules,
+        _phaseState?.DamageInvulnerabilityRemainingSeconds ?? 0);
     _map.Draw(
         spriteBatch,
             GetActiveInterventionEntrancePlacement(),
@@ -714,6 +815,7 @@ private static bool RectanglesTouchOrIntersect(
         _phaseState?.VerticalRouteRevealed == true,
         visualModules);
 
+    DrawDamageEventEffects(spriteBatch, visualModules);
     _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
     _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
 

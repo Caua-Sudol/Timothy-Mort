@@ -23,6 +23,7 @@ public class LevelMap
     private const string VerticalRouteGelatinLayerName = "rotaVerticalGelatina";
     private const string DamageLayerName = "dano";
     private const string VerticalRouteDamageLayerName = "rotaVerticalDano";
+    private const string SafeRouteSolidLayerName = "rotaSeguraSolida";
     private const string DebugMeasurementLayerName = "medicaoDebug";
     private const string SceneDestinationPropertyName = "destino";
     private const string SceneDestinationSpawnPropertyName = "spawnDestino";
@@ -42,6 +43,7 @@ public class LevelMap
     private List<InterventionEntrance> _interventionEntrances = new List<InterventionEntrance>();
     private List<Rectangle> _interventionButtons = new List<Rectangle>();
     private List<Rectangle> _verticalRoutePlatforms = new List<Rectangle>();
+    private List<Rectangle> _safeRoutePlatforms = new List<Rectangle>();
     private List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
     private List<DamageVolume> _damageVolumes = new List<DamageVolume>();
     private List<DamageVolume> _verticalRouteDamageVolumes = new List<DamageVolume>();
@@ -247,6 +249,7 @@ public void UpdateVisualEffects(double deltaTime)
     public IEnumerable<Rectangle> GetSolidColliders(
         bool exitDoorIsOpen,
         bool verticalRouteRevealed,
+        bool safeRouteRevealed,
         Vector2 exitDoorPosition)
     {
         foreach (Rectangle platform in _platforms)
@@ -257,6 +260,14 @@ public void UpdateVisualEffects(double deltaTime)
         if (verticalRouteRevealed)
         {
             foreach (Rectangle platform in _verticalRoutePlatforms)
+            {
+                yield return platform;
+            }
+        }
+
+        if (safeRouteRevealed)
+        {
+            foreach (Rectangle platform in _safeRoutePlatforms)
             {
                 yield return platform;
             }
@@ -380,11 +391,36 @@ public void UpdateVisualEffects(double deltaTime)
             }
         }
 
-        DrawDamageVolumes(spriteBatch, _damageVolumes);
+        if (visualModules.HasFlag(SolutionVisualModule.SAFE_ROUTE))
+        {
+            foreach (Rectangle platform in _safeRoutePlatforms)
+            {
+                spriteBatch.Draw(_platformTexture, platform, new Color(38, 122, 82));
+                spriteBatch.Draw(
+                    _platformTexture,
+                    new Rectangle(platform.X, platform.Y, platform.Width, 5),
+                    Color.LightGreen);
+
+                int markerY = platform.Y + Math.Max(8, platform.Height / 2);
+                for (int markerX = platform.X + 20; markerX < platform.Right - 8; markerX += 40)
+                {
+                    spriteBatch.Draw(
+                        _platformTexture,
+                        new Rectangle(markerX, markerY, 12, 4),
+                        Color.LightGreen);
+                    spriteBatch.Draw(
+                        _platformTexture,
+                        new Rectangle(markerX + 8, markerY - 4, 4, 12),
+                        Color.LightGreen);
+                }
+            }
+        }
+
+        DrawDamageVolumes(spriteBatch, _damageVolumes, visualModules);
 
         if (verticalRouteRevealed)
         {
-            DrawDamageVolumes(spriteBatch, _verticalRouteDamageVolumes);
+            DrawDamageVolumes(spriteBatch, _verticalRouteDamageVolumes, visualModules);
         }
 
         if (activeInterventionEntrancePlacement.HasValue)
@@ -575,6 +611,7 @@ private void LoadObjects(TmxMap map)
         LoadRectanglesFromOptionalLayer(map, InterventionButtonLayerName, _interventionButtons);
         LoadExitDoor(map);
         LoadRectanglesFromOptionalLayer(map, VerticalRoutePlatformLayerName, _verticalRoutePlatforms);
+        LoadRectanglesFromOptionalLayer(map, SafeRouteSolidLayerName, _safeRoutePlatforms);
     LoadRectanglesFromOptionalLayer(map, VerticalRouteGelatinLayerName, _verticalRouteGelatins);
     LoadDamageVolumesFromOptionalLayer(map, DamageLayerName, _damageVolumes);
     LoadDamageVolumesFromOptionalLayer(
@@ -593,6 +630,7 @@ private void ApplyObjectState(LevelMap candidate)
     _interventionEntrances = candidate._interventionEntrances;
     _interventionButtons = candidate._interventionButtons;
     _verticalRoutePlatforms = candidate._verticalRoutePlatforms;
+    _safeRoutePlatforms = candidate._safeRoutePlatforms;
     _verticalRouteGelatins = candidate._verticalRouteGelatins;
     _damageVolumes = candidate._damageVolumes;
     _verticalRouteDamageVolumes = candidate._verticalRouteDamageVolumes;
@@ -762,7 +800,8 @@ private void ApplyObjectState(LevelMap candidate)
 
     private void DrawDamageVolumes(
         SpriteBatch spriteBatch,
-        IEnumerable<DamageVolume> damageVolumes)
+        IEnumerable<DamageVolume> damageVolumes,
+        SolutionVisualModule visualModules)
     {
         const int spikeWidth = 16;
         const int spikeStepHeight = 4;
@@ -770,6 +809,31 @@ private void ApplyObjectState(LevelMap candidate)
         foreach (DamageVolume damageVolume in damageVolumes)
         {
             Rectangle bounds = damageVolume.Bounds;
+            if (visualModules.HasFlag(SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT))
+            {
+                Rectangle dangerBand = new(
+                    bounds.X,
+                    bounds.Y - 8,
+                    bounds.Width,
+                    bounds.Height + 8);
+                spriteBatch.Draw(_platformTexture, dangerBand, Color.DarkRed * 0.65f);
+                spriteBatch.Draw(
+                    _platformTexture,
+                    new Rectangle(bounds.X, bounds.Y - 8, bounds.Width, 4),
+                    Color.Yellow);
+
+                for (int alertX = bounds.X + 24; alertX < bounds.Right; alertX += 48)
+                {
+                    spriteBatch.Draw(
+                        _platformTexture,
+                        new Rectangle(alertX, bounds.Y - 30, 5, 14),
+                        Color.Yellow);
+                    spriteBatch.Draw(
+                        _platformTexture,
+                        new Rectangle(alertX, bounds.Y - 12, 5, 5),
+                        Color.Yellow);
+                }
+            }
 
             for (int spikeLeft = bounds.Left;
                  spikeLeft < bounds.Right;
