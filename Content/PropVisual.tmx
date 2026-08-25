@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="18">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="7" nextobjectid="23">
  <objectgroup color="#57d957" id="1" name="mapaGeral">
-  <object id="1" name="inicio" x="0" y="832" width="640" height="256"/>
-  <object id="3" name="plataforma_intermediaria" x="1472" y="832" width="448" height="256"/>
+  <object id="1" name="inicio" x="0" y="832" width="640" height="128"/>
+  <object id="3" name="plataforma_intermediaria" x="1472" y="832" width="480" height="96"/>
  </objectgroup>
  <objectgroup color="#ff4fd8" id="2" name="gelatina">
   <object id="9" name="gelatina_plataforma_1" x="968" y="756" width="160" height="32"/>
@@ -12,4 +12,9 @@
  </objectgroup>
  <objectgroup color="#ffd84f" id="4" name="saidaCena"/>
  <objectgroup color="#ff9f43" id="5" name="entradaIntervencao"/>
+ <objectgroup color="#70d6ff" id="6" name="visualForeground">
+  <object id="19" name="arbusto" x="1489.7" y="693.455" width="184.727" height="165.818"/>
+  <object id="22" name="arbusto" x="396" y="695.455" width="184.727" height="165.818"/>
+  <object id="21" name="arbusto" x="1744.24" y="693.455" width="184.727" height="165.818"/>
+ </objectgroup>
 </map>

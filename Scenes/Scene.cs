@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace DontLikePoetry;
@@ -37,6 +38,7 @@ public class Scene
 
     private Player _player;
     private readonly LevelMap _map;
+    private readonly PropVisualPresentation _propVisualPresentation;
 private readonly PlayerCollision _playerCollision = new PlayerCollision();
 private readonly HashSet<Rectangle> _usedGelatins = new HashSet<Rectangle>();
 private bool _playerWasTouchingSolidSurface;
@@ -90,12 +92,13 @@ private Vector2 _checkpoint;
             scenario.MapPath,
             scenario.FallbackPlayerStart,
             entrySpawnId,
-            phaseState)
+            phaseState,
+            scenario.Id == ScenarioCatalog.PropVisualScenarioId)
     {
     }
 
     public Scene(string mapPath, Vector2 playerStart)
-        : this(mapPath, playerStart, null, null)
+        : this(mapPath, playerStart, null, null, false)
     {
     }
 
@@ -103,9 +106,13 @@ private Vector2 _checkpoint;
         string mapPath,
         Vector2 playerStart,
         string entrySpawnId,
-        PhaseState phaseState)
+        PhaseState phaseState,
+        bool usesPropVisualPresentation)
     {
         _map = new LevelMap(mapPath);
+        _propVisualPresentation = usesPropVisualPresentation
+            ? new PropVisualPresentation()
+            : null;
         _fallbackPlayerStart = playerStart;
         _entrySpawnId = entrySpawnId;
         _phaseState = phaseState;
@@ -119,7 +126,7 @@ private Vector2 _checkpoint;
         }
     }
 
-    public void LoadContent(GraphicsDevice graphicsDevice)
+    public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {
         _fadeAlpha = 0.0f;
         _playerIsDead = false;
@@ -135,6 +142,7 @@ private Vector2 _checkpoint;
         _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
+        _propVisualPresentation?.LoadContent(content);
         _exitDoorPosition = GetExitDoorRestingPosition();
         _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
             ?? _map.PlayerSpawn
@@ -795,6 +803,12 @@ private static bool RectanglesTouchOrIntersect(
 
     private void DrawWorld(SpriteBatch spriteBatch, Camera camera)
     {
+        if (_propVisualPresentation != null)
+        {
+            DrawPropVisualWorld(spriteBatch, camera);
+            return;
+        }
+
         var cameraTransform = camera.GetTransform();
     spriteBatch.Begin(
         samplerState: SamplerState.PointClamp,
@@ -819,6 +833,45 @@ private static bool RectanglesTouchOrIntersect(
     _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
     _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
 
+        spriteBatch.End();
+    }
+
+    private void DrawPropVisualWorld(SpriteBatch spriteBatch, Camera camera)
+    {
+        Matrix cameraTransform = camera.GetTransform();
+        SolutionVisualModule visualModules = GetAppliedVisualModules();
+
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
+        _propVisualPresentation.DrawBackground(spriteBatch);
+        spriteBatch.End();
+
+        spriteBatch.Begin(
+            samplerState: SamplerState.LinearClamp,
+            transformMatrix: cameraTransform);
+        _propVisualPresentation.DrawMidground(
+            spriteBatch,
+            _map.Platforms,
+            _map.Gelatins);
+        spriteBatch.End();
+
+        spriteBatch.Begin(
+            samplerState: SamplerState.PointClamp,
+            transformMatrix: cameraTransform);
+        _player.Draw(
+            spriteBatch,
+            visualModules,
+            _phaseState?.DamageInvulnerabilityRemainingSeconds ?? 0);
+        DrawDamageEventEffects(spriteBatch, visualModules);
+        _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
+        _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
+        spriteBatch.End();
+
+        spriteBatch.Begin(
+            samplerState: SamplerState.LinearClamp,
+            transformMatrix: cameraTransform);
+        _propVisualPresentation.DrawForeground(
+            spriteBatch,
+            _map.PropVisualForegrounds);
         spriteBatch.End();
     }
 

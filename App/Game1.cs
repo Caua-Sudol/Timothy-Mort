@@ -91,7 +91,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _damageHud.LoadContent(GraphicsDevice);
         _interventionChoiceMenu.LoadContent(GraphicsDevice);
         _debugView.LoadContent(GraphicsDevice);
-        _scene.LoadContent(GraphicsDevice);
+        _scene.LoadContent(GraphicsDevice, Content);
 
         TargetElapsedTime = TimeSpan.FromSeconds(SecondsPerFrameMenu);
     }
@@ -432,7 +432,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
         _scene = new Scene(scenario, spawnId, _phaseState);
-        _scene.LoadContent(GraphicsDevice);
+        _scene.LoadContent(GraphicsDevice, Content);
         _overlayState = OverlayState.NONE;
         _mapReloadErrorMessage = null;
     }

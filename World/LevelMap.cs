@@ -25,6 +25,7 @@ public class LevelMap
     private const string VerticalRouteDamageLayerName = "rotaVerticalDano";
     private const string SafeRouteSolidLayerName = "rotaSeguraSolida";
     private const string DebugMeasurementLayerName = "medicaoDebug";
+    private const string PropVisualForegroundLayerName = "visualForeground";
     private const string SceneDestinationPropertyName = "destino";
     private const string SceneDestinationSpawnPropertyName = "spawnDestino";
     private const string SceneRequiresAppliedSolutionPropertyName = "requerSolucaoAplicada";
@@ -47,6 +48,7 @@ public class LevelMap
     private List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
     private List<DamageVolume> _damageVolumes = new List<DamageVolume>();
     private List<DamageVolume> _verticalRouteDamageVolumes = new List<DamageVolume>();
+    private List<Rectangle> _propVisualForegrounds = new List<Rectangle>();
     private Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
     private Texture2D _platformTexture;
     private double _visualEffectTime;
@@ -133,6 +135,11 @@ public class LevelMap
     public IEnumerable<DamageVolume> VerticalRouteDamageVolumes
     {
         get { return _verticalRouteDamageVolumes; }
+    }
+
+    public IEnumerable<Rectangle> PropVisualForegrounds
+    {
+        get { return _propVisualForegrounds; }
     }
 
     public LevelMap(string mapPath)
@@ -618,6 +625,10 @@ private void LoadObjects(TmxMap map)
         map,
         VerticalRouteDamageLayerName,
         _verticalRouteDamageVolumes);
+    LoadRectanglesFromOptionalLayer(
+        map,
+        PropVisualForegroundLayerName,
+        _propVisualForegrounds);
     LoadDebugMeasurementPair(map);
 }
 
@@ -634,6 +645,7 @@ private void ApplyObjectState(LevelMap candidate)
     _verticalRouteGelatins = candidate._verticalRouteGelatins;
     _damageVolumes = candidate._damageVolumes;
     _verticalRouteDamageVolumes = candidate._verticalRouteDamageVolumes;
+    _propVisualForegrounds = candidate._propVisualForegrounds;
     _playerSpawns = candidate._playerSpawns;
     PlayerSpawn = candidate.PlayerSpawn;
     DebugMeasurementPair = candidate.DebugMeasurementPair;
