@@ -14,6 +14,14 @@ Protótipo de um jogo sério de plataforma 2D sobre princípios de design.
   affordance_visibilidade (aplicação da solução)
   Volta ao seletor (conclusão e reset da fase)
 ```
+## Feedback
+
+A fase de feedback de dano isola o problema de comunicar o instante do impacto e a duração da invulnerabilidade. Ela é acessada por uma entrada própria em `SimpleCutscene`, usa os cenários `feedback_dano` e `feedback_intervencao` e não compartilha estado nem catálogo com as fases de affordance ou de teste de assets.
+
+O problema-base mostra somente a perda de corações. Depois da escolha, a intervenção selecionada é aplicada tanto na sala intermediária quanto no mapa original. Soluções inadequadas mantêm a saída fechada e abrem uma revisão; soluções parciais ou adequadas liberam a continuação.
+
+A implementação e as ressalvas aceitas para o protótipo estão registradas em [docs/checkpoints_feedback_dano.md](docs/checkpoints_feedback_dano.md).
+
 ## Controles
 
 | Controle            | Ação                                                     |
@@ -41,9 +49,11 @@ Os cenários atuais são:
 
 O contrato completo de layers, objetos, propriedades e reload está em [docs/convencoes_cenarios.md](docs/convencoes_cenarios.md). As medidas de movimento e os marcadores de alcance estão em [docs/metricas_mov.md](docs/metricas_mov.md).
 
-## LM-GM da fase
+## LM-GM das fases
 
-O mapeamento pedagógico da fase de affordance está em [docs/lm_gm_affordance_visibilidade.md](docs/lm_gm_affordance_visibilidade.md). 
+O mapeamento pedagógico da fase de affordance está em [docs/lm_gm_affordance_visibilidade.md](docs/lm_gm_affordance_visibilidade.md).
+
+O mapeamento pedagógico da fase de feedback de dano está em [docs/lm_gm_feedback_dano.md](docs/lm_gm_feedback_dano.md).
 
 Ele adapta o modelo Learning-Game Mechanics de (Arnab et al., 2015) 
 
