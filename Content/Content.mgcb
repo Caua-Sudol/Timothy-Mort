@@ -61,3 +61,14 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../assets/foreground_prot.png;visual/foreground_prot.png
+
+#begin ../assets/Timothy&Mort.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/Timothy&Mort.png;visual/timothy_mort.png

@@ -855,12 +855,9 @@ private static bool RectanglesTouchOrIntersect(
         spriteBatch.End();
 
         spriteBatch.Begin(
-            samplerState: SamplerState.PointClamp,
+            samplerState: SamplerState.LinearClamp,
             transformMatrix: cameraTransform);
-        _player.Draw(
-            spriteBatch,
-            visualModules,
-            _phaseState?.DamageInvulnerabilityRemainingSeconds ?? 0);
+        _propVisualPresentation.DrawPlayer(spriteBatch, _player);
         DrawDamageEventEffects(spriteBatch, visualModules);
         _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
         _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
