@@ -26,14 +26,14 @@
         "Content/PropVisual.tmx": {
             "expandedObjectLayers": [
                 5,
-                1,
-                2
+                2,
+                1
             ],
             "scale": 0.33,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 2304.5454545454545,
-                "y": 543.9393939393939
+                "x": 2303.030303030303,
+                "y": 543.939393939394
             }
         },
         "Content/SimpleCutsceneMap.tmx": {
@@ -43,8 +43,8 @@
             "scale": 0.5,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 830,
-                "y": 748
+                "x": 651,
+                "y": 583
             }
         },
         "Content/SimpleCutsceneMap.tmx#grass": {
