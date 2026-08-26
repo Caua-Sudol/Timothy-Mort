@@ -30,11 +30,24 @@ public static class PhaseCatalog
             DamageFeedbackSettings.MaximumHealth,
             DamageFeedbackSettings.InvulnerabilityDurationSeconds);
 
+    public static PhaseDefinition ConceptualModelsConstraints { get; } =
+        new PhaseDefinition(
+            ScenarioCatalog.ConceptualModelsConstraintsScenarioId,
+            ScenarioCatalog.ConceptualModelsConstraintsScenarioId,
+            new[]
+            {
+                ScenarioCatalog.ConceptualModelsConstraintsScenarioId,
+                ScenarioCatalog.ConceptualModelsConstraintsInterventionScenarioId
+            },
+            ConceptualModelsConstraintsChoiceCatalog.Instance,
+            false);
+
     private static readonly IReadOnlyList<PhaseDefinition> Phases =
         new[]
         {
             AffordanceVisibility,
-            DamageFeedback
+            DamageFeedback,
+            ConceptualModelsConstraints
         };
 
     public static PhaseDefinition GetForScenario(string scenarioId)

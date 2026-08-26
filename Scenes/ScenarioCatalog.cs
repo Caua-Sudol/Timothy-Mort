@@ -11,6 +11,10 @@ public static class ScenarioCatalog
     public const string AffordanceInterventionScenarioId = "affordance_intervencao";
     public const string DamageFeedbackScenarioId = "feedback_dano";
     public const string DamageFeedbackInterventionScenarioId = "feedback_intervencao";
+    public const string ConceptualModelsConstraintsScenarioId =
+        "modelos_conceituais_restricoes";
+    public const string ConceptualModelsConstraintsInterventionScenarioId =
+        "modelos_conceituais_restricoes_intervencao";
     public const string PropVisualScenarioId = "prop_visual";
 
     private static readonly IReadOnlyDictionary<string, ScenarioDefinition> Scenarios = new Dictionary<string, ScenarioDefinition>(StringComparer.Ordinal)
@@ -38,6 +42,16 @@ public static class ScenarioCatalog
             [DamageFeedbackInterventionScenarioId] = new ScenarioDefinition(
                 DamageFeedbackInterventionScenarioId,
                 "Content/FeedbackIntervencao.tmx",
+                new Vector2(160, 816)
+            ),
+            [ConceptualModelsConstraintsScenarioId] = new ScenarioDefinition(
+                ConceptualModelsConstraintsScenarioId,
+                "Content/ModelosConceituaisRestricoes.tmx",
+                new Vector2(160, 816)
+            ),
+            [ConceptualModelsConstraintsInterventionScenarioId] = new ScenarioDefinition(
+                ConceptualModelsConstraintsInterventionScenarioId,
+                "Content/ModelosConceituaisRestricoesIntervencao.tmx",
                 new Vector2(160, 816)
             ),
             [PropVisualScenarioId] = new ScenarioDefinition(
