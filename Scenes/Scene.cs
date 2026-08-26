@@ -352,6 +352,13 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             _player.HitBox,
             _phaseState.VerticalRouteRevealed);
 
+        if (damageVolume == null &&
+            GetAppliedVisualModules().HasFlag(
+                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE))
+        {
+            damageVolume = _map.GetHarmlessSpikeVolume(_player.HitBox);
+        }
+
         if (damageVolume == null ||
             !_phaseState.TryApplyDamage())
         {
@@ -509,7 +516,10 @@ private void UpdateGelatinContact()
 
         bool dashWasAvailable = _player.CanDash;
 
-        if (_map.IsTrampolineGelatin(gelatin))
+        bool restoresTrampolineGelatin = GetAppliedVisualModules().HasFlag(
+            SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN);
+
+        if (_map.IsTrampolineGelatin(gelatin) && !restoresTrampolineGelatin)
         {
             if (_player.Velocity.Y >= 0)
             {

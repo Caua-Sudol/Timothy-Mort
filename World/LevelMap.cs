@@ -377,6 +377,19 @@ public void UpdateVisualEffects(double deltaTime)
         return null;
     }
 
+    public DamageVolume GetHarmlessSpikeVolume(Rectangle hitBox)
+    {
+        foreach (DamageVolume damageVolume in _harmlessSpikeVolumes)
+        {
+            if (hitBox.Intersects(damageVolume.Bounds))
+            {
+                return damageVolume;
+            }
+        }
+
+        return null;
+    }
+
     public void Draw(
         SpriteBatch spriteBatch,
         InterventionEntrancePlacement? activeInterventionEntrancePlacement,

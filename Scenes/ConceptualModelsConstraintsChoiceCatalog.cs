@@ -12,9 +12,9 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
         FixedInitialSolutionPresentation =
             new List<PresentedSolutionDefinition>
             {
-                new PresentedSolutionDefinition("I1", 1),
-                new PresentedSolutionDefinition("I2", 2),
-                new PresentedSolutionDefinition("I3", 3)
+                new PresentedSolutionDefinition("P1", 1),
+                new PresentedSolutionDefinition("P2", 2),
+                new PresentedSolutionDefinition("P3", 3)
             }.AsReadOnly();
 
     private static readonly IReadOnlyList<PresentedJustificationDefinition>
@@ -59,6 +59,36 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
                 "Indicar visualmente a rota até a saída.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.PATH_INDICATOR)
+        };
+
+    public IReadOnlyList<InterventionSolutionDefinition> InitialPartialSolutions { get; } =
+        new List<InterventionSolutionDefinition>
+        {
+            new InterventionSolutionDefinition(
+                "P1",
+                "Espinhos ativos",
+                "Fazer todos os espinhos causarem dano e realçar as plataformas especiais.",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE |
+                SolutionVisualModule.GELATIN_GLOW |
+                SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT),
+            new InterventionSolutionDefinition(
+                "P2",
+                "Gelatinas restauradas",
+                "Restaurar as gelatinas e exibir lembretes de DANO e DASH.",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
+                SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS),
+            new InterventionSolutionDefinition(
+                "P3",
+                "Perigo consistente",
+                "Fazer todos os espinhos causarem dano e indicar a rota até a saída.",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE |
                 SolutionVisualModule.PATH_INDICATOR)
         };
 
@@ -119,6 +149,14 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
     public InterventionSolutionDefinition GetSolution(string solutionId)
     {
         foreach (InterventionSolutionDefinition solution in InitialInadequateSolutions)
+        {
+            if (solution.Id == solutionId)
+            {
+                return solution;
+            }
+        }
+
+        foreach (InterventionSolutionDefinition solution in InitialPartialSolutions)
         {
             if (solution.Id == solutionId)
             {

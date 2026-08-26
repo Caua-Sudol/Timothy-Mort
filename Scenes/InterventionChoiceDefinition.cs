@@ -16,7 +16,7 @@ public enum SolutionChoiceRound
 }
 
 [Flags]
-public enum SolutionVisualModule
+public enum SolutionVisualModule : long
 {
     NONE = 0,
     PATH_INDICATOR = 1,
@@ -48,7 +48,9 @@ public enum SolutionVisualModule
     DAMAGE_COMPRESSION = 67108864,
     INVULNERABILITY_TRANSPARENCY = 134217728,
     INVULNERABILITY_SILHOUETTE = 268435456,
-    CONCEPTUAL_RULE_REMINDERS = 536870912
+    CONCEPTUAL_RULE_REMINDERS = 536870912,
+    RESTORE_TRAMPOLINE_GELATIN = 1073741824L,
+    RESTORE_HARMLESS_SPIKE_DAMAGE = 2147483648L
 }
 
 public sealed class InterventionSolutionDefinition
