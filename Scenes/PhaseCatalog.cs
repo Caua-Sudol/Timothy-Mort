@@ -40,7 +40,7 @@ public static class PhaseCatalog
                 ScenarioCatalog.ConceptualModelsConstraintsInterventionScenarioId
             },
             ConceptualModelsConstraintsChoiceCatalog.Instance,
-            false,
+            true,
             ConceptualModelsConstraintsSettings.MaximumHealth,
             ConceptualModelsConstraintsSettings.InvulnerabilityDurationSeconds,
             ConceptualModelsConstraintsSettings.BaseVisualModules,

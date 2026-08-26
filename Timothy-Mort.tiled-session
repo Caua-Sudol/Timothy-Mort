@@ -1,5 +1,5 @@
 {
-    "activeFile": "Content/SimpleCutsceneMap.tmx",
+    "activeFile": "Content/ModelosConceituaisRestricoesIntervencao.tmx",
     "expandedProjectPaths": [
         "Content"
     ],
@@ -24,30 +24,42 @@
             }
         },
         "Content/FeedbackIntervencao.tmx": {
+            "expandedObjectLayers": [
+                1
+            ],
             "scale": 0.7242513020833332,
             "selectedLayer": 0,
             "viewCenter": {
                 "x": 768.3797024585376,
-                "y": 544.0100678682189
+                "y": 543.3196997617872
             }
         },
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
-                8,
                 7,
                 6,
-                2
+                2,
+                8
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 1030,
-                "y": 844
+                "x": 2304.6666666666665,
+                "y": 544.6666666666666
             }
         },
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
+            "expandedObjectLayers": [
+                7,
+                6,
+                13,
+                11,
+                2,
+                12,
+                8
+            ],
             "scale": 0.75,
-            "selectedLayer": 6,
+            "selectedLayer": 1,
             "viewCenter": {
                 "x": 746,
                 "y": 526.6666666666665
@@ -68,13 +80,15 @@
         },
         "Content/SimpleCutsceneMap.tmx": {
             "expandedObjectLayers": [
-                7
+                7,
+                6,
+                2
             ],
             "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 857,
-                "y": 601
+                "x": 1617,
+                "y": 936
             }
         },
         "Content/SimpleCutsceneMap.tmx#grass": {
@@ -104,12 +118,18 @@
     },
     "openFiles": [
         "Content/PropVisual.tmx",
-        "Content/SimpleCutsceneMap.tmx"
+        "Content/SimpleCutsceneMap.tmx",
+        "Content/ModelosConceituaisRestricoesIntervencao.tmx",
+        "Content/ModelosConceituaisRestricoes.tmx",
+        "Content/FeedbackIntervencao.tmx"
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
         "Content/PropVisual.tmx",
         "Content/SimpleCutsceneMap.tmx",
+        "Content/FeedbackIntervencao.tmx",
+        "Content/ModelosConceituaisRestricoes.tmx",
+        "Content/ModelosConceituaisRestricoesIntervencao.tmx",
         "Content/AffordanceIntervencao.tmx",
         "Content/AffordanceVisibilidade.tmx"
     ]

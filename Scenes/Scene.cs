@@ -39,6 +39,8 @@ public class Scene
     private Player _player;
     private readonly LevelMap _map;
     private readonly PropVisualPresentation _propVisualPresentation;
+    private readonly ConceptualRuleReminderPresentation
+        _conceptualRuleReminderPresentation;
 private readonly PlayerCollision _playerCollision = new PlayerCollision();
 private readonly HashSet<Rectangle> _usedGelatins = new HashSet<Rectangle>();
 private bool _playerWasTouchingSolidSurface;
@@ -113,6 +115,10 @@ private Vector2 _checkpoint;
         _propVisualPresentation = usesPropVisualPresentation
             ? new PropVisualPresentation()
             : null;
+        _conceptualRuleReminderPresentation =
+            phaseState?.PhaseId == ScenarioCatalog.ConceptualModelsConstraintsScenarioId
+                ? new ConceptualRuleReminderPresentation()
+                : null;
         _fallbackPlayerStart = playerStart;
         _entrySpawnId = entrySpawnId;
         _phaseState = phaseState;
@@ -143,6 +149,7 @@ private Vector2 _checkpoint;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
         _propVisualPresentation?.LoadContent(content);
+        _conceptualRuleReminderPresentation?.LoadContent(graphicsDevice, content);
         _exitDoorPosition = GetExitDoorRestingPosition();
         _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
             ?? _map.PlayerSpawn
@@ -843,6 +850,14 @@ private static bool RectanglesTouchOrIntersect(
         _exitDoorIsOpen,
         _phaseState?.VerticalRouteRevealed == true,
         visualModules);
+
+    if (visualModules.HasFlag(SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS))
+    {
+        _conceptualRuleReminderPresentation?.Draw(
+            spriteBatch,
+            _map,
+            _phaseState?.VerticalRouteRevealed == true);
+    }
 
     DrawDamageEventEffects(spriteBatch, visualModules);
     _player.DrawDashRechargeSymbol(spriteBatch, visualModules);

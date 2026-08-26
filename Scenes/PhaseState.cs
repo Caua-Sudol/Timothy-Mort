@@ -80,7 +80,12 @@ public sealed class PhaseState
 
     public bool NeedsSolutionRevision
     {
-        get { return HasFirstChoice && !ExitDoorIsOpen; }
+        get
+        {
+            return HasFirstChoice &&
+                !ExitDoorIsOpen &&
+                ChoiceCatalog.AvailableRevisionSolutions.Count > 0;
+        }
     }
 
     public bool InterventionEntranceIsActive

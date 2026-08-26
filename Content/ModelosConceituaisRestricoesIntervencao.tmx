@@ -21,11 +21,22 @@
  <objectgroup color="#4fa3ff" id="3" name="spawnJogador">
   <object id="6" name="spawn_entrada" type="SpawnJogador" x="100" y="814" width="16" height="16"/>
  </objectgroup>
+ <objectgroup color="#ff9f43" id="4" name="botaoIntervencao">
+  <object id="7" name="botao_escolhas" x="1248" y="624" width="64" height="16"/>
+ </objectgroup>
+ <objectgroup color="#e84c4c" id="5" name="portaSaida">
+  <object id="8" name="porta_retorno" x="4" y="700" width="64" height="128"/>
+ </objectgroup>
+ <objectgroup color="#f06a6a" id="10" name="destinoPortaSaida">
+  <object id="17" name="destino_porta_retorno" x="10" y="136">
+   <point/>
+  </object>
+ </objectgroup>
  <objectgroup color="#ffd84f" id="6" name="saidaCena">
-  <object id="9" name="retorno_modelos_conceituais_restricoes" type="SaidaCena" x="1.33333" y="130.667" width="64" height="128">
+  <object id="9" name="retorno_modelos_conceituais_restricoes" type="SaidaCena" x="4" y="134" width="64" height="128">
    <properties>
     <property name="destino" propertytype="CenarioId" value="modelos_conceituais_restricoes"/>
-    <property name="spawnDestino" value="spawn_retorno_intervencao"/>
+    <property name="spawnDestino" value="spawn_inicial"/>
    </properties>
   </object>
  </objectgroup>
