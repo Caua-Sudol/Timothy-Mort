@@ -328,15 +328,20 @@ public sealed class PhaseState
             DamageInvulnerabilityRemainingSeconds - deltaTime);
     }
 
-    public bool TryApplyDamage()
+    public bool TryApplyDamage(int amount = 1)
     {
+        if (amount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount));
+        }
+
         if (!HasDamageSystem || CurrentHealth <= 0 ||
             DamageInvulnerabilityRemainingSeconds > 0.0)
         {
             return false;
         }
 
-        CurrentHealth--;
+        CurrentHealth = Math.Max(0, CurrentHealth - amount);
         DamageInvulnerabilityRemainingSeconds =
             _definition.DamageInvulnerabilitySeconds;
         return true;

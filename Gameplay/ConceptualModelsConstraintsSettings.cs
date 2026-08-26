@@ -6,6 +6,7 @@ public static class ConceptualModelsConstraintsSettings
     public const int ExitHealthThreshold = 2;
     public const double InvulnerabilityDurationSeconds = 1.5;
     public const float TrampolineVerticalSpeed = 360f;
+    public const float TrampolineDashEquivalentVerticalSpeed = Player.DashSpeed;
 
     public const SolutionVisualModule BaseVisualModules =
         SolutionVisualModule.GELATIN_TEXTURE |

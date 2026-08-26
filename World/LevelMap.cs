@@ -415,7 +415,15 @@ public void UpdateVisualEffects(double deltaTime)
 
         foreach (Rectangle trampoline in _trampolineGelatins)
         {
-            DrawGelatin(spriteBatch, trampoline, visualModules);
+            Color? trampolineColor = visualModules.HasFlag(
+                SolutionVisualModule.DISTINCT_TRAMPOLINE_GELATIN)
+                ? Color.LimeGreen
+                : null;
+            DrawGelatin(
+                spriteBatch,
+                trampoline,
+                visualModules,
+                trampolineColor);
             DrawSharedPlatformDecoration(spriteBatch, trampoline, visualModules);
             DrawSharedPlatformOutline(spriteBatch, trampoline, visualModules);
         }
@@ -467,12 +475,20 @@ public void UpdateVisualEffects(double deltaTime)
             }
         }
 
-        DrawDamageVolumes(spriteBatch, _damageVolumes, visualModules);
-        DrawDamageVolumes(spriteBatch, _harmlessSpikeVolumes, visualModules);
+        DrawDamageVolumes(spriteBatch, _damageVolumes, visualModules, false);
+        DrawDamageVolumes(
+            spriteBatch,
+            _harmlessSpikeVolumes,
+            visualModules,
+            visualModules.HasFlag(SolutionVisualModule.DISTINCT_HARMLESS_SPIKES));
 
         if (verticalRouteRevealed)
         {
-            DrawDamageVolumes(spriteBatch, _verticalRouteDamageVolumes, visualModules);
+            DrawDamageVolumes(
+                spriteBatch,
+                _verticalRouteDamageVolumes,
+                visualModules,
+                false);
         }
 
         if (activeInterventionEntrancePlacement.HasValue)
@@ -869,7 +885,8 @@ private void ApplyObjectState(LevelMap candidate)
     private void DrawDamageVolumes(
         SpriteBatch spriteBatch,
         IEnumerable<DamageVolume> damageVolumes,
-        SolutionVisualModule visualModules)
+        SolutionVisualModule visualModules,
+        bool usesDistinctVisual)
     {
         const int spikeWidth = 16;
         const int spikeStepHeight = 4;
@@ -877,6 +894,9 @@ private void ApplyObjectState(LevelMap candidate)
         foreach (DamageVolume damageVolume in damageVolumes)
         {
             Rectangle bounds = damageVolume.Bounds;
+            Color spikeColor = usesDistinctVisual
+                ? Color.MediumVioletRed
+                : Color.OrangeRed;
             if (visualModules.HasFlag(SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT))
             {
                 Rectangle dangerBand = new(
@@ -924,7 +944,7 @@ private void ApplyObjectState(LevelMap candidate)
                             bounds.Bottom - (step + 1) * spikeStepHeight,
                             currentSpikeWidth - inset * 2,
                             spikeStepHeight),
-                        Color.OrangeRed);
+                        spikeColor);
                 }
             }
         }
@@ -960,17 +980,19 @@ private void ApplyObjectState(LevelMap candidate)
     private void DrawGelatin(
         SpriteBatch spriteBatch,
         Rectangle gelatin,
-        SolutionVisualModule visualModules)
+        SolutionVisualModule visualModules,
+        Color? colorOverride = null)
     {
         gelatin = GetGelatinVisualBounds(gelatin, visualModules);
 
-        Color gelatinColor = (visualModules & SolutionVisualModule.GELATIN_COLOR) != 0
-            ? Color.DeepSkyBlue
-            : (visualModules & SolutionVisualModule.GELATIN_TEXTURE) != 0
-                ? Color.CornflowerBlue
-                : (visualModules & SolutionVisualModule.GELATIN_GLOW) != 0
-                    ? Color.Cyan
-                    : Color.Purple;
+        Color gelatinColor = colorOverride ?? (
+            (visualModules & SolutionVisualModule.GELATIN_COLOR) != 0
+                ? Color.DeepSkyBlue
+                : (visualModules & SolutionVisualModule.GELATIN_TEXTURE) != 0
+                    ? Color.CornflowerBlue
+                    : (visualModules & SolutionVisualModule.GELATIN_GLOW) != 0
+                        ? Color.Cyan
+                        : Color.Purple);
 
         if ((visualModules & SolutionVisualModule.GELATIN_GLOW) != 0)
         {

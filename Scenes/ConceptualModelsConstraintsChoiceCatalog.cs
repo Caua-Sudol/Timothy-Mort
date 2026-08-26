@@ -12,9 +12,9 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
         FixedInitialSolutionPresentation =
             new List<PresentedSolutionDefinition>
             {
-                new PresentedSolutionDefinition("P1", 1),
-                new PresentedSolutionDefinition("P2", 2),
-                new PresentedSolutionDefinition("P3", 3)
+                new PresentedSolutionDefinition("A1", 1),
+                new PresentedSolutionDefinition("A2", 2),
+                new PresentedSolutionDefinition("A3", 3)
             }.AsReadOnly();
 
     private static readonly IReadOnlyList<PresentedJustificationDefinition>
@@ -92,6 +92,38 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
                 SolutionVisualModule.PATH_INDICATOR)
         };
 
+    public IReadOnlyList<InterventionSolutionDefinition> InitialAdequateSolutions { get; } =
+        new List<InterventionSolutionDefinition>
+        {
+            new InterventionSolutionDefinition(
+                "A1",
+                "Plataformas restauradas",
+                "Restaurar as propriedades originais de gelatinas e espinhos.",
+                SolutionQuality.ADEQUATE,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
+                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE),
+            new InterventionSolutionDefinition(
+                "A2",
+                "Variantes diferenciadas",
+                "Diferenciar as plataformas alteradas e ajustar suas propriedades.",
+                SolutionQuality.ADEQUATE,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.DISTINCT_TRAMPOLINE_GELATIN |
+                SolutionVisualModule.TRAMPOLINE_DASH_EQUIVALENT |
+                SolutionVisualModule.DISTINCT_HARMLESS_SPIKES |
+                SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE),
+            new InterventionSolutionDefinition(
+                "A3",
+                "Gelatina restaurada",
+                "Restaurar as gelatinas e diferenciar os espinhos alterados.",
+                SolutionQuality.ADEQUATE,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
+                SolutionVisualModule.DISTINCT_HARMLESS_SPIKES |
+                SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE)
+        };
+
     public IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
         new List<InterventionJustificationDefinition>
         {
@@ -157,6 +189,14 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
         }
 
         foreach (InterventionSolutionDefinition solution in InitialPartialSolutions)
+        {
+            if (solution.Id == solutionId)
+            {
+                return solution;
+            }
+        }
+
+        foreach (InterventionSolutionDefinition solution in InitialAdequateSolutions)
         {
             if (solution.Id == solutionId)
             {

@@ -25,6 +25,8 @@ public enum PlayerState
 
 public class Player
 {
+    public const float DashSpeed = 960f;
+
     private static readonly Color DashAvailableColor = Color.Purple;
     private static readonly Color DashSpentColor = Color.SlateGray;
 
@@ -49,7 +51,7 @@ public class Player
     public bool CanDash { get; private set; } = true;
     public bool ShowsDashAsAvailable { get; private set; } = true;
     private Vector2 _dashDirection;
-    private float _dashSpeed = 960f;
+    private float _dashSpeed = DashSpeed;
     private float _dashDuration = 0.18f;
     private double _dashTimer;
 

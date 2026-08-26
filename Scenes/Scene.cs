@@ -348,19 +348,30 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             return;
         }
 
+        SolutionVisualModule visualModules = GetAppliedVisualModules();
         DamageVolume damageVolume = _map.GetDamageVolume(
             _player.HitBox,
             _phaseState.VerticalRouteRevealed);
+        bool hitHarmlessSpike = false;
 
         if (damageVolume == null &&
-            GetAppliedVisualModules().HasFlag(
-                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE))
+            (visualModules.HasFlag(
+                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE) ||
+             visualModules.HasFlag(
+                SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE)))
         {
             damageVolume = _map.GetHarmlessSpikeVolume(_player.HitBox);
+            hitHarmlessSpike = damageVolume != null;
         }
 
+        int damageAmount = hitHarmlessSpike &&
+            visualModules.HasFlag(
+                SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE)
+            ? 2
+            : 1;
+
         if (damageVolume == null ||
-            !_phaseState.TryApplyDamage())
+            !_phaseState.TryApplyDamage(damageAmount))
         {
             return;
         }
@@ -516,15 +527,20 @@ private void UpdateGelatinContact()
 
         bool dashWasAvailable = _player.CanDash;
 
-        bool restoresTrampolineGelatin = GetAppliedVisualModules().HasFlag(
+        SolutionVisualModule visualModules = GetAppliedVisualModules();
+        bool restoresTrampolineGelatin = visualModules.HasFlag(
             SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN);
 
         if (_map.IsTrampolineGelatin(gelatin) && !restoresTrampolineGelatin)
         {
             if (_player.Velocity.Y >= 0)
             {
-                _player.ApplyUpwardImpulse(
-                    ConceptualModelsConstraintsSettings.TrampolineVerticalSpeed);
+                float trampolineSpeed = visualModules.HasFlag(
+                    SolutionVisualModule.TRAMPOLINE_DASH_EQUIVALENT)
+                    ? ConceptualModelsConstraintsSettings
+                        .TrampolineDashEquivalentVerticalSpeed
+                    : ConceptualModelsConstraintsSettings.TrampolineVerticalSpeed;
+                _player.ApplyUpwardImpulse(trampolineSpeed);
                 _usedGelatins.Add(gelatin);
             }
 
