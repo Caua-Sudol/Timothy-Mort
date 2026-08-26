@@ -40,7 +40,11 @@ public static class PhaseCatalog
                 ScenarioCatalog.ConceptualModelsConstraintsInterventionScenarioId
             },
             ConceptualModelsConstraintsChoiceCatalog.Instance,
-            false);
+            false,
+            ConceptualModelsConstraintsSettings.MaximumHealth,
+            ConceptualModelsConstraintsSettings.InvulnerabilityDurationSeconds,
+            ConceptualModelsConstraintsSettings.BaseVisualModules,
+            ConceptualModelsConstraintsSettings.ExitHealthThreshold);
 
     private static readonly IReadOnlyList<PhaseDefinition> Phases =
         new[]

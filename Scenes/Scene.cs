@@ -241,7 +241,6 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 {
     _map.UpdateVisualEffects(deltaTime);
     _phaseState?.UpdateDamageInvulnerability(deltaTime);
-    bool wasGrounded = _player.IsGrounded;
         _player.Update(deltaTime);
         ApplyGelatinFallSpeed();
         bool dashWasAvailableBeforePhysics = _player.CanDash;
@@ -275,7 +274,11 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         UpdateInterventionButton(deltaTime);
         UpdateExitDoorRise(deltaTime);
 
-        if (!wasGrounded && _player.IsGrounded)
+        bool playerIsTouchingGelatin = PlayerTouchesAnySurface(
+            _map.GetGelatinVolumes(
+                _phaseState?.VerticalRouteRevealed == true));
+
+        if (_player.IsGrounded && !playerIsTouchingGelatin)
         {
             _usedGelatins.Clear();
         }
@@ -498,6 +501,18 @@ private void UpdateGelatinContact()
         }
 
         bool dashWasAvailable = _player.CanDash;
+
+        if (_map.IsTrampolineGelatin(gelatin))
+        {
+            if (_player.Velocity.Y >= 0)
+            {
+                _player.ApplyUpwardImpulse(
+                    ConceptualModelsConstraintsSettings.TrampolineVerticalSpeed);
+                _usedGelatins.Add(gelatin);
+            }
+
+            continue;
+        }
 
         if (_phaseState?.AppliedSolutionUsesModule(
             SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) == true)
@@ -874,12 +889,7 @@ private static bool RectanglesTouchOrIntersect(
 
     private SolutionVisualModule GetAppliedVisualModules()
     {
-        if (_phaseState == null || string.IsNullOrEmpty(_phaseState.AppliedSolutionId))
-        {
-            return SolutionVisualModule.NONE;
-        }
-
-        return _phaseState.AppliedVisualModules;
+        return _phaseState?.AppliedVisualModules ?? SolutionVisualModule.NONE;
     }
 
     private InterventionEntrancePlacement? GetActiveInterventionEntrancePlacement()

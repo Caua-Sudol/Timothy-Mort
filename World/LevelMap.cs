@@ -12,6 +12,7 @@ public class LevelMap
     private const int TileSize = 32;
     private const string PlatformLayerName = "mapaGeral";
     private const string GelatinLayerName = "gelatina";
+    private const string TrampolineGelatinLayerName = "gelatinaTrampolim";
     private const string CutsceneTriggerLayerName = "triggerColision";
     private const string PlayerSpawnLayerName = "spawnJogador";
     private const string SceneExitLayerName = "saidaCena";
@@ -22,6 +23,7 @@ public class LevelMap
     private const string VerticalRoutePlatformLayerName = "rotaVerticalSolida";
     private const string VerticalRouteGelatinLayerName = "rotaVerticalGelatina";
     private const string DamageLayerName = "dano";
+    private const string HarmlessSpikeLayerName = "espinhoInofensivo";
     private const string VerticalRouteDamageLayerName = "rotaVerticalDano";
     private const string SafeRouteSolidLayerName = "rotaSeguraSolida";
     private const string DebugMeasurementLayerName = "medicaoDebug";
@@ -39,6 +41,7 @@ public class LevelMap
     private readonly string _mapPath;
     private List<Rectangle> _platforms = new List<Rectangle>();
     private List<Rectangle> _gelatins = new List<Rectangle>();
+    private List<Rectangle> _trampolineGelatins = new List<Rectangle>();
     private List<Rectangle> _cutsceneTriggers = new List<Rectangle>();
     private List<SceneExit> _sceneExits = new List<SceneExit>();
     private List<InterventionEntrance> _interventionEntrances = new List<InterventionEntrance>();
@@ -47,6 +50,7 @@ public class LevelMap
     private List<Rectangle> _safeRoutePlatforms = new List<Rectangle>();
     private List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
     private List<DamageVolume> _damageVolumes = new List<DamageVolume>();
+    private List<DamageVolume> _harmlessSpikeVolumes = new List<DamageVolume>();
     private List<DamageVolume> _verticalRouteDamageVolumes = new List<DamageVolume>();
     private List<Rectangle> _propVisualForegrounds = new List<Rectangle>();
     private Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
@@ -70,8 +74,13 @@ public class LevelMap
     {
         get
         {
-            return _gelatins;
+            return _gelatins.Concat(_trampolineGelatins);
         }
+    }
+
+    public IEnumerable<Rectangle> TrampolineGelatins
+    {
+        get { return _trampolineGelatins; }
     }
 
     public IEnumerable<Rectangle> CutsceneTriggers
@@ -130,6 +139,11 @@ public class LevelMap
     public IEnumerable<DamageVolume> DamageVolumes
     {
         get { return _damageVolumes; }
+    }
+
+    public IEnumerable<DamageVolume> HarmlessSpikeVolumes
+    {
+        get { return _harmlessSpikeVolumes; }
     }
 
     public IEnumerable<DamageVolume> VerticalRouteDamageVolumes
@@ -314,6 +328,11 @@ public void UpdateVisualEffects(double deltaTime)
             yield return gelatin;
         }
 
+        foreach (Rectangle trampoline in _trampolineGelatins)
+        {
+            yield return trampoline;
+        }
+
         if (!verticalRouteRevealed)
         {
             yield break;
@@ -323,6 +342,11 @@ public void UpdateVisualEffects(double deltaTime)
         {
             yield return gelatin;
         }
+    }
+
+    public bool IsTrampolineGelatin(Rectangle gelatin)
+    {
+        return _trampolineGelatins.Contains(gelatin);
     }
 
     public DamageVolume GetDamageVolume(
@@ -376,6 +400,13 @@ public void UpdateVisualEffects(double deltaTime)
             DrawSharedPlatformOutline(spriteBatch, gelatin, visualModules);
         }
 
+        foreach (Rectangle trampoline in _trampolineGelatins)
+        {
+            DrawGelatin(spriteBatch, trampoline, visualModules);
+            DrawSharedPlatformDecoration(spriteBatch, trampoline, visualModules);
+            DrawSharedPlatformOutline(spriteBatch, trampoline, visualModules);
+        }
+
         if (verticalRouteRevealed)
         {
             foreach (Rectangle platform in _verticalRoutePlatforms)
@@ -424,6 +455,7 @@ public void UpdateVisualEffects(double deltaTime)
         }
 
         DrawDamageVolumes(spriteBatch, _damageVolumes, visualModules);
+        DrawDamageVolumes(spriteBatch, _harmlessSpikeVolumes, visualModules);
 
         if (verticalRouteRevealed)
         {
@@ -516,6 +548,11 @@ private void LoadObjects(TmxMap map)
                 _gelatins.Add(new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height));
             }
         }
+
+        LoadRectanglesFromOptionalLayer(
+            map,
+            TrampolineGelatinLayerName,
+            _trampolineGelatins);
 
         var cutsceneTriggerLayer = map.ObjectGroups.FirstOrDefault(
             layer => layer.Name == CutsceneTriggerLayerName);
@@ -623,6 +660,10 @@ private void LoadObjects(TmxMap map)
     LoadDamageVolumesFromOptionalLayer(map, DamageLayerName, _damageVolumes);
     LoadDamageVolumesFromOptionalLayer(
         map,
+        HarmlessSpikeLayerName,
+        _harmlessSpikeVolumes);
+    LoadDamageVolumesFromOptionalLayer(
+        map,
         VerticalRouteDamageLayerName,
         _verticalRouteDamageVolumes);
     LoadRectanglesFromOptionalLayer(
@@ -636,6 +677,7 @@ private void ApplyObjectState(LevelMap candidate)
 {
     _platforms = candidate._platforms;
     _gelatins = candidate._gelatins;
+    _trampolineGelatins = candidate._trampolineGelatins;
     _cutsceneTriggers = candidate._cutsceneTriggers;
     _sceneExits = candidate._sceneExits;
     _interventionEntrances = candidate._interventionEntrances;
@@ -644,6 +686,7 @@ private void ApplyObjectState(LevelMap candidate)
     _safeRoutePlatforms = candidate._safeRoutePlatforms;
     _verticalRouteGelatins = candidate._verticalRouteGelatins;
     _damageVolumes = candidate._damageVolumes;
+    _harmlessSpikeVolumes = candidate._harmlessSpikeVolumes;
     _verticalRouteDamageVolumes = candidate._verticalRouteDamageVolumes;
     _propVisualForegrounds = candidate._propVisualForegrounds;
     _playerSpawns = candidate._playerSpawns;
@@ -1162,6 +1205,11 @@ private void ApplyObjectState(LevelMap candidate)
         foreach (Rectangle gelatin in _gelatins)
         {
             DrawPathIndicator(spriteBatch, gelatin);
+        }
+
+        foreach (Rectangle trampoline in _trampolineGelatins)
+        {
+            DrawPathIndicator(spriteBatch, trampoline);
         }
     }
 

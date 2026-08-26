@@ -23,6 +23,36 @@
                 "y": 890.909090909091
             }
         },
+        "Content/FeedbackIntervencao.tmx": {
+            "scale": 0.7242513020833332,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 768.3797024585376,
+                "y": 544.0100678682189
+            }
+        },
+        "Content/ModelosConceituaisRestricoes.tmx": {
+            "expandedObjectLayers": [
+                8,
+                7,
+                6,
+                2
+            ],
+            "scale": 0.75,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 1030,
+                "y": 844
+            }
+        },
+        "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 6,
+            "viewCenter": {
+                "x": 746,
+                "y": 526.6666666666665
+            }
+        },
         "Content/PropVisual.tmx": {
             "expandedObjectLayers": [
                 5,
@@ -41,10 +71,10 @@
                 7
             ],
             "scale": 0.5,
-            "selectedLayer": 3,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 651,
-                "y": 583
+                "x": 857,
+                "y": 601
             }
         },
         "Content/SimpleCutsceneMap.tmx#grass": {

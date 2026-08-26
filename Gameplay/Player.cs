@@ -446,6 +446,21 @@ public void ClearDashEnergyAbsorption()
         CanDash = true;
     }
 
+    public void ApplyUpwardImpulse(float speed)
+    {
+        if (speed <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(speed));
+        }
+
+        CancelDash();
+        _velocity = new Vector2(_velocity.X, -speed);
+        _isGrounded = false;
+        _coyoteTimer = 0;
+        _jumpBufferTimer = 0;
+        State = PlayerState.Jumping;
+    }
+
     public void ApplyDamageKnockback(int horizontalDirection)
     {
         if (horizontalDirection == 0)

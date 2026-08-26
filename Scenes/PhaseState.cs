@@ -15,6 +15,7 @@ public sealed class PhaseState
 
     private readonly PhaseDefinition _definition;
     private readonly string _deathCountingScenarioId;
+    private bool _appliedSolutionAllowsExit;
     private bool _deathRegisteredInCurrentAttempt;
     private IReadOnlyList<PresentedSolutionDefinition> _initialSolutionPresentation =
         Array.Empty<PresentedSolutionDefinition>();
@@ -32,7 +33,15 @@ public sealed class PhaseState
     public int SolutionSelectionCount { get; private set; }
     public bool HasRevision { get; private set; }
     public bool VerticalRouteRevealed { get; private set; }
-    public bool ExitDoorIsOpen { get; private set; }
+    public bool ExitDoorIsOpen
+    {
+        get
+        {
+            return _appliedSolutionAllowsExit ||
+                CurrentScenarioId == _definition.ProblemScenarioId &&
+                _definition.HealthAllowsExit(CurrentHealth);
+        }
+    }
 
     public int MaximumHealth
     {
@@ -76,34 +85,27 @@ public sealed class PhaseState
 
     public bool InterventionEntranceIsActive
     {
-        get { return !ExitDoorIsOpen; }
+        get { return !_appliedSolutionAllowsExit; }
     }
 
     public bool AppliedSolutionUsesModule(SolutionVisualModule module)
     {
-        if (!_definition.AppliesSolutionVisualModules ||
-            string.IsNullOrEmpty(AppliedSolutionId))
-        {
-            return false;
-        }
-
-        InterventionSolutionDefinition solution =
-            _definition.ChoiceCatalog.GetSolution(AppliedSolutionId);
-
-        return (solution.VisualModules & module) == module;
+        return (AppliedVisualModules & module) == module;
     }
 
     public SolutionVisualModule AppliedVisualModules
     {
         get
         {
+            SolutionVisualModule modules = _definition.BaseVisualModules;
+
             if (!_definition.AppliesSolutionVisualModules ||
                 string.IsNullOrEmpty(AppliedSolutionId))
             {
-                return SolutionVisualModule.NONE;
+                return modules;
             }
 
-            return _definition.ChoiceCatalog
+            return modules | _definition.ChoiceCatalog
                 .GetSolution(AppliedSolutionId)
                 .VisualModules;
         }
@@ -166,7 +168,7 @@ public sealed class PhaseState
         SolutionSelectionCount = 0;
         HasRevision = false;
         VerticalRouteRevealed = false;
-        ExitDoorIsOpen = false;
+        _appliedSolutionAllowsExit = false;
         _deathRegisteredInCurrentAttempt = false;
         _initialSolutionPresentation = Array.Empty<PresentedSolutionDefinition>();
         _initialJustificationPresentation =
@@ -382,7 +384,7 @@ public sealed class PhaseState
         AppliedSolutionId = solution.Id;
         SolutionSelectionCount = 1;
         VerticalRouteRevealed = true;
-        ExitDoorIsOpen = solution.OpensExitDoor;
+        _appliedSolutionAllowsExit = solution.OpensExitDoor;
     }
 
     private bool InitialJustificationPresentationContains(string justificationId)
@@ -425,6 +427,6 @@ public sealed class PhaseState
         SolutionSelectionCount++;
         HasRevision = true;
         VerticalRouteRevealed = true;
-        ExitDoorIsOpen = solution.OpensExitDoor;
+        _appliedSolutionAllowsExit = solution.OpensExitDoor;
     }
 }

@@ -13,6 +13,8 @@ public sealed class PhaseDefinition
     public bool AppliesSolutionVisualModules { get; }
     public int MaximumHealth { get; }
     public double DamageInvulnerabilitySeconds { get; }
+    public SolutionVisualModule BaseVisualModules { get; }
+    public int? ExitHealthThreshold { get; }
 
     public bool HasDamageSystem
     {
@@ -26,7 +28,9 @@ public sealed class PhaseDefinition
         IInterventionChoiceCatalog choiceCatalog,
         bool appliesSolutionVisualModules,
         int maximumHealth = 0,
-        double damageInvulnerabilitySeconds = 0.0)
+        double damageInvulnerabilitySeconds = 0.0,
+        SolutionVisualModule baseVisualModules = SolutionVisualModule.NONE,
+        int? exitHealthThreshold = null)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -56,12 +60,22 @@ public sealed class PhaseDefinition
                 nameof(damageInvulnerabilitySeconds));
         }
 
+        if (exitHealthThreshold.HasValue &&
+            (maximumHealth <= 0 ||
+             exitHealthThreshold.Value < 0 ||
+             exitHealthThreshold.Value > maximumHealth))
+        {
+            throw new ArgumentOutOfRangeException(nameof(exitHealthThreshold));
+        }
+
         Id = id;
         ProblemScenarioId = problemScenarioId;
         ChoiceCatalog = choiceCatalog;
         AppliesSolutionVisualModules = appliesSolutionVisualModules;
         MaximumHealth = maximumHealth;
         DamageInvulnerabilitySeconds = damageInvulnerabilitySeconds;
+        BaseVisualModules = baseVisualModules;
+        ExitHealthThreshold = exitHealthThreshold;
         _scenarioIds = new HashSet<string>(scenarioIds, StringComparer.Ordinal);
 
         if (!_scenarioIds.Contains(problemScenarioId))
@@ -76,5 +90,11 @@ public sealed class PhaseDefinition
     {
         return !string.IsNullOrEmpty(scenarioId) &&
             _scenarioIds.Contains(scenarioId);
+    }
+
+    public bool HealthAllowsExit(int currentHealth)
+    {
+        return ExitHealthThreshold.HasValue &&
+            currentHealth <= ExitHealthThreshold.Value;
     }
 }
