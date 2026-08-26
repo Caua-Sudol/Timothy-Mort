@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="18">
+ <objectgroup color="#57d957" id="1" name="mapaGeral">
+  <object id="1" name="inicio" x="0" y="832" width="640" height="256"/>
+  <object id="3" name="plataforma_intermediaria" x="1472" y="832" width="448" height="256"/>
+  <object id="5" name="plataforma_apos_parede" x="2688" y="832" width="384" height="256"/>
+  <object id="7" name="plataforma_final" x="3968" y="832" width="640" height="256"/>
+ </objectgroup>
+ <objectgroup color="#ff4fd8" id="2" name="gelatina">
+  <object id="9" name="gelatina_plataforma_1" x="968" y="756" width="160" height="32"/>
+  <object id="10" name="gelatina_parede_1" x="2240" y="608" width="64" height="224"/>
+  <object id="11" name="gelatina_plataforma_2" x="3424" y="704" width="160" height="32"/>
+ </objectgroup>
+ <objectgroup color="#4fa3ff" id="3" name="spawnJogador">
+  <object id="12" name="spawn_inicial" type="SpawnJogador" x="160" y="816" width="16" height="16"/>
+  <object id="13" name="spawn_retorno_intervencao" type="SpawnJogador" x="3024" y="816" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup color="#ffd84f" id="4" name="saidaCena">
+  <object id="17" name="concluir_modelos_conceituais_restricoes" type="SaidaCena" x="4448" y="704" width="96" height="128">
+   <properties>
+    <property name="destino" propertytype="CenarioId" value="simple_cutscene"/>
+    <property name="spawnDestino" value="spawn_inicial"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup color="#ff9f43" id="5" name="entradaIntervencao">
+  <object id="15" name="entrada_antecipada" type="EntradaIntervencao" x="1760" y="704" width="64" height="128">
+   <properties>
+    <property name="destino" propertytype="CenarioId" value="modelos_conceituais_restricoes_intervencao"/>
+    <property name="posicao" propertytype="PosicaoEntradaIntervencao" value="antecipada"/>
+    <property name="spawnDestino" value="spawn_entrada"/>
+   </properties>
+  </object>
+  <object id="16" name="entrada_tardia" type="EntradaIntervencao" x="2944" y="704" width="64" height="128">
+   <properties>
+    <property name="destino" propertytype="CenarioId" value="modelos_conceituais_restricoes_intervencao"/>
+    <property name="posicao" propertytype="PosicaoEntradaIntervencao" value="tardia"/>
+    <property name="spawnDestino" value="spawn_entrada"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>
