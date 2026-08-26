@@ -5,30 +5,6 @@ namespace DontLikePoetry;
 
 public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoiceCatalog
 {
-    private static readonly IReadOnlyList<InterventionSolutionDefinition>
-        NoRevisionSolutions = Array.Empty<InterventionSolutionDefinition>();
-
-    private static readonly IReadOnlyList<PresentedSolutionDefinition>
-        FixedInitialSolutionPresentation =
-            new List<PresentedSolutionDefinition>
-            {
-                new PresentedSolutionDefinition("A1", 1),
-                new PresentedSolutionDefinition("A2", 2),
-                new PresentedSolutionDefinition("A3", 3)
-            }.AsReadOnly();
-
-    private static readonly IReadOnlyList<PresentedJustificationDefinition>
-        FixedInitialJustificationPresentation =
-            new List<PresentedJustificationDefinition>
-            {
-                new PresentedJustificationDefinition("J1", 1),
-                new PresentedJustificationDefinition("J2", 2),
-                new PresentedJustificationDefinition("J3", 3),
-                new PresentedJustificationDefinition("J4", 4),
-                new PresentedJustificationDefinition("J5", 5),
-                new PresentedJustificationDefinition("J6", 6)
-            }.AsReadOnly();
-
     public static ConceptualModelsConstraintsChoiceCatalog Instance { get; } =
         new ConceptualModelsConstraintsChoiceCatalog();
 
@@ -124,6 +100,8 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
                 SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE)
         };
 
+    public IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; }
+
     public IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
         new List<InterventionJustificationDefinition>
         {
@@ -148,12 +126,30 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
         };
 
     public IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions
-    {
-        get { return NoRevisionSolutions; }
-    }
+    { get; } =
+        new List<InterventionSolutionDefinition>
+        {
+            new InterventionSolutionDefinition(
+                "P4",
+                "Gelatinas originais",
+                "Restaurar apenas as gelatinas ao comportamento original.",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.REVISION,
+                SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN),
+            new InterventionSolutionDefinition(
+                "A4",
+                "Gelatina distinta",
+                "Diferenciar a gelatina-trampolim e restaurar os espinhos.",
+                SolutionQuality.ADEQUATE,
+                SolutionChoiceRound.REVISION,
+                SolutionVisualModule.DISTINCT_TRAMPOLINE_GELATIN |
+                SolutionVisualModule.TRAMPOLINE_DASH_EQUIVALENT |
+                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE)
+        };
 
     private ConceptualModelsConstraintsChoiceCatalog()
     {
+        InitialSolutions = CreateInitialSolutions();
     }
 
     public IReadOnlyList<PresentedSolutionDefinition> CreateInitialSolutionPresentation(
@@ -164,7 +160,26 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             throw new ArgumentNullException(nameof(random));
         }
 
-        return FixedInitialSolutionPresentation;
+        var selectedSolutions = new List<InterventionSolutionDefinition>
+        {
+            PickSolution(InitialInadequateSolutions, random, "inadequado"),
+            PickSolution(InitialPartialSolutions, random, "parcial"),
+            PickSolution(InitialAdequateSolutions, random, "adequado")
+        };
+
+        Shuffle(selectedSolutions, random);
+
+        var presentation =
+            new List<PresentedSolutionDefinition>(selectedSolutions.Count);
+
+        for (int index = 0; index < selectedSolutions.Count; index++)
+        {
+            presentation.Add(new PresentedSolutionDefinition(
+                selectedSolutions[index].Id,
+                index + 1));
+        }
+
+        return presentation.AsReadOnly();
     }
 
     public IReadOnlyList<PresentedJustificationDefinition>
@@ -175,12 +190,28 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             throw new ArgumentNullException(nameof(random));
         }
 
-        return FixedInitialJustificationPresentation;
+        var shuffledJustifications =
+            new List<InterventionJustificationDefinition>(Justifications);
+
+        Shuffle(shuffledJustifications, random);
+
+        var presentation =
+            new List<PresentedJustificationDefinition>(
+                shuffledJustifications.Count);
+
+        for (int index = 0; index < shuffledJustifications.Count; index++)
+        {
+            presentation.Add(new PresentedJustificationDefinition(
+                shuffledJustifications[index].Id,
+                index + 1));
+        }
+
+        return presentation.AsReadOnly();
     }
 
     public InterventionSolutionDefinition GetSolution(string solutionId)
     {
-        foreach (InterventionSolutionDefinition solution in InitialInadequateSolutions)
+        foreach (InterventionSolutionDefinition solution in InitialSolutions)
         {
             if (solution.Id == solutionId)
             {
@@ -188,15 +219,7 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             }
         }
 
-        foreach (InterventionSolutionDefinition solution in InitialPartialSolutions)
-        {
-            if (solution.Id == solutionId)
-            {
-                return solution;
-            }
-        }
-
-        foreach (InterventionSolutionDefinition solution in InitialAdequateSolutions)
+        foreach (InterventionSolutionDefinition solution in AvailableRevisionSolutions)
         {
             if (solution.Id == solutionId)
             {
@@ -221,5 +244,44 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
 
         throw new InvalidOperationException(
             $"Justificativa de modelos conceituais não registrada: {justificationId}");
+    }
+
+    private IReadOnlyList<InterventionSolutionDefinition> CreateInitialSolutions()
+    {
+        var solutions = new List<InterventionSolutionDefinition>(
+            InitialInadequateSolutions.Count +
+            InitialPartialSolutions.Count +
+            InitialAdequateSolutions.Count);
+
+        solutions.AddRange(InitialInadequateSolutions);
+        solutions.AddRange(InitialPartialSolutions);
+        solutions.AddRange(InitialAdequateSolutions);
+
+        return solutions.AsReadOnly();
+    }
+
+    private static InterventionSolutionDefinition PickSolution(
+        IReadOnlyList<InterventionSolutionDefinition> pool,
+        Random random,
+        string qualityName)
+    {
+        if (pool == null || pool.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"O pool inicial {qualityName} não possui soluções.");
+        }
+
+        return pool[random.Next(pool.Count)];
+    }
+
+    private static void Shuffle<T>(IList<T> entries, Random random)
+    {
+        for (int index = entries.Count - 1; index > 0; index--)
+        {
+            int swapIndex = random.Next(index + 1);
+            T temporary = entries[index];
+            entries[index] = entries[swapIndex];
+            entries[swapIndex] = temporary;
+        }
     }
 }
