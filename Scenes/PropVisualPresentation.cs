@@ -9,8 +9,8 @@ internal sealed class PropVisualPresentation
 {
     private static readonly Rectangle BackgroundBounds = new Rectangle(0, 0, 1920, 1080);
     private static readonly Rectangle PlayerSourceBounds = new Rectangle(400, 62, 744, 1413);
-    private const int PlayerVisualWidth = 117;
-    private const int PlayerVisualHeight = 224;
+    private const int PlayerVisualWidth = 137;
+    private const int PlayerVisualHeight = 262;
 
     private Texture2D _backgroundTexture;
     private Texture2D _solidPlatformTexture;
