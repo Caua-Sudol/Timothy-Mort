@@ -17,7 +17,7 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             new InterventionSolutionDefinition(
                 "I1",
                 "Realce uniforme",
-                "Destacar igualmente todas as gelatinas e plataformas de espinhos.",
+                "Destacar todas as plataformas especiais das normais.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.GELATIN_GLOW |
@@ -25,7 +25,7 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             new InterventionSolutionDefinition(
                 "I2",
                 "Regras explícitas",
-                "Exibir lembretes curtos com ícones de DANO e DASH.",
+                "Exibir lembretes curtos com ícones de dano e impulso.",
                 SolutionQuality.INADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS),
@@ -43,7 +43,7 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
         {
             new InterventionSolutionDefinition(
                 "P1",
-                "Espinhos ativos",
+                "Perigo consistente",
                 "Fazer todos os espinhos causarem dano e realçar as plataformas especiais.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
@@ -52,15 +52,15 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
                 SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT),
             new InterventionSolutionDefinition(
                 "P2",
-                "Gelatinas restauradas",
-                "Restaurar as gelatinas e exibir lembretes de DANO e DASH.",
+                "Propriedade restauradas",
+                "Todas as plataformas não sólidas recuperam a propriedade já vista e exibir lembretes de dano e impulso.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
                 SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS),
             new InterventionSolutionDefinition(
                 "P3",
-                "Perigo consistente",
+                "Perigo e rota",
                 "Fazer todos os espinhos causarem dano e indicar a rota até a saída.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
@@ -74,7 +74,7 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             new InterventionSolutionDefinition(
                 "A1",
                 "Plataformas restauradas",
-                "Restaurar as propriedades originais de gelatinas e espinhos.",
+                "Restaurar as propriedades já vistas para os perigos e plataformas não sólidas.",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
@@ -91,8 +91,8 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
                 SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE),
             new InterventionSolutionDefinition(
                 "A3",
-                "Gelatina restaurada",
-                "Restaurar as gelatinas e diferenciar os espinhos alterados.",
+                "Propriedade antiga e novos perigos",
+                "Propriedade de plataformas não sólidas restaurada e diferenciar visualmente novos perigos.",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
