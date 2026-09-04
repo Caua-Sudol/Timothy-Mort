@@ -131,15 +131,15 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
         {
             new InterventionSolutionDefinition(
                 "P4",
-                "Gelatinas originais",
-                "Restaurar apenas as gelatinas ao comportamento original.",
+                "Plataformas originais",
+                "Restaurar apenas as plataformas não sólidas ao comportamento original.",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN),
             new InterventionSolutionDefinition(
                 "A4",
-                "Gelatina distinta",
-                "Diferenciar a gelatina-trampolim e restaurar os espinhos.",
+                "Plataformas distinta",
+                "Diferenciar plataformas com propriedades ainda não vistas.",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.REVISION,
                 SolutionVisualModule.DISTINCT_TRAMPOLINE_GELATIN |
