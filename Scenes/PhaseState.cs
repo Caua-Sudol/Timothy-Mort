@@ -15,6 +15,7 @@ public sealed class PhaseState
 
     private readonly PhaseDefinition _definition;
     private readonly string _deathCountingScenarioId;
+    private readonly SolutionVisualModule? _baseVisualModulesOverride;
     private bool _appliedSolutionAllowsExit;
     private bool _deathRegisteredInCurrentAttempt;
     private IReadOnlyList<PresentedSolutionDefinition> _initialSolutionPresentation =
@@ -104,7 +105,8 @@ public sealed class PhaseState
     {
         get
         {
-            SolutionVisualModule modules = _definition.BaseVisualModules;
+            SolutionVisualModule modules =
+                _baseVisualModulesOverride ?? _definition.BaseVisualModules;
 
             if (!_definition.AppliesSolutionVisualModules ||
                 string.IsNullOrEmpty(AppliedSolutionId))
@@ -135,7 +137,8 @@ public sealed class PhaseState
 
     public PhaseState(
         PhaseDefinition definition,
-        string initialScenarioId)
+        string initialScenarioId,
+        SolutionVisualModule? baseVisualModulesOverride = null)
     {
         _definition = definition ??
             throw new ArgumentNullException(nameof(definition));
@@ -150,6 +153,7 @@ public sealed class PhaseState
         PhaseId = definition.Id;
         CurrentScenarioId = initialScenarioId;
         _deathCountingScenarioId = definition.ProblemScenarioId;
+        _baseVisualModulesOverride = baseVisualModulesOverride;
         RestoreDamageState();
     }
 

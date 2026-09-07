@@ -566,7 +566,16 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         else if (_phaseState == null ||
                  _phaseState.PhaseId != destinationPhase.Id)
         {
-            _phaseState = new PhaseState(destinationPhase, scenarioId);
+            SolutionVisualModule? baseVisualModulesOverride =
+                destinationPhase.Id ==
+                    ScenarioCatalog.ConceptualModelsConstraintsScenarioId
+                    ? _phaseProgress.GetTransferredVisualModules()
+                    : null;
+
+            _phaseState = new PhaseState(
+                destinationPhase,
+                scenarioId,
+                baseVisualModulesOverride);
         }
         else
         {
@@ -590,7 +599,17 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _phaseState?.PhaseId == phase.Id &&
             _phaseState.ExitDoorIsOpen)
         {
-            _phaseProgress.TryCompletePhase(phase.Id);
+            SolutionVisualModule finalSolutionVisualModules =
+                string.IsNullOrEmpty(_phaseState.AppliedSolutionId)
+                    ? SolutionVisualModule.NONE
+                    : _phaseState.ChoiceCatalog
+                        .GetSolution(_phaseState.AppliedSolutionId)
+                        .VisualModules;
+
+            _phaseProgress.TryCompletePhase(
+                phase.Id,
+                _phaseState.AppliedSolutionId,
+                finalSolutionVisualModules);
             _phaseResultScreen.Open(_phaseState);
             _activeScreen = AppScreen.PHASE_RESULT;
             return true;
