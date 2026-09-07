@@ -20,7 +20,7 @@ public class StartMenu
     private readonly SpriteFont _font;
     private readonly Vector2 _fontPositionStart;
     private readonly Vector2 _fontPositionExit;
-    private StartMenuOption _currentOption = StartMenuOption.NONE;
+    private StartMenuOption _currentOption = StartMenuOption.START;
 
     public StartMenu(SpriteFont font, Vector2 menuCenter)
     {
@@ -29,17 +29,19 @@ public class StartMenu
         _fontPositionExit = menuCenter + new Vector2(0, OptionSpacing / 2);
     }
 
-    public StartMenuOption Update(KeyboardState keyboardState)
+    public StartMenuOption Update(
+        KeyboardState keyboardState,
+        KeyboardState previousKeyboardState)
     {
-        if (keyboardState.IsKeyDown(Keys.W))
+        if (keyboardState.IsKeyDown(Keys.W) || keyboardState.IsKeyDown(Keys.Up))
         {
             _currentOption = StartMenuOption.START;
         }
-        if (keyboardState.IsKeyDown(Keys.S))
+        if (keyboardState.IsKeyDown(Keys.S) || keyboardState.IsKeyDown(Keys.Down))
         {
             _currentOption = StartMenuOption.EXIT;
         }
-        if (keyboardState.IsKeyDown(Keys.Enter))
+        if (keyboardState.IsKeyDown(Keys.Enter) && previousKeyboardState.IsKeyUp(Keys.Enter))
         {
             return _currentOption;
         }

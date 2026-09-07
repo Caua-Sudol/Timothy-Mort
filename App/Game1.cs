@@ -20,7 +20,9 @@ public class Game1 : Game
     private Camera _camera;
     private DebugView _debugView;
     private Scene _scene;
+    private TitleScreen _titleScreen;
     private StartMenu _startMenu;
+    private PhaseSelectMenu _phaseSelectMenu;
     private PauseMenu _pauseMenu;
     private DeathMenu _deathMenu;
     private DamageHud _damageHud;
@@ -28,7 +30,7 @@ public class Game1 : Game
     private PhaseState _phaseState;
     private string _currentScenarioId = ScenarioCatalog.InitialScenarioId;
     private readonly Random _choicePresentationRandom = new Random();
-    private AppScreen _activeScreen = AppScreen.START_MENU;
+    private AppScreen _activeScreen = AppScreen.TITLE;
     private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
     private Texture2D _scenarioFadeTexture;
@@ -61,14 +63,14 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     }
 
     protected override void Initialize()
-    { 
-        _scene = new Scene(ScenarioCatalog.Initial, null, _phaseState);
-
+    {
         SpriteFont font = Content.Load<SpriteFont>("font");
         _debugView = new DebugView(font);
         Vector2 menuCenter = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
 
+        _titleScreen = new TitleScreen(font, menuCenter);
         _startMenu = new StartMenu(font, menuCenter);
+        _phaseSelectMenu = new PhaseSelectMenu(font, menuCenter);
         _pauseMenu = new PauseMenu(font, menuCenter);
         _deathMenu = new DeathMenu(font, menuCenter);
         _damageHud = new DamageHud();
@@ -90,8 +92,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _scenarioFadeTexture.SetData(new[] { Color.White });
         _damageHud.LoadContent(GraphicsDevice);
         _interventionChoiceMenu.LoadContent(GraphicsDevice);
+        _phaseSelectMenu.LoadContent(GraphicsDevice);
         _debugView.LoadContent(GraphicsDevice);
-        _scene.LoadContent(GraphicsDevice, Content);
 
         TargetElapsedTime = TimeSpan.FromSeconds(SecondsPerFrameMenu);
     }
@@ -109,13 +111,21 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
             Exit();
 
-        if(_activeScreen == AppScreen.PLAYING)
+        if (_activeScreen == AppScreen.TITLE)
         {
-            UpdatePlaying(keyboardState, deltaTime);
+            UpdateTitleScreen(keyboardState);
         }
-        if(_activeScreen == AppScreen.START_MENU)
+        else if (_activeScreen == AppScreen.START_MENU)
         {
             UpdateStartMenu(keyboardState);
+        }
+        else if (_activeScreen == AppScreen.PHASE_SELECT)
+        {
+            UpdatePhaseSelect(keyboardState);
+        }
+        else if (_activeScreen == AppScreen.PLAYING)
+        {
+            UpdatePlaying(keyboardState, deltaTime);
         }
 
         _previousKeyboardState = keyboardState;
@@ -130,13 +140,21 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         GraphicsDevice.SetRenderTarget(_gameRenderTarget);
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        if(_activeScreen == AppScreen.PLAYING)
+        if (_activeScreen == AppScreen.TITLE)
         {
-            DrawPlaying();
+            DrawTitleScreen();
         }
-        if(_activeScreen == AppScreen.START_MENU)
+        else if (_activeScreen == AppScreen.START_MENU)
         {
             DrawStartMenu();
+        }
+        else if (_activeScreen == AppScreen.PHASE_SELECT)
+        {
+            DrawPhaseSelect();
+        }
+        else if (_activeScreen == AppScreen.PLAYING)
+        {
+            DrawPlaying();
         }
 
         GraphicsDevice.SetRenderTarget(null);
@@ -193,16 +211,48 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private void UpdateStartMenu(KeyboardState keyboardState)
     {
-        StartMenuOption selectedOption = _startMenu.Update(keyboardState);
+        StartMenuOption selectedOption =
+            _startMenu.Update(keyboardState, _previousKeyboardState);
         
         if(selectedOption == StartMenuOption.START)
         {
-            _activeScreen = AppScreen.PLAYING;
+            _activeScreen = AppScreen.PHASE_SELECT;
             _overlayState = OverlayState.NONE;
         }
         else if(selectedOption == StartMenuOption.EXIT)
         {
             Exit();
+        }
+    }
+
+    private void UpdateTitleScreen(KeyboardState keyboardState)
+    {
+        if (_titleScreen.Update(keyboardState, _previousKeyboardState))
+        {
+            _activeScreen = AppScreen.START_MENU;
+        }
+    }
+
+    private void UpdatePhaseSelect(KeyboardState keyboardState)
+    {
+        if (EscapeWasPressed(keyboardState))
+        {
+            _activeScreen = AppScreen.START_MENU;
+            return;
+        }
+
+        PhaseSelectOption selectedOption =
+            _phaseSelectMenu.Update(keyboardState, _previousKeyboardState);
+
+        if (selectedOption == PhaseSelectOption.AFFORDANCE)
+        {
+            ChangeScenario(ScenarioCatalog.AffordanceVisibilityScenarioId, null);
+            _activeScreen = AppScreen.PLAYING;
+        }
+        else if (selectedOption == PhaseSelectOption.PROP_VISUAL)
+        {
+            ChangeScenario(ScenarioCatalog.PropVisualScenarioId, null);
+            _activeScreen = AppScreen.PLAYING;
         }
     }
 
@@ -313,6 +363,12 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             out string destinationScenarioId,
             out string destinationSpawnId))
         {
+            if (destinationScenarioId == ScenarioCatalog.InitialScenarioId)
+            {
+                ReturnToPhaseSelect();
+                return;
+            }
+
             BeginScenarioTransition(destinationScenarioId, destinationSpawnId);
             return;
         }
@@ -437,6 +493,20 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _mapReloadErrorMessage = null;
     }
 
+    private void ReturnToPhaseSelect()
+    {
+        _phaseState = null;
+        _scene = null;
+        _currentScenarioId = ScenarioCatalog.InitialScenarioId;
+        _overlayState = OverlayState.NONE;
+        _scenarioTransitionState = ScenarioTransitionState.NONE;
+        _scenarioFadeAlpha = 0.0f;
+        _pendingScenarioId = null;
+        _pendingScenarioSpawnId = null;
+        _mapReloadErrorMessage = null;
+        _activeScreen = AppScreen.PHASE_SELECT;
+    }
+
     private void UpdatePauseMenu(KeyboardState keyboardState)
     {
         PauseOption selectedOption = _pauseMenu.Update(keyboardState, _previousKeyboardState);
@@ -499,6 +569,16 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     private void DrawStartMenu()
     {
         _startMenu.Draw(_spriteBatch);
+    }
+
+    private void DrawTitleScreen()
+    {
+        _titleScreen.Draw(_spriteBatch);
+    }
+
+    private void DrawPhaseSelect()
+    {
+        _phaseSelectMenu.Draw(_spriteBatch);
     }
 
     private void DrawPlaying()

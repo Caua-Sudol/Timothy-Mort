@@ -2,6 +2,8 @@ namespace DontLikePoetry;
 
 public enum AppScreen
 {
-    START_MENU = 1,
-    PLAYING = 2
+    TITLE = 1,
+    START_MENU = 2,
+    PHASE_SELECT = 3,
+    PLAYING = 4
 }
