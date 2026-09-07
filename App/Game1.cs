@@ -28,6 +28,7 @@ public class Game1 : Game
     private DamageHud _damageHud;
     private InterventionChoiceMenu _interventionChoiceMenu;
     private PhaseState _phaseState;
+    private readonly PhaseProgress _phaseProgress = new PhaseProgress();
     private string _currentScenarioId = ScenarioCatalog.InitialScenarioId;
     private readonly Random _choicePresentationRandom = new Random();
     private AppScreen _activeScreen = AppScreen.TITLE;
@@ -70,7 +71,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         _titleScreen = new TitleScreen(font, menuCenter);
         _startMenu = new StartMenu(font, menuCenter);
-        _phaseSelectMenu = new PhaseSelectMenu(font, menuCenter);
+        _phaseSelectMenu = new PhaseSelectMenu(font, menuCenter, _phaseProgress);
         _pauseMenu = new PauseMenu(font, menuCenter);
         _deathMenu = new DeathMenu(font, menuCenter);
         _damageHud = new DamageHud();
@@ -244,16 +245,28 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         PhaseSelectOption selectedOption =
             _phaseSelectMenu.Update(keyboardState, _previousKeyboardState);
 
-        if (selectedOption == PhaseSelectOption.AFFORDANCE)
+        string scenarioId = selectedOption switch
         {
-            ChangeScenario(ScenarioCatalog.AffordanceVisibilityScenarioId, null);
-            _activeScreen = AppScreen.PLAYING;
-        }
-        else if (selectedOption == PhaseSelectOption.PROP_VISUAL)
+            PhaseSelectOption.AFFORDANCE => ScenarioCatalog.AffordanceVisibilityScenarioId,
+            PhaseSelectOption.FEEDBACK => ScenarioCatalog.DamageFeedbackScenarioId,
+            PhaseSelectOption.CONCEPTUAL_MODELS => ScenarioCatalog.ConceptualModelsConstraintsScenarioId,
+            PhaseSelectOption.PROP_VISUAL => ScenarioCatalog.PropVisualScenarioId,
+            _ => null
+        };
+
+        if (scenarioId == null)
         {
-            ChangeScenario(ScenarioCatalog.PropVisualScenarioId, null);
-            _activeScreen = AppScreen.PLAYING;
+            return;
         }
+
+        PhaseDefinition phase = PhaseCatalog.GetForScenario(scenarioId);
+        if (phase != null && !_phaseProgress.IsUnlocked(phase.Id))
+        {
+            return;
+        }
+
+        ChangeScenario(scenarioId, null);
+        _activeScreen = AppScreen.PLAYING;
     }
 
     private double GetSecondsPerFrame()
@@ -365,6 +378,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             if (destinationScenarioId == ScenarioCatalog.InitialScenarioId)
             {
+                CompleteCurrentPhase();
                 ReturnToPhaseSelect();
                 return;
             }
@@ -491,6 +505,18 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _scene.LoadContent(GraphicsDevice, Content);
         _overlayState = OverlayState.NONE;
         _mapReloadErrorMessage = null;
+    }
+
+    private void CompleteCurrentPhase()
+    {
+        PhaseDefinition phase = PhaseCatalog.GetForScenario(_currentScenarioId);
+        if (phase != null &&
+            _currentScenarioId == phase.ProblemScenarioId &&
+            _phaseState?.PhaseId == phase.Id &&
+            _phaseState.ExitDoorIsOpen)
+        {
+            _phaseProgress.TryCompletePhase(phase.Id);
+        }
     }
 
     private void ReturnToPhaseSelect()

@@ -8,7 +8,9 @@ public enum PhaseSelectOption
 {
     NONE = 0,
     AFFORDANCE = 1,
-    PROP_VISUAL = 2
+    PROP_VISUAL = 2,
+    FEEDBACK = 3,
+    CONCEPTUAL_MODELS = 4
 }
 
 public sealed class PhaseSelectMenu
@@ -31,15 +33,24 @@ public sealed class PhaseSelectMenu
         "Protótipo visual"
     };
 
+    private static readonly string[] PhaseIds =
+    {
+        ScenarioCatalog.AffordanceVisibilityScenarioId,
+        ScenarioCatalog.DamageFeedbackScenarioId,
+        ScenarioCatalog.ConceptualModelsConstraintsScenarioId
+    };
+
     private readonly SpriteFont _font;
     private readonly Vector2 _center;
+    private readonly PhaseProgress _progress;
     private Texture2D _pixel;
     private int _selectedPhaseIndex;
 
-    public PhaseSelectMenu(SpriteFont font, Vector2 center)
+    public PhaseSelectMenu(SpriteFont font, Vector2 center, PhaseProgress progress)
     {
         _font = font;
         _center = center;
+        _progress = progress;
     }
 
     public void LoadContent(GraphicsDevice graphicsDevice)
@@ -65,17 +76,17 @@ public sealed class PhaseSelectMenu
             _selectedPhaseIndex = (_selectedPhaseIndex + 1) % PhaseTitles.Length;
         }
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter))
+        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter) &&
+            IsUnlocked(_selectedPhaseIndex))
         {
-            if (_selectedPhaseIndex == 0)
+            return _selectedPhaseIndex switch
             {
-                return PhaseSelectOption.AFFORDANCE;
-            }
-
-            if (_selectedPhaseIndex == VisualPrototypeIndex)
-            {
-                return PhaseSelectOption.PROP_VISUAL;
-            }
+                0 => PhaseSelectOption.AFFORDANCE,
+                1 => PhaseSelectOption.FEEDBACK,
+                2 => PhaseSelectOption.CONCEPTUAL_MODELS,
+                VisualPrototypeIndex => PhaseSelectOption.PROP_VISUAL,
+                _ => PhaseSelectOption.NONE
+            };
         }
 
         return PhaseSelectOption.NONE;
@@ -103,7 +114,7 @@ public sealed class PhaseSelectMenu
                 cardY,
                 CardWidth,
                 CardHeight);
-            bool isUnlocked = index == 0 || isVisualPrototype;
+            bool isUnlocked = IsUnlocked(index);
             bool isSelected = index == _selectedPhaseIndex;
             Color borderColor = isSelected ? Color.Yellow : Color.DimGray;
             Color textColor = isUnlocked ? Color.White : Color.Gray;
@@ -131,10 +142,24 @@ public sealed class PhaseSelectMenu
                     cardRectangle.Center.ToVector2() + new Vector2(0.0f, 24.0f),
                     Color.LightGray);
             }
+            else
+            {
+                bool isCompleted = _progress.IsCompleted(PhaseIds[index]);
+                DrawCenteredText(
+                    spriteBatch,
+                    isCompleted ? "Concluída" : "Disponível",
+                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, 32.0f),
+                    isCompleted ? Color.LightGreen : Color.LightGray);
+            }
         }
 
         DrawCenteredText(spriteBatch, NavigationText, new Vector2(_center.X, 900.0f), Color.LightGray);
         spriteBatch.End();
+    }
+
+    private bool IsUnlocked(int index)
+    {
+        return index == VisualPrototypeIndex || _progress.IsUnlocked(PhaseIds[index]);
     }
 
     private void DrawBorder(SpriteBatch spriteBatch, Rectangle rectangle, Color color)
