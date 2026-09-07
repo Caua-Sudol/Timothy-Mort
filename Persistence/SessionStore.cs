@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
 namespace DontLikePoetry;
@@ -21,18 +22,19 @@ public sealed class LocalSessionInfo
 public sealed class SessionStore
 {
     private const string DatabaseFileName = "timothy-mort.db";
+    private readonly string _dataDirectory;
     private readonly string _connectionString;
 
     public string DatabasePath { get; }
 
     public SessionStore()
     {
-        string dataDirectory = Path.Combine(
+        _dataDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "TimothyMort");
-        Directory.CreateDirectory(dataDirectory);
+        Directory.CreateDirectory(_dataDirectory);
 
-        DatabasePath = Path.Combine(dataDirectory, DatabaseFileName);
+        DatabasePath = Path.Combine(_dataDirectory, DatabaseFileName);
         _connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = DatabasePath,
@@ -122,7 +124,10 @@ public sealed class SessionStore
         return new LocalSessionInfo(sessionId, publicCode);
     }
 
-    public void SavePhaseCompletion(string sessionId, PhaseState state)
+    public void SavePhaseCompletion(
+        string sessionId,
+        PhaseState state,
+        bool completeSession)
     {
         if (string.IsNullOrWhiteSpace(sessionId))
         {
@@ -181,8 +186,47 @@ public sealed class SessionStore
                 state.InitialJustificationPresentation);
         }
 
-        TouchSession(connection, transaction, sessionId, now);
+        if (completeSession)
+        {
+            CompleteSession(connection, transaction, sessionId, now);
+        }
+        else
+        {
+            TouchSession(connection, transaction, sessionId, now);
+        }
+
         transaction.Commit();
+    }
+
+    public SessionCompletionData LoadSessionCompletion(string sessionId)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            throw new ArgumentException("A sessão é obrigatória.", nameof(sessionId));
+        }
+
+        using var connection = OpenConnection();
+        SessionCompletionData session = LoadSessionHeader(connection, sessionId);
+        LoadPhaseCompletions(connection, session);
+        return session;
+    }
+
+    public string ExportSession(string sessionId)
+    {
+        SessionCompletionData session = LoadSessionCompletion(sessionId);
+        string exportDirectory = Path.Combine(_dataDirectory, "exports");
+        Directory.CreateDirectory(exportDirectory);
+
+        string exportPath = Path.Combine(exportDirectory, session.SessionId + ".json");
+        string json = JsonSerializer.Serialize(
+            session,
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            });
+        File.WriteAllText(exportPath, json);
+        return exportPath;
     }
 
     private static void UpsertPhaseProgress(
@@ -427,6 +471,149 @@ public sealed class SessionStore
         command.ExecuteNonQuery();
     }
 
+    private static SessionCompletionData LoadSessionHeader(
+        SqliteConnection connection,
+        string sessionId)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT participant_code, status, created_utc, completed_utc
+            FROM sessions
+            WHERE session_id = $sessionId;
+            """;
+        command.Parameters.AddWithValue("$sessionId", sessionId);
+
+        using SqliteDataReader reader = command.ExecuteReader();
+        if (!reader.Read())
+        {
+            throw new InvalidOperationException("A sessão não foi encontrada.");
+        }
+
+        return new SessionCompletionData
+        {
+            SessionId = sessionId,
+            PublicCode = reader.GetString(0),
+            Status = reader.GetString(1),
+            CreatedUtc = reader.GetString(2),
+            CompletedUtc = reader.IsDBNull(3) ? null : reader.GetString(3)
+        };
+    }
+
+    private static void LoadPhaseCompletions(
+        SqliteConnection connection,
+        SessionCompletionData session)
+    {
+        using (SqliteCommand command = connection.CreateCommand())
+        {
+            command.CommandText =
+                """
+                SELECT
+                    phase_id,
+                    completed_utc,
+                    active_seconds,
+                    total_deaths,
+                    first_solution_id,
+                    first_solution_quality,
+                    first_solution_position,
+                    first_justification_id,
+                    first_justification_position,
+                    had_revision,
+                    selection_count,
+                    final_solution_id,
+                    final_solution_quality,
+                    applied_visual_modules
+                FROM phase_telemetry
+                WHERE session_id = $sessionId
+                ORDER BY completed_utc;
+                """;
+            command.Parameters.AddWithValue("$sessionId", session.SessionId);
+
+            using SqliteDataReader reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                session.Phases.Add(new PhaseCompletionData
+                {
+                    PhaseId = reader.GetString(0),
+                    CompletedUtc = reader.GetString(1),
+                    ActiveSeconds = reader.GetDouble(2),
+                    TotalDeaths = reader.GetInt32(3),
+                    FirstSolutionId = ReadNullableString(reader, 4),
+                    FirstSolutionQuality = ReadNullableString(reader, 5),
+                    FirstSolutionPosition = ReadNullableInt(reader, 6),
+                    FirstJustificationId = ReadNullableString(reader, 7),
+                    FirstJustificationPosition = ReadNullableInt(reader, 8),
+                    HadRevision = reader.GetInt32(9) != 0,
+                    SelectionCount = reader.GetInt32(10),
+                    FinalSolutionId = ReadNullableString(reader, 11),
+                    FinalSolutionQuality = ReadNullableString(reader, 12),
+                    AppliedVisualModules = reader.GetInt64(13)
+                });
+            }
+        }
+
+        foreach (PhaseCompletionData phase in session.Phases)
+        {
+            LoadPresentedChoices(
+                connection,
+                session.SessionId,
+                phase.PhaseId,
+                true,
+                phase.PresentedSolutions);
+            LoadPresentedChoices(
+                connection,
+                session.SessionId,
+                phase.PhaseId,
+                false,
+                phase.PresentedJustifications);
+        }
+    }
+
+    private static void LoadPresentedChoices(
+        SqliteConnection connection,
+        string sessionId,
+        string phaseId,
+        bool loadSolutions,
+        List<PresentedChoiceData> destination)
+    {
+        string tableName = loadSolutions
+            ? "phase_presented_solutions"
+            : "phase_presented_justifications";
+        string idColumn = loadSolutions ? "solution_id" : "justification_id";
+
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText =
+            $"""
+            SELECT position, {idColumn}
+            FROM {tableName}
+            WHERE session_id = $sessionId
+              AND phase_id = $phaseId
+            ORDER BY position;
+            """;
+        command.Parameters.AddWithValue("$sessionId", sessionId);
+        command.Parameters.AddWithValue("$phaseId", phaseId);
+
+        using SqliteDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            destination.Add(new PresentedChoiceData
+            {
+                Position = reader.GetInt32(0),
+                ChoiceId = reader.GetString(1)
+            });
+        }
+    }
+
+    private static string ReadNullableString(SqliteDataReader reader, int ordinal)
+    {
+        return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+    }
+
+    private static int? ReadNullableInt(SqliteDataReader reader, int ordinal)
+    {
+        return reader.IsDBNull(ordinal) ? null : reader.GetInt32(ordinal);
+    }
+
     private void EnsureSchema()
     {
         using var connection = OpenConnection();
@@ -621,6 +808,34 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$sessionId", sessionId);
         command.Parameters.AddWithValue("$now", now);
         command.ExecuteNonQuery();
+    }
+
+    private static void CompleteSession(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string sessionId,
+        string now)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            """
+            UPDATE sessions
+            SET status = 'completed',
+                updated_utc = $now,
+                completed_utc = $now
+            WHERE session_id = $sessionId
+              AND status = 'active'
+              AND completed_utc IS NULL;
+            """;
+        command.Parameters.AddWithValue("$sessionId", sessionId);
+        command.Parameters.AddWithValue("$now", now);
+
+        if (command.ExecuteNonQuery() != 1)
+        {
+            throw new InvalidOperationException(
+                "A sessão não pôde ser marcada como concluída.");
+        }
     }
 
     private static void LoadProgress(

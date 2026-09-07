@@ -26,6 +26,7 @@ public class Game1 : Game
     private PhaseSelectMenu _phaseSelectMenu;
     private PhaseIntroductionScreen _phaseIntroductionScreen;
     private PhaseResultScreen _phaseResultScreen;
+    private StudyCompletionScreen _studyCompletionScreen;
     private string _introductionScenarioId;
     private PauseMenu _pauseMenu;
     private DeathMenu _deathMenu;
@@ -37,6 +38,8 @@ public class Game1 : Game
     private LocalSessionInfo _pendingActiveSession;
     private string _activeSessionId;
     private string _activeSessionCode;
+    private SessionCompletionData _completedSessionData;
+    private bool _showStudyCompletionAfterPhaseResult;
     private string _currentScenarioId = ScenarioCatalog.InitialScenarioId;
     private readonly Random _choicePresentationRandom = new Random();
     private AppScreen _activeScreen = AppScreen.TITLE;
@@ -84,6 +87,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _phaseIntroductionScreen = new PhaseIntroductionScreen(
             font, new Vector2(LogicalWidth, LogicalHeight));
         _phaseResultScreen = new PhaseResultScreen(
+            font, new Vector2(LogicalWidth, LogicalHeight));
+        _studyCompletionScreen = new StudyCompletionScreen(
             font, new Vector2(LogicalWidth, LogicalHeight));
         _pauseMenu = new PauseMenu(font, menuCenter);
         _deathMenu = new DeathMenu(font, menuCenter);
@@ -149,6 +154,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             UpdatePhaseResult(keyboardState, deltaTime);
         }
+        else if (_activeScreen == AppScreen.STUDY_COMPLETION)
+        {
+            UpdateStudyCompletion(keyboardState, deltaTime);
+        }
         else if (_activeScreen == AppScreen.PLAYING)
         {
             UpdatePlaying(keyboardState, deltaTime);
@@ -189,6 +198,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         else if (_activeScreen == AppScreen.PHASE_RESULT)
         {
             _phaseResultScreen.Draw(_spriteBatch, _scenarioFadeTexture);
+        }
+        else if (_activeScreen == AppScreen.STUDY_COMPLETION)
+        {
+            _studyCompletionScreen.Draw(_spriteBatch, _scenarioFadeTexture);
         }
         else if (_activeScreen == AppScreen.PLAYING)
         {
@@ -332,6 +345,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         _activeSessionId = session.SessionId;
         _activeSessionCode = session.PublicCode;
+        _completedSessionData = null;
+        _showStudyCompletionAfterPhaseResult = false;
         _pendingActiveSession = null;
         _phaseSelectMenu.SetSessionCode(_activeSessionCode);
         _activeScreen = AppScreen.PHASE_SELECT;
@@ -413,11 +428,110 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         if (KeyWasPressed(keyboardState, Keys.Enter) || EscapeWasPressed(keyboardState))
         {
+            if (_showStudyCompletionAfterPhaseResult)
+            {
+                ReturnToPhaseSelect();
+                _activeScreen = AppScreen.STUDY_COMPLETION;
+                _showStudyCompletionAfterPhaseResult = false;
+                return;
+            }
+
             ReturnToPhaseSelect();
             return;
         }
 
         _phaseResultScreen.Update(deltaTime);
+    }
+
+    private void UpdateStudyCompletion(
+        KeyboardState keyboardState,
+        double deltaTime)
+    {
+        StudyCompletionAction action = _studyCompletionScreen.Update(
+            keyboardState,
+            _previousKeyboardState,
+            deltaTime);
+
+        if (action == StudyCompletionAction.RETURN_TO_MENU)
+        {
+            _phaseProgress.Clear();
+            _phaseSelectMenu.SetSessionCode(null);
+            _activeSessionId = null;
+            _activeSessionCode = null;
+            _completedSessionData = null;
+            _activeScreen = AppScreen.START_MENU;
+            return;
+        }
+
+        if (action == StudyCompletionAction.RETRY_EXPORT)
+        {
+            TryRefreshSessionExport();
+            return;
+        }
+
+        if (action == StudyCompletionAction.OPEN_FORM)
+        {
+            if (ResearchStudyConfiguration.TryOpenMeegaForm(
+                _completedSessionData.SessionId,
+                out string errorMessage))
+            {
+                _studyCompletionScreen.SetFormStatus(
+                    "Questionário MEEGA+ aberto no navegador.");
+            }
+            else
+            {
+                _studyCompletionScreen.SetFormStatus(errorMessage);
+            }
+        }
+    }
+
+    private void PrepareStudyCompletion()
+    {
+        try
+        {
+            _completedSessionData =
+                _sessionStore.LoadSessionCompletion(_activeSessionId);
+            string exportPath = _sessionStore.ExportSession(_activeSessionId);
+            _studyCompletionScreen.Open(
+                _completedSessionData,
+                exportPath,
+                null);
+        }
+        catch (Exception)
+        {
+            _completedSessionData ??= new SessionCompletionData
+            {
+                SessionId = _activeSessionId,
+                PublicCode = _activeSessionCode,
+                Status = "completed"
+            };
+            _studyCompletionScreen.Open(
+                _completedSessionData,
+                null,
+                "Não foi possível exportar os dados locais.");
+        }
+
+        _showStudyCompletionAfterPhaseResult = true;
+    }
+
+    private void TryRefreshSessionExport()
+    {
+        try
+        {
+            _completedSessionData =
+                _sessionStore.LoadSessionCompletion(_activeSessionId);
+            string exportPath = _sessionStore.ExportSession(_activeSessionId);
+            _studyCompletionScreen.Open(
+                _completedSessionData,
+                exportPath,
+                null);
+        }
+        catch (Exception)
+        {
+            _studyCompletionScreen.SetExportResult(
+                null,
+                "Não foi possível exportar os dados locais.");
+        }
     }
 
     private double GetSecondsPerFrame()
@@ -695,21 +809,34 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                         .GetSolution(_phaseState.AppliedSolutionId)
                         .VisualModules;
 
-            _phaseProgress.TryCompletePhase(
-                phase.Id,
-                _phaseState.AppliedSolutionId,
-                finalSolutionVisualModules);
-
             string persistenceMessage;
             try
             {
+                bool completesStudy = phase.Id ==
+                    ScenarioCatalog.ConceptualModelsConstraintsScenarioId;
                 _sessionStore.SavePhaseCompletion(
                     _activeSessionId,
-                    _phaseState);
-                persistenceMessage = "Progresso salvo localmente.";
+                    _phaseState,
+                    completesStudy);
+                _phaseProgress.TryCompletePhase(
+                    phase.Id,
+                    _phaseState.AppliedSolutionId,
+                    finalSolutionVisualModules);
+
+                if (completesStudy)
+                {
+                    PrepareStudyCompletion();
+                    persistenceMessage =
+                        "Sessão e telemetria salvas localmente.";
+                }
+                else
+                {
+                    persistenceMessage = "Progresso salvo localmente.";
+                }
             }
             catch (Exception)
             {
+                _showStudyCompletionAfterPhaseResult = false;
                 persistenceMessage =
                     "Não foi possível salvar o progresso local.";
             }
