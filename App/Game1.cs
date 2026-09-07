@@ -23,6 +23,8 @@ public class Game1 : Game
     private TitleScreen _titleScreen;
     private StartMenu _startMenu;
     private PhaseSelectMenu _phaseSelectMenu;
+    private PhaseIntroductionScreen _phaseIntroductionScreen;
+    private string _introductionScenarioId;
     private PauseMenu _pauseMenu;
     private DeathMenu _deathMenu;
     private DamageHud _damageHud;
@@ -72,6 +74,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _titleScreen = new TitleScreen(font, menuCenter);
         _startMenu = new StartMenu(font, menuCenter);
         _phaseSelectMenu = new PhaseSelectMenu(font, menuCenter, _phaseProgress);
+        _phaseIntroductionScreen = new PhaseIntroductionScreen(
+            font, new Vector2(LogicalWidth, LogicalHeight));
         _pauseMenu = new PauseMenu(font, menuCenter);
         _deathMenu = new DeathMenu(font, menuCenter);
         _damageHud = new DamageHud();
@@ -124,6 +128,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             UpdatePhaseSelect(keyboardState);
         }
+        else if (_activeScreen == AppScreen.PHASE_INTRODUCTION)
+        {
+            UpdatePhaseIntroduction(keyboardState, deltaTime);
+        }
         else if (_activeScreen == AppScreen.PLAYING)
         {
             UpdatePlaying(keyboardState, deltaTime);
@@ -152,6 +160,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         else if (_activeScreen == AppScreen.PHASE_SELECT)
         {
             DrawPhaseSelect();
+        }
+        else if (_activeScreen == AppScreen.PHASE_INTRODUCTION)
+        {
+            _phaseIntroductionScreen.Draw(_spriteBatch, _scenarioFadeTexture);
         }
         else if (_activeScreen == AppScreen.PLAYING)
         {
@@ -265,8 +277,36 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             return;
         }
 
+        if (phase != null)
+        {
+            var introduction = PhaseIntroductionCatalog.Get(phase.Id);
+            _phaseIntroductionScreen.Open(introduction.Title, introduction.Text);
+            _introductionScenarioId = scenarioId;
+            _activeScreen = AppScreen.PHASE_INTRODUCTION;
+            return;
+        }
+
         ChangeScenario(scenarioId, null);
         _activeScreen = AppScreen.PLAYING;
+    }
+
+    private void UpdatePhaseIntroduction(KeyboardState keyboardState, double deltaTime)
+    {
+        if (EscapeWasPressed(keyboardState))
+        {
+            _introductionScenarioId = null;
+            _activeScreen = AppScreen.PHASE_SELECT;
+            return;
+        }
+
+        _phaseIntroductionScreen.Update(deltaTime);
+
+        if (KeyWasPressed(keyboardState, Keys.Enter) && _introductionScenarioId != null)
+        {
+            ChangeScenario(_introductionScenarioId, null);
+            _introductionScenarioId = null;
+            _activeScreen = AppScreen.PLAYING;
+        }
     }
 
     private double GetSecondsPerFrame()
