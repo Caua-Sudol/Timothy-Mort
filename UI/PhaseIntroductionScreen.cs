@@ -10,7 +10,7 @@ public sealed class PhaseIntroductionScreen
     private const int LeafCount = 32;
     private const float TitleScale = 1.5f;
     private const float BodyScale = 1.25f;
-    private const string NavigationText = "Enter para iniciar a fase    Esc para voltar";
+    private const string DefaultNavigationText = "Enter para iniciar a fase    Esc para voltar";
 
     private readonly SpriteFont _font;
     private readonly Vector2 _dimensions;
@@ -18,6 +18,8 @@ public sealed class PhaseIntroductionScreen
     private readonly Leaf[] _leaves = new Leaf[LeafCount];
     private string _title = string.Empty;
     private string _body = string.Empty;
+    private string _navigationText = DefaultNavigationText;
+    private float _bodyScale = BodyScale;
 
     private struct Leaf
     {
@@ -34,10 +36,12 @@ public sealed class PhaseIntroductionScreen
         _dimensions = dimensions;
     }
 
-    public void Open(string title, string text)
+    public void Open(string title, string text, string navigationText = DefaultNavigationText)
     {
         _title = title;
-        _body = WrapText(text, _dimensions.X * 0.64f / BodyScale);
+        _navigationText = navigationText;
+        _body = WrapText(text.Replace("\r\n", "\n"), _dimensions.X * 0.64f / BodyScale);
+        _bodyScale = Math.Min(BodyScale, _dimensions.Y * 0.43f / Math.Max(1.0f, _font.MeasureString(_body).Y));
 
         for (int index = 0; index < _leaves.Length; index++)
         {
@@ -90,9 +94,9 @@ public sealed class PhaseIntroductionScreen
         Vector2 bodyPosition = new Vector2(_dimensions.X * 0.18f, _dimensions.Y * 0.37f);
         spriteBatch.DrawString(
             _font, _body, bodyPosition, Color.WhiteSmoke,
-            0.0f, Vector2.Zero, BodyScale, SpriteEffects.None, 0.0f);
+            0.0f, Vector2.Zero, _bodyScale, SpriteEffects.None, 0.0f);
 
-        DrawCenteredText(spriteBatch, NavigationText, _dimensions.Y * 0.86f, Color.LightGray, 1.0f);
+        DrawCenteredText(spriteBatch, _navigationText, _dimensions.Y * 0.86f, Color.LightGray, 1.0f);
         spriteBatch.End();
     }
 

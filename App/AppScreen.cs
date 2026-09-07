@@ -6,5 +6,6 @@ public enum AppScreen
     START_MENU = 2,
     PHASE_SELECT = 3,
     PLAYING = 4,
-    PHASE_INTRODUCTION = 5
+    PHASE_INTRODUCTION = 5,
+    PHASE_RESULT = 6
 }

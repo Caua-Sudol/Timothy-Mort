@@ -25,6 +25,8 @@ public sealed class PhaseState
     public string PhaseId { get; }
     public string CurrentScenarioId { get; private set; }
     public int DeathCount { get; private set; }
+    public int TotalDeathCount { get; private set; }
+    public double ElapsedSeconds { get; private set; }
     public int CurrentHealth { get; private set; }
     public double DamageInvulnerabilityRemainingSeconds { get; private set; }
     public string FirstSolutionId { get; private set; }
@@ -167,6 +169,8 @@ public sealed class PhaseState
     {
         CurrentScenarioId = initialScenarioId;
         DeathCount = 0;
+        TotalDeathCount = 0;
+        ElapsedSeconds = 0.0;
         FirstSolutionId = null;
         FirstJustificationId = null;
         AppliedSolutionId = null;
@@ -306,14 +310,28 @@ public sealed class PhaseState
 
     public void RegisterDeath()
     {
-        if (CurrentScenarioId != _deathCountingScenarioId ||
-            _deathRegisteredInCurrentAttempt)
+        if (_deathRegisteredInCurrentAttempt)
         {
             return;
         }
 
-        DeathCount++;
+        TotalDeathCount++;
+        if (CurrentScenarioId == _deathCountingScenarioId)
+        {
+            DeathCount++;
+        }
+
         _deathRegisteredInCurrentAttempt = true;
+    }
+
+    public void AccumulateActiveTime(double deltaTime)
+    {
+        if (!double.IsFinite(deltaTime) || deltaTime < 0.0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(deltaTime));
+        }
+
+        ElapsedSeconds += deltaTime;
     }
 
     public void UpdateDamageInvulnerability(double deltaTime)

@@ -24,6 +24,7 @@ public class Game1 : Game
     private StartMenu _startMenu;
     private PhaseSelectMenu _phaseSelectMenu;
     private PhaseIntroductionScreen _phaseIntroductionScreen;
+    private PhaseResultScreen _phaseResultScreen;
     private string _introductionScenarioId;
     private PauseMenu _pauseMenu;
     private DeathMenu _deathMenu;
@@ -75,6 +76,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _startMenu = new StartMenu(font, menuCenter);
         _phaseSelectMenu = new PhaseSelectMenu(font, menuCenter, _phaseProgress);
         _phaseIntroductionScreen = new PhaseIntroductionScreen(
+            font, new Vector2(LogicalWidth, LogicalHeight));
+        _phaseResultScreen = new PhaseResultScreen(
             font, new Vector2(LogicalWidth, LogicalHeight));
         _pauseMenu = new PauseMenu(font, menuCenter);
         _deathMenu = new DeathMenu(font, menuCenter);
@@ -132,6 +135,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             UpdatePhaseIntroduction(keyboardState, deltaTime);
         }
+        else if (_activeScreen == AppScreen.PHASE_RESULT)
+        {
+            UpdatePhaseResult(keyboardState, deltaTime);
+        }
         else if (_activeScreen == AppScreen.PLAYING)
         {
             UpdatePlaying(keyboardState, deltaTime);
@@ -164,6 +171,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         else if (_activeScreen == AppScreen.PHASE_INTRODUCTION)
         {
             _phaseIntroductionScreen.Draw(_spriteBatch, _scenarioFadeTexture);
+        }
+        else if (_activeScreen == AppScreen.PHASE_RESULT)
+        {
+            _phaseResultScreen.Draw(_spriteBatch, _scenarioFadeTexture);
         }
         else if (_activeScreen == AppScreen.PLAYING)
         {
@@ -309,6 +320,17 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         }
     }
 
+    private void UpdatePhaseResult(KeyboardState keyboardState, double deltaTime)
+    {
+        if (KeyWasPressed(keyboardState, Keys.Enter) || EscapeWasPressed(keyboardState))
+        {
+            ReturnToPhaseSelect();
+            return;
+        }
+
+        _phaseResultScreen.Update(deltaTime);
+    }
+
     private double GetSecondsPerFrame()
     {
         if (_activeScreen == AppScreen.PLAYING && _overlayState == OverlayState.NONE)
@@ -352,6 +374,11 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (_overlayState == OverlayState.INTERVENTION_CHOICES)
         {
+            if (IsActive)
+            {
+                _phaseState?.AccumulateActiveTime(deltaTime);
+            }
+
             _interventionChoiceMenu.Update(keyboardState, _previousKeyboardState);
 
             if (_interventionChoiceMenu.TryTakeCompletedFirstChoice(
@@ -382,6 +409,11 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             UpdatePauseMenu(keyboardState);
             return;
+        }
+
+        if (IsActive && _scene.SceneMode == SceneMode.PLAYING)
+        {
+            _phaseState?.AccumulateActiveTime(deltaTime);
         }
 
         _scene.Update(_camera, deltaTime);
@@ -418,8 +450,11 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             if (destinationScenarioId == ScenarioCatalog.InitialScenarioId)
             {
-                CompleteCurrentPhase();
-                ReturnToPhaseSelect();
+                if (!CompleteCurrentPhase())
+                {
+                    ReturnToPhaseSelect();
+                }
+
                 return;
             }
 
@@ -547,7 +582,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _mapReloadErrorMessage = null;
     }
 
-    private void CompleteCurrentPhase()
+    private bool CompleteCurrentPhase()
     {
         PhaseDefinition phase = PhaseCatalog.GetForScenario(_currentScenarioId);
         if (phase != null &&
@@ -556,7 +591,12 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _phaseState.ExitDoorIsOpen)
         {
             _phaseProgress.TryCompletePhase(phase.Id);
+            _phaseResultScreen.Open(_phaseState);
+            _activeScreen = AppScreen.PHASE_RESULT;
+            return true;
         }
+
+        return false;
     }
 
     private void ReturnToPhaseSelect()
