@@ -45,6 +45,7 @@ public sealed class PhaseSelectMenu
     private readonly PhaseProgress _progress;
     private Texture2D _pixel;
     private int _selectedPhaseIndex;
+    private string _sessionCode;
 
     public PhaseSelectMenu(SpriteFont font, Vector2 center, PhaseProgress progress)
     {
@@ -57,6 +58,11 @@ public sealed class PhaseSelectMenu
     {
         _pixel = new Texture2D(graphicsDevice, 1, 1);
         _pixel.SetData(new[] { Color.White });
+    }
+
+    public void SetSessionCode(string sessionCode)
+    {
+        _sessionCode = sessionCode;
     }
 
     public PhaseSelectOption Update(
@@ -96,6 +102,15 @@ public sealed class PhaseSelectMenu
     {
         spriteBatch.Begin();
 
+        if (!string.IsNullOrEmpty(_sessionCode))
+        {
+            DrawCenteredText(
+                spriteBatch,
+                $"Sessão: {_sessionCode}",
+                new Vector2(_center.X, 120.0f),
+                Color.LightGray);
+        }
+
         DrawCenteredText(spriteBatch, TitleText, new Vector2(_center.X, 180.0f), Color.White);
         DrawCenteredText(spriteBatch, TutorialText, new Vector2(_center.X, 250.0f), Color.Gray);
 
@@ -114,10 +129,14 @@ public sealed class PhaseSelectMenu
                 cardY,
                 CardWidth,
                 CardHeight);
+            bool isCompleted = !isVisualPrototype &&
+                _progress.IsCompleted(PhaseIds[index]);
             bool isUnlocked = IsUnlocked(index);
             bool isSelected = index == _selectedPhaseIndex;
             Color borderColor = isSelected ? Color.Yellow : Color.DimGray;
-            Color textColor = isUnlocked ? Color.White : Color.Gray;
+            Color textColor = isCompleted
+                ? Color.LightGreen
+                : isUnlocked ? Color.White : Color.Gray;
 
             DrawBorder(spriteBatch, cardRectangle, borderColor);
             DrawCenteredText(
@@ -126,7 +145,15 @@ public sealed class PhaseSelectMenu
                 cardRectangle.Center.ToVector2() - new Vector2(0.0f, 24.0f),
                 textColor);
 
-            if (!isUnlocked)
+            if (isCompleted)
+            {
+                DrawCenteredText(
+                    spriteBatch,
+                    "Concluída",
+                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, 32.0f),
+                    Color.LightGreen);
+            }
+            else if (!isUnlocked)
             {
                 DrawCenteredText(
                     spriteBatch,
@@ -144,12 +171,11 @@ public sealed class PhaseSelectMenu
             }
             else
             {
-                bool isCompleted = _progress.IsCompleted(PhaseIds[index]);
                 DrawCenteredText(
                     spriteBatch,
-                    isCompleted ? "Concluída" : "Disponível",
+                    "Disponível",
                     cardRectangle.Center.ToVector2() + new Vector2(0.0f, 32.0f),
-                    isCompleted ? Color.LightGreen : Color.LightGray);
+                    Color.LightGray);
             }
         }
 
@@ -159,7 +185,9 @@ public sealed class PhaseSelectMenu
 
     private bool IsUnlocked(int index)
     {
-        return index == VisualPrototypeIndex || _progress.IsUnlocked(PhaseIds[index]);
+        return index == VisualPrototypeIndex ||
+            !_progress.IsCompleted(PhaseIds[index]) &&
+            _progress.IsUnlocked(PhaseIds[index]);
     }
 
     private void DrawBorder(SpriteBatch spriteBatch, Rectangle rectangle, Color color)

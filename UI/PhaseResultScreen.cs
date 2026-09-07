@@ -14,7 +14,7 @@ public sealed class PhaseResultScreen
         _presentation = new PhaseIntroductionScreen(font, dimensions);
     }
 
-    public void Open(PhaseState state)
+    public void Open(PhaseState state, string persistenceMessage = null)
     {
         InterventionSolutionDefinition firstSolution = state.HasFirstChoice
             ? state.ChoiceCatalog.GetSolution(state.FirstSolutionId)
@@ -38,6 +38,13 @@ public sealed class PhaseResultScreen
         text.AppendLine();
         text.AppendLine("Sobre a primeira escolha:");
         text.Append(PhaseResultTextCatalog.GetExplanation(state.PhaseId, firstSolution?.Quality));
+
+        if (!string.IsNullOrEmpty(persistenceMessage))
+        {
+            text.AppendLine();
+            text.AppendLine();
+            text.Append(persistenceMessage);
+        }
 
         // Capture the result now so time and counts remain fixed while this screen is open.
         _presentation.Open(

@@ -22,6 +22,7 @@ public class Game1 : Game
     private Scene _scene;
     private TitleScreen _titleScreen;
     private StartMenu _startMenu;
+    private SessionStartScreen _sessionStartScreen;
     private PhaseSelectMenu _phaseSelectMenu;
     private PhaseIntroductionScreen _phaseIntroductionScreen;
     private PhaseResultScreen _phaseResultScreen;
@@ -32,6 +33,10 @@ public class Game1 : Game
     private InterventionChoiceMenu _interventionChoiceMenu;
     private PhaseState _phaseState;
     private readonly PhaseProgress _phaseProgress = new PhaseProgress();
+    private SessionStore _sessionStore;
+    private LocalSessionInfo _pendingActiveSession;
+    private string _activeSessionId;
+    private string _activeSessionCode;
     private string _currentScenarioId = ScenarioCatalog.InitialScenarioId;
     private readonly Random _choicePresentationRandom = new Random();
     private AppScreen _activeScreen = AppScreen.TITLE;
@@ -74,6 +79,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         _titleScreen = new TitleScreen(font, menuCenter);
         _startMenu = new StartMenu(font, menuCenter);
+        _sessionStartScreen = new SessionStartScreen(font, menuCenter);
         _phaseSelectMenu = new PhaseSelectMenu(font, menuCenter, _phaseProgress);
         _phaseIntroductionScreen = new PhaseIntroductionScreen(
             font, new Vector2(LogicalWidth, LogicalHeight));
@@ -127,6 +133,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             UpdateStartMenu(keyboardState);
         }
+        else if (_activeScreen == AppScreen.SESSION_START)
+        {
+            UpdateSessionStart(keyboardState);
+        }
         else if (_activeScreen == AppScreen.PHASE_SELECT)
         {
             UpdatePhaseSelect(keyboardState);
@@ -163,6 +173,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         else if (_activeScreen == AppScreen.START_MENU)
         {
             DrawStartMenu();
+        }
+        else if (_activeScreen == AppScreen.SESSION_START)
+        {
+            _sessionStartScreen.Draw(_spriteBatch);
         }
         else if (_activeScreen == AppScreen.PHASE_SELECT)
         {
@@ -240,13 +254,88 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         
         if(selectedOption == StartMenuOption.START)
         {
-            _activeScreen = AppScreen.PHASE_SELECT;
             _overlayState = OverlayState.NONE;
+            OpenSessionStartFlow();
         }
         else if(selectedOption == StartMenuOption.EXIT)
         {
             Exit();
         }
+    }
+
+    private void OpenSessionStartFlow()
+    {
+        try
+        {
+            _sessionStore ??= new SessionStore();
+            _pendingActiveSession =
+                _sessionStore.FindMostRecentActiveSession();
+
+            if (_pendingActiveSession == null)
+            {
+                ActivateSession(_sessionStore.CreateNewSession(_phaseProgress));
+                return;
+            }
+
+            _sessionStartScreen.Open(_pendingActiveSession.PublicCode);
+            _activeScreen = AppScreen.SESSION_START;
+        }
+        catch (Exception)
+        {
+            _pendingActiveSession = null;
+            _sessionStartScreen.Open(null);
+            _sessionStartScreen.SetError(
+                "Não foi possível acessar as sessões locais.");
+            _activeScreen = AppScreen.SESSION_START;
+        }
+    }
+
+    private void UpdateSessionStart(KeyboardState keyboardState)
+    {
+        SessionStartAction action = _sessionStartScreen.Update(
+            keyboardState,
+            _previousKeyboardState);
+
+        if (action == SessionStartAction.BACK)
+        {
+            _activeScreen = AppScreen.START_MENU;
+            return;
+        }
+
+        if (action == SessionStartAction.NONE)
+        {
+            return;
+        }
+
+        try
+        {
+            if (action == SessionStartAction.CONTINUE)
+            {
+                _sessionStore.ContinueSession(
+                    _pendingActiveSession.SessionId,
+                    _phaseProgress);
+                ActivateSession(_pendingActiveSession);
+            }
+            else if (action == SessionStartAction.NEW_SESSION)
+            {
+                ActivateSession(_sessionStore.CreateNewSession(_phaseProgress));
+            }
+        }
+        catch (Exception)
+        {
+            _sessionStartScreen.SetError(
+                "Não foi possível preparar a sessão local.");
+        }
+    }
+
+    private void ActivateSession(LocalSessionInfo session)
+    {
+        _activeSessionId = session.SessionId;
+        _activeSessionCode = session.PublicCode;
+        _pendingActiveSession = null;
+        _phaseSelectMenu.SetSessionCode(_activeSessionCode);
+        _activeScreen = AppScreen.PHASE_SELECT;
+        _overlayState = OverlayState.NONE;
     }
 
     private void UpdateTitleScreen(KeyboardState keyboardState)
@@ -610,7 +699,22 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                 phase.Id,
                 _phaseState.AppliedSolutionId,
                 finalSolutionVisualModules);
-            _phaseResultScreen.Open(_phaseState);
+
+            string persistenceMessage;
+            try
+            {
+                _sessionStore.SavePhaseCompletion(
+                    _activeSessionId,
+                    _phaseState);
+                persistenceMessage = "Progresso salvo localmente.";
+            }
+            catch (Exception)
+            {
+                persistenceMessage =
+                    "Não foi possível salvar o progresso local.";
+            }
+
+            _phaseResultScreen.Open(_phaseState, persistenceMessage);
             _activeScreen = AppScreen.PHASE_RESULT;
             return true;
         }

@@ -16,6 +16,27 @@ public sealed class PhaseProgress
         return _completedPhaseIds.Contains(phaseId);
     }
 
+    public void Clear()
+    {
+        _completedPhaseIds.Clear();
+        _finalSolutionIds.Clear();
+        _finalSolutionVisualModules.Clear();
+    }
+
+    public void RestoreCompletedPhase(
+        string phaseId,
+        string finalSolutionId,
+        SolutionVisualModule finalSolutionVisualModules)
+    {
+        _completedPhaseIds.Add(phaseId);
+
+        if (!string.IsNullOrEmpty(finalSolutionId))
+        {
+            _finalSolutionIds[phaseId] = finalSolutionId;
+            _finalSolutionVisualModules[phaseId] = finalSolutionVisualModules;
+        }
+    }
+
     public bool IsUnlocked(string phaseId)
     {
         return phaseId switch
