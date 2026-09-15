@@ -20,7 +20,7 @@ public sealed class SessionStartScreen
     private const string ReplacementWarningText =
         "Uma nova sessão encerra a retomada da sessão atual";
     private const string NavigationText =
-        "W/S ou setas para navegar    Enter para selecionar    Esc para voltar";
+        "W/S ou setas para navegar    Enter para selecionar    Esc para sair";
 
     private readonly SpriteFont _font;
     private readonly Vector2 _center;

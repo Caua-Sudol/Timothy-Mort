@@ -1,5 +1,5 @@
 {
-    "activeFile": "Content/ModelosConceituaisRestricoesIntervencao.tmx",
+    "activeFile": "Content/PropVisual.tmx",
     "expandedProjectPaths": [
         "Content"
     ],
@@ -30,65 +30,65 @@
             "scale": 0.7242513020833332,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 768.3797024585376,
-                "y": 543.3196997617872
+                "x": 767.6893343521058,
+                "y": 543.3196997617871
             }
         },
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
                 7,
-                6,
                 2,
+                6,
                 8
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2304.6666666666665,
+                "x": 2304,
                 "y": 544.6666666666666
             }
         },
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
             "expandedObjectLayers": [
                 7,
-                6,
-                13,
-                11,
                 2,
+                6,
+                11,
+                8,
                 12,
-                8
+                13
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 746,
-                "y": 526.6666666666665
+                "x": 644,
+                "y": 628
             }
         },
         "Content/PropVisual.tmx": {
             "expandedObjectLayers": [
-                5,
+                1,
                 2,
-                1
+                5
             ],
-            "scale": 0.33,
-            "selectedLayer": 4,
+            "scale": 1.5,
+            "selectedLayer": 5,
             "viewCenter": {
-                "x": 2303.030303030303,
-                "y": 543.939393939394
+                "x": 401.3333333333333,
+                "y": 928
             }
         },
         "Content/SimpleCutsceneMap.tmx": {
             "expandedObjectLayers": [
                 7,
-                6,
-                2
+                2,
+                6
             ],
             "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 1617,
-                "y": 936
+                "x": 1350,
+                "y": 616
             }
         },
         "Content/SimpleCutsceneMap.tmx#grass": {
@@ -125,11 +125,11 @@
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
-        "Content/PropVisual.tmx",
-        "Content/SimpleCutsceneMap.tmx",
         "Content/FeedbackIntervencao.tmx",
         "Content/ModelosConceituaisRestricoes.tmx",
         "Content/ModelosConceituaisRestricoesIntervencao.tmx",
+        "Content/SimpleCutsceneMap.tmx",
+        "Content/PropVisual.tmx",
         "Content/AffordanceIntervencao.tmx",
         "Content/AffordanceVisibilidade.tmx"
     ]

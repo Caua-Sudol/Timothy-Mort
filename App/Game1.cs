@@ -42,7 +42,7 @@ public class Game1 : Game
     private bool _showStudyCompletionAfterPhaseResult;
     private string _currentScenarioId = ScenarioCatalog.InitialScenarioId;
     private readonly Random _choicePresentationRandom = new Random();
-    private AppScreen _activeScreen = AppScreen.TITLE;
+    private AppScreen _activeScreen = AppScreen.SESSION_START;
     private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
     private Texture2D _scenarioFadeTexture;
@@ -115,6 +115,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _debugView.LoadContent(GraphicsDevice);
 
         TargetElapsedTime = TimeSpan.FromSeconds(SecondsPerFrameMenu);
+        OpenSessionStartFlow();
     }
 
     protected override void Update(GameTime gameTime)
@@ -268,7 +269,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         if(selectedOption == StartMenuOption.START)
         {
             _overlayState = OverlayState.NONE;
-            OpenSessionStartFlow();
+            _activeScreen = AppScreen.PHASE_SELECT;
         }
         else if(selectedOption == StartMenuOption.EXIT)
         {
@@ -311,7 +312,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (action == SessionStartAction.BACK)
         {
-            _activeScreen = AppScreen.START_MENU;
+            Exit();
             return;
         }
 
@@ -349,7 +350,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _showStudyCompletionAfterPhaseResult = false;
         _pendingActiveSession = null;
         _phaseSelectMenu.SetSessionCode(_activeSessionCode);
-        _activeScreen = AppScreen.PHASE_SELECT;
+        _activeScreen = AppScreen.TITLE;
         _overlayState = OverlayState.NONE;
     }
 
@@ -459,7 +460,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _activeSessionId = null;
             _activeSessionCode = null;
             _completedSessionData = null;
-            _activeScreen = AppScreen.START_MENU;
+            OpenSessionStartFlow();
             return;
         }
 
