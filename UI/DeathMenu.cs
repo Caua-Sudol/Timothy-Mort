@@ -13,16 +13,22 @@ public enum DeathOption
 
 public class DeathMenu
 {
-    private const float OptionSpacing = 20.0f;
+    private const float OptionSpacing = 130.0f;
 
     private readonly SpriteFont _font;
+    private readonly SpriteFont _titleFont;
+    private readonly Texture2D _selector;
+    private readonly Vector2 _center;
     private readonly Vector2 _retryPosition;
     private readonly Vector2 _quitPosition;
 
     private DeathOption _currentOption = DeathOption.RETRY;
 
-    public DeathMenu(SpriteFont font, Vector2 menuCenter)
+    public DeathMenu(SpriteFont titleFont, SpriteFont font, Texture2D selector, Vector2 menuCenter)
     {
+        _titleFont = titleFont;
+        _selector = selector;
+        _center = menuCenter;
         _font = font;
         _retryPosition = menuCenter - new Vector2(0, OptionSpacing / 2);
         _quitPosition = menuCenter + new Vector2(0, OptionSpacing / 2);
@@ -51,9 +57,13 @@ public class DeathMenu
 
     public void Draw(SpriteBatch spriteBatch)
     {
-        spriteBatch.Begin();
-        DrawOption(spriteBatch, "Retry", _retryPosition, GetOptionColor(DeathOption.RETRY));
-        DrawOption(spriteBatch, "Quit", _quitPosition, GetOptionColor(DeathOption.QUIT));
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
+        Vector2 titlePosition = _center - new Vector2(0, 300);
+        spriteBatch.DrawString(_titleFont, "Você morreu",
+            titlePosition - _titleFont.MeasureString("Você morreu") / 2,
+            new Color(216, 208, 187));
+        DrawOption(spriteBatch, "Retry", _retryPosition, _currentOption == DeathOption.RETRY);
+        DrawOption(spriteBatch, "Quit", _quitPosition, _currentOption == DeathOption.QUIT);
         spriteBatch.End();
     }
 
@@ -74,18 +84,17 @@ public class DeathMenu
         }
     }
 
-    private Color GetOptionColor(DeathOption option)
+    private void DrawOption(SpriteBatch spriteBatch, string text, Vector2 position, bool selected)
     {
-        if (_currentOption == option)
+        if (selected)
         {
-            return Color.Yellow;
+            const int width = 480;
+            int height = (int)(width * _selector.Height / (float)_selector.Width);
+            spriteBatch.Draw(_selector,
+                new Rectangle((int)(position.X - width / 2.0f), (int)(position.Y - height / 2.0f), width, height),
+                Color.White);
         }
-
-        return Color.White;
-    }
-
-    private void DrawOption(SpriteBatch spriteBatch, string text, Vector2 position, Color color)
-    {
+        Color color = selected ? new Color(216, 208, 187) : new Color(181, 173, 161);
         Vector2 textSize = _font.MeasureString(text);
         Vector2 textPosition = position - textSize / 2;
 

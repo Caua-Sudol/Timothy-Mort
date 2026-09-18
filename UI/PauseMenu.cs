@@ -14,17 +14,23 @@ public enum PauseOption
 
 public class PauseMenu
 {
-    private const float OptionSpacing = 20.0f;
+    private const float OptionSpacing = 130.0f;
 
     private readonly SpriteFont _font;
+    private readonly SpriteFont _titleFont;
+    private readonly Texture2D _selector;
+    private readonly Vector2 _center;
     private readonly Vector2 _resumePosition;
     private readonly Vector2 _restartPosition;
     private readonly Vector2 _quitPosition;
 
     private PauseOption _currentOption = PauseOption.RESUME;
 
-    public PauseMenu(SpriteFont font, Vector2 menuCenter)
+    public PauseMenu(SpriteFont titleFont, SpriteFont font, Texture2D selector, Vector2 menuCenter)
     {
+        _titleFont = titleFont;
+        _selector = selector;
+        _center = menuCenter;
         _font = font;
         _resumePosition = menuCenter - new Vector2(0, OptionSpacing);
         _restartPosition = menuCenter;
@@ -57,10 +63,14 @@ public class PauseMenu
 
     public void Draw(SpriteBatch spriteBatch)
     {
-        spriteBatch.Begin();
-        DrawOption(spriteBatch, "Resume", _resumePosition, GetOptionColor(PauseOption.RESUME));
-        DrawOption(spriteBatch, "Restart", _restartPosition, GetOptionColor(PauseOption.RESTART));
-        DrawOption(spriteBatch, "Quit", _quitPosition, GetOptionColor(PauseOption.QUIT));
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
+        Vector2 titlePosition = _center - new Vector2(0, 300);
+        spriteBatch.DrawString(_titleFont, "Pausa",
+            titlePosition - _titleFont.MeasureString("Pausa") / 2,
+            new Color(216, 208, 187));
+        DrawOption(spriteBatch, "Resume", _resumePosition, _currentOption == PauseOption.RESUME);
+        DrawOption(spriteBatch, "Restart", _restartPosition, _currentOption == PauseOption.RESTART);
+        DrawOption(spriteBatch, "Quit", _quitPosition, _currentOption == PauseOption.QUIT);
         spriteBatch.End();
     }
 
@@ -101,18 +111,17 @@ public class PauseMenu
         }
     }
 
-    private Color GetOptionColor(PauseOption option)
+    private void DrawOption(SpriteBatch spriteBatch, string text, Vector2 position, bool selected)
     {
-        if (_currentOption == option)
+        if (selected)
         {
-            return Color.Yellow;
+            const int width = 480;
+            int height = (int)(width * _selector.Height / (float)_selector.Width);
+            spriteBatch.Draw(_selector,
+                new Rectangle((int)(position.X - width / 2.0f), (int)(position.Y - height / 2.0f), width, height),
+                Color.White);
         }
-
-        return Color.White;
-    }
-
-    private void DrawOption(SpriteBatch spriteBatch, string text, Vector2 position, Color color)
-    {
+        Color color = selected ? new Color(216, 208, 187) : new Color(181, 173, 161);
         Vector2 textSize = _font.MeasureString(text);
         Vector2 textPosition = position - textSize / 2;
 

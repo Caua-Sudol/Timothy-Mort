@@ -22,9 +22,9 @@ public sealed class StudyCompletionScreen
     private string _exportError;
     private string _formStatus;
 
-    public StudyCompletionScreen(SpriteFont font, Vector2 dimensions)
+    public StudyCompletionScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions)
     {
-        _presentation = new PhaseIntroductionScreen(font, dimensions);
+        _presentation = new PhaseIntroductionScreen(titleFont, font, dimensions);
     }
 
     public void Open(

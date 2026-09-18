@@ -77,6 +77,9 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     protected override void Initialize()
     {
         SpriteFont font = Content.Load<SpriteFont>("font");
+        SpriteFont titleFont = Content.Load<SpriteFont>("walter");
+        SpriteFont bodyFont = Content.Load<SpriteFont>("patrick");
+        Texture2D selector = Content.Load<Texture2D>("ui/selector");
         _debugView = new DebugView(font);
         Vector2 menuCenter = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
 
@@ -90,15 +93,19 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             Content.Load<SpriteFont>("patrick"),
             Content.Load<Texture2D>("ui/selector"),
             menuCenter);
-        _phaseSelectMenu = new PhaseSelectMenu(font, menuCenter, _phaseProgress);
+        _phaseSelectMenu = new PhaseSelectMenu(
+            Content.Load<SpriteFont>("walter"),
+            Content.Load<SpriteFont>("patrick"),
+            menuCenter,
+            _phaseProgress);
         _phaseIntroductionScreen = new PhaseIntroductionScreen(
-            font, new Vector2(LogicalWidth, LogicalHeight));
+            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight));
         _phaseResultScreen = new PhaseResultScreen(
-            font, new Vector2(LogicalWidth, LogicalHeight));
+            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight));
         _studyCompletionScreen = new StudyCompletionScreen(
-            font, new Vector2(LogicalWidth, LogicalHeight));
-        _pauseMenu = new PauseMenu(font, menuCenter);
-        _deathMenu = new DeathMenu(font, menuCenter);
+            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight));
+        _pauseMenu = new PauseMenu(titleFont, bodyFont, selector, menuCenter);
+        _deathMenu = new DeathMenu(titleFont, bodyFont, selector, menuCenter);
         _damageHud = new DamageHud();
         _interventionChoiceMenu = new InterventionChoiceMenu(font);
 
@@ -118,7 +125,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _scenarioFadeTexture.SetData(new[] { Color.White });
         _damageHud.LoadContent(GraphicsDevice);
         _interventionChoiceMenu.LoadContent(GraphicsDevice);
-        _phaseSelectMenu.LoadContent(GraphicsDevice);
+        _phaseSelectMenu.LoadContent(Content);
         _debugView.LoadContent(GraphicsDevice);
 
         TargetElapsedTime = TimeSpan.FromSeconds(SecondsPerFrameMenu);
@@ -365,7 +372,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         if (_titleScreen.Update(keyboardState, _previousKeyboardState))
         {
-            _activeScreen = AppScreen.START_MENU;
+            _activeScreen = AppScreen.PHASE_SELECT;
         }
     }
 
@@ -373,7 +380,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         if (EscapeWasPressed(keyboardState))
         {
-            _activeScreen = AppScreen.START_MENU;
+            _activeScreen = AppScreen.TITLE;
             return;
         }
 

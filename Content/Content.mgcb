@@ -50,6 +50,28 @@
 /processorParam:TextureFormat=Color
 /build:../assets/selector.png;ui/selector.png
 
+#begin ../assets/card_selected.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/card_selected.png;ui/card_selected.png
+
+#begin ../assets/card_no_selecioned.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/card_no_selecioned.png;ui/card_unselected.png
+
 #begin ../assets/bg_prot.png
 /importer:TextureImporter
 /processor:TextureProcessor

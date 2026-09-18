@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -15,22 +16,18 @@ public enum PhaseSelectOption
 
 public sealed class PhaseSelectMenu
 {
-    private const int CardWidth = 480;
-    private const int CardHeight = 280;
+    private const int CardWidth = 540;
+    private const int CardHeight = 368;
     private const int CardSpacing = 48;
-    private const int BorderThickness = 4;
     private const int MainPhaseCount = 3;
-    private const int VisualPrototypeIndex = 3;
     private const string TitleText = "Selecionar fase";
-    private const string TutorialText = "Tutorial - em breve";
     private const string NavigationText = "A/D ou setas para navegar    Enter para selecionar    Esc para voltar";
 
     private static readonly string[] PhaseTitles =
     {
-        "1. Affordance e visibilidade",
-        "2. Feedback de dano",
-        "3. Modelos conceituais e restrições",
-        "Protótipo visual"
+        "Affordance\ne visibilidade",
+        "Feedback\nde dano",
+        "Modelos conceituais\ne restrições"
     };
 
     private static readonly string[] PhaseIds =
@@ -41,23 +38,30 @@ public sealed class PhaseSelectMenu
     };
 
     private readonly SpriteFont _font;
+    private readonly SpriteFont _titleFont;
+    private static readonly Color BackgroundColor = new Color(21, 25, 31);
+    private static readonly Color PrimaryColor = new Color(216, 208, 187);
+    private static readonly Color SecondaryColor = new Color(181, 173, 161);
+    private static readonly Color CardTextColor = new Color(37, 40, 43);
     private readonly Vector2 _center;
     private readonly PhaseProgress _progress;
-    private Texture2D _pixel;
+    private Texture2D _selectedCard;
+    private Texture2D _unselectedCard;
     private int _selectedPhaseIndex;
     private string _sessionCode;
 
-    public PhaseSelectMenu(SpriteFont font, Vector2 center, PhaseProgress progress)
+    public PhaseSelectMenu(SpriteFont titleFont, SpriteFont font, Vector2 center, PhaseProgress progress)
     {
+        _titleFont = titleFont;
         _font = font;
         _center = center;
         _progress = progress;
     }
 
-    public void LoadContent(GraphicsDevice graphicsDevice)
+    public void LoadContent(ContentManager content)
     {
-        _pixel = new Texture2D(graphicsDevice, 1, 1);
-        _pixel.SetData(new[] { Color.White });
+        _selectedCard = content.Load<Texture2D>("ui/card_selected");
+        _unselectedCard = content.Load<Texture2D>("ui/card_unselected");
     }
 
     public void SetSessionCode(string sessionCode)
@@ -90,7 +94,6 @@ public sealed class PhaseSelectMenu
                 0 => PhaseSelectOption.AFFORDANCE,
                 1 => PhaseSelectOption.FEEDBACK,
                 2 => PhaseSelectOption.CONCEPTUAL_MODELS,
-                VisualPrototypeIndex => PhaseSelectOption.PROP_VISUAL,
                 _ => PhaseSelectOption.NONE
             };
         }
@@ -100,7 +103,8 @@ public sealed class PhaseSelectMenu
 
     public void Draw(SpriteBatch spriteBatch)
     {
-        spriteBatch.Begin();
+        spriteBatch.GraphicsDevice.Clear(BackgroundColor);
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
 
         if (!string.IsNullOrEmpty(_sessionCode))
         {
@@ -108,11 +112,10 @@ public sealed class PhaseSelectMenu
                 spriteBatch,
                 $"Sessão: {_sessionCode}",
                 new Vector2(_center.X, 120.0f),
-                Color.LightGray);
+                SecondaryColor, scale: 0.75f);
         }
 
-        DrawCenteredText(spriteBatch, TitleText, new Vector2(_center.X, 180.0f), Color.White);
-        DrawCenteredText(spriteBatch, TutorialText, new Vector2(_center.X, 250.0f), Color.Gray);
+        DrawCenteredText(spriteBatch, TitleText, new Vector2(_center.X, 190.0f), PrimaryColor, _titleFont);
 
         int totalWidth = MainPhaseCount * CardWidth +
                          (MainPhaseCount - 1) * CardSpacing;
@@ -121,97 +124,82 @@ public sealed class PhaseSelectMenu
 
         for (int index = 0; index < PhaseTitles.Length; index++)
         {
-            bool isVisualPrototype = index == VisualPrototypeIndex;
-            var cardRectangle = isVisualPrototype
-                ? new Rectangle((int)_center.X - CardWidth / 2, cardY + CardHeight + CardSpacing, CardWidth, 120)
-                : new Rectangle(
+            var cardRectangle = new Rectangle(
                 startX + index * (CardWidth + CardSpacing),
                 cardY,
                 CardWidth,
                 CardHeight);
-            bool isCompleted = !isVisualPrototype &&
-                _progress.IsCompleted(PhaseIds[index]);
+            bool isCompleted = _progress.IsCompleted(PhaseIds[index]);
             bool isUnlocked = IsUnlocked(index);
             bool isSelected = index == _selectedPhaseIndex;
-            Color borderColor = isSelected ? Color.Yellow : Color.DimGray;
-            Color textColor = isCompleted
-                ? Color.LightGreen
-                : isUnlocked ? Color.White : Color.Gray;
-
-            DrawBorder(spriteBatch, cardRectangle, borderColor);
+            Color textColor = CardTextColor;
+            spriteBatch.Draw(isSelected ? _selectedCard : _unselectedCard, cardRectangle, Color.White);
             DrawCenteredText(
                 spriteBatch,
                 PhaseTitles[index],
                 cardRectangle.Center.ToVector2() - new Vector2(0.0f, 24.0f),
-                textColor);
+                textColor,
+                _titleFont,
+                0.45f);
+
+            Vector2 statusPosition = cardRectangle.Center.ToVector2() +
+                new Vector2(0.0f, 105.0f);
 
             if (isCompleted)
             {
                 DrawCenteredText(
                     spriteBatch,
                     "Concluída",
-                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, 32.0f),
-                    Color.LightGreen);
+                    statusPosition,
+                    textColor, scale: 0.85f);
             }
             else if (!isUnlocked)
             {
                 DrawCenteredText(
                     spriteBatch,
                     "Bloqueada",
-                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, 32.0f),
-                    Color.Gray);
-            }
-            else if (isVisualPrototype)
-            {
-                DrawCenteredText(
-                    spriteBatch,
-                    "Área de testes",
-                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, 24.0f),
-                    Color.LightGray);
+                    statusPosition,
+                    textColor, scale: 0.85f);
             }
             else
             {
                 DrawCenteredText(
                     spriteBatch,
                     "Disponível",
-                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, 32.0f),
-                    Color.LightGray);
+                    statusPosition,
+                    textColor, scale: 0.85f);
             }
         }
 
-        DrawCenteredText(spriteBatch, NavigationText, new Vector2(_center.X, 900.0f), Color.LightGray);
+        DrawCenteredText(spriteBatch, NavigationText, new Vector2(_center.X, 960.0f), SecondaryColor, scale: 0.75f);
         spriteBatch.End();
     }
 
     private bool IsUnlocked(int index)
     {
-        return index == VisualPrototypeIndex ||
-            !_progress.IsCompleted(PhaseIds[index]) &&
+        return !_progress.IsCompleted(PhaseIds[index]) &&
             _progress.IsUnlocked(PhaseIds[index]);
-    }
-
-    private void DrawBorder(SpriteBatch spriteBatch, Rectangle rectangle, Color color)
-    {
-        spriteBatch.Draw(_pixel, new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, BorderThickness), color);
-        spriteBatch.Draw(
-            _pixel,
-            new Rectangle(rectangle.X, rectangle.Bottom - BorderThickness, rectangle.Width, BorderThickness),
-            color);
-        spriteBatch.Draw(_pixel, new Rectangle(rectangle.X, rectangle.Y, BorderThickness, rectangle.Height), color);
-        spriteBatch.Draw(
-            _pixel,
-            new Rectangle(rectangle.Right - BorderThickness, rectangle.Y, BorderThickness, rectangle.Height),
-            color);
     }
 
     private void DrawCenteredText(
         SpriteBatch spriteBatch,
         string text,
         Vector2 position,
-        Color color)
+        Color color,
+        SpriteFont font = null,
+        float scale = 1.0f)
     {
-        Vector2 textSize = _font.MeasureString(text);
-        spriteBatch.DrawString(_font, text, position - textSize / 2.0f, color);
+        font ??= _font;
+        string[] lines = text.Split('\n');
+        float lineHeight = font.LineSpacing * scale;
+        float y = position.Y - lines.Length * lineHeight / 2.0f;
+        foreach (string line in lines)
+        {
+            float width = font.MeasureString(line).X * scale;
+            spriteBatch.DrawString(font, line, new Vector2(position.X - width / 2.0f, y),
+                color, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
+            y += lineHeight;
+        }
     }
 
     private static bool KeyWasPressed(

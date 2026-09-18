@@ -8,11 +8,12 @@ namespace DontLikePoetry;
 public sealed class PhaseIntroductionScreen
 {
     private const int LeafCount = 32;
-    private const float TitleScale = 1.5f;
-    private const float BodyScale = 1.25f;
+    private const float TitleScale = 1.0f;
+    private const float BodyScale = 1.0f;
     private const string DefaultNavigationText = "Enter para iniciar a fase    Esc para voltar";
 
     private readonly SpriteFont _font;
+    private readonly SpriteFont _titleFont;
     private readonly Vector2 _dimensions;
     private readonly Random _random = new Random();
     private readonly Leaf[] _leaves = new Leaf[LeafCount];
@@ -30,8 +31,9 @@ public sealed class PhaseIntroductionScreen
         public float RotationSpeed;
     }
 
-    public PhaseIntroductionScreen(SpriteFont font, Vector2 dimensions)
+    public PhaseIntroductionScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions)
     {
+        _titleFont = titleFont;
         _font = font;
         _dimensions = dimensions;
     }
@@ -41,7 +43,10 @@ public sealed class PhaseIntroductionScreen
         _title = title;
         _navigationText = navigationText;
         _body = WrapText(text.Replace("\r\n", "\n"), _dimensions.X * 0.64f / BodyScale);
-        _bodyScale = Math.Min(BodyScale, _dimensions.Y * 0.43f / Math.Max(1.0f, _font.MeasureString(_body).Y));
+        Vector2 bodySize = _font.MeasureString(_body);
+        _bodyScale = Math.Min(BodyScale, Math.Min(
+            _dimensions.Y * 0.43f / Math.Max(1.0f, bodySize.Y),
+            _dimensions.X * 0.64f / Math.Max(1.0f, bodySize.X)));
 
         for (int index = 0; index < _leaves.Length; index++)
         {
@@ -79,8 +84,24 @@ public sealed class PhaseIntroductionScreen
     // The shared pixel belongs to Game1; this screen does not allocate a texture.
     public void Draw(SpriteBatch spriteBatch, Texture2D pixel)
     {
-        spriteBatch.Begin();
-        spriteBatch.Draw(pixel, new Rectangle(0, 0, (int)_dimensions.X, (int)_dimensions.Y), Color.Black);
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
+        DrawBackground(spriteBatch, pixel);
+
+        DrawCenteredText(spriteBatch, _title, _dimensions.Y * 0.25f, new Color(216, 208, 187), TitleScale, _titleFont);
+
+        Vector2 bodyPosition = new Vector2(_dimensions.X * 0.18f, _dimensions.Y * 0.37f);
+        spriteBatch.DrawString(
+            _font, _body, bodyPosition, new Color(216, 208, 187),
+            0.0f, Vector2.Zero, _bodyScale, SpriteEffects.None, 0.0f);
+
+        DrawCenteredText(spriteBatch, _navigationText, _dimensions.Y * 0.86f, new Color(181, 173, 161), 0.75f, _font);
+        spriteBatch.End();
+    }
+
+    // The caller owns the SpriteBatch Begin/End pair.
+    public void DrawBackground(SpriteBatch spriteBatch, Texture2D pixel)
+    {
+        spriteBatch.Draw(pixel, new Rectangle(0, 0, (int)_dimensions.X, (int)_dimensions.Y), new Color(21, 25, 31));
 
         foreach (Leaf leaf in _leaves)
         {
@@ -89,24 +110,15 @@ public sealed class PhaseIntroductionScreen
                 leaf.Rotation, new Vector2(0.5f), leaf.Size, SpriteEffects.None, 0.0f);
         }
 
-        DrawCenteredText(spriteBatch, _title, _dimensions.Y * 0.25f, Color.White, TitleScale);
-
-        Vector2 bodyPosition = new Vector2(_dimensions.X * 0.18f, _dimensions.Y * 0.37f);
-        spriteBatch.DrawString(
-            _font, _body, bodyPosition, Color.WhiteSmoke,
-            0.0f, Vector2.Zero, _bodyScale, SpriteEffects.None, 0.0f);
-
-        DrawCenteredText(spriteBatch, _navigationText, _dimensions.Y * 0.86f, Color.LightGray, 1.0f);
-        spriteBatch.End();
     }
 
-    private void DrawCenteredText(SpriteBatch spriteBatch, string text, float y, Color color, float scale)
+    private void DrawCenteredText(SpriteBatch spriteBatch, string text, float y, Color color, float scale, SpriteFont font)
     {
-        Vector2 textSize = _font.MeasureString(text);
+        Vector2 textSize = font.MeasureString(text);
         float fittedScale = Math.Min(scale, _dimensions.X * 0.8f / Math.Max(1.0f, textSize.X));
         Vector2 position = new Vector2((_dimensions.X - textSize.X * fittedScale) / 2.0f, y);
         spriteBatch.DrawString(
-            _font, text, position, color, 0.0f, Vector2.Zero, fittedScale, SpriteEffects.None, 0.0f);
+            font, text, position, color, 0.0f, Vector2.Zero, fittedScale, SpriteEffects.None, 0.0f);
     }
 
     private string WrapText(string text, float maximumWidth)
