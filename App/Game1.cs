@@ -80,9 +80,16 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _debugView = new DebugView(font);
         Vector2 menuCenter = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
 
-        _titleScreen = new TitleScreen(font, menuCenter);
+        _titleScreen = new TitleScreen(
+            Content.Load<SpriteFont>("patrick"),
+            Content.Load<Texture2D>("ui/sc_press_any_key"),
+            menuCenter);
         _startMenu = new StartMenu(font, menuCenter);
-        _sessionStartScreen = new SessionStartScreen(font, menuCenter);
+        _sessionStartScreen = new SessionStartScreen(
+            Content.Load<SpriteFont>("walter"),
+            Content.Load<SpriteFont>("patrick"),
+            Content.Load<Texture2D>("ui/selector"),
+            menuCenter);
         _phaseSelectMenu = new PhaseSelectMenu(font, menuCenter, _phaseProgress);
         _phaseIntroductionScreen = new PhaseIntroductionScreen(
             font, new Vector2(LogicalWidth, LogicalHeight));

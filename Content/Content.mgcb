@@ -18,6 +18,38 @@
 /processor:FontDescriptionProcessor
 /build:font.spritefont
 
+#begin walter.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/build:walter.spritefont
+
+#begin patrick.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/build:patrick.spritefont
+
+#begin ../assets/sc_press_any_key.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/sc_press_any_key.png;ui/sc_press_any_key.png
+
+#begin ../assets/selector.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/selector.png;ui/selector.png
+
 #begin ../assets/bg_prot.png
 /importer:TextureImporter
 /processor:TextureProcessor

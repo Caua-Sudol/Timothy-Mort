@@ -6,16 +6,17 @@ namespace DontLikePoetry;
 
 public sealed class TitleScreen
 {
-    private const string GameTitle = "TIMOTHY & MORT";
     private const string ContinueText = "Pressione qualquer botão";
-    private const float TextSpacing = 80.0f;
+    private static readonly Color ContinueColor = new Color(181, 173, 161);
 
     private readonly SpriteFont _font;
+    private readonly Texture2D _background;
     private readonly Vector2 _center;
 
-    public TitleScreen(SpriteFont font, Vector2 center)
+    public TitleScreen(SpriteFont font, Texture2D background, Vector2 center)
     {
         _font = font;
+        _background = background;
         _center = center;
     }
 
@@ -27,17 +28,16 @@ public sealed class TitleScreen
 
     public void Draw(SpriteBatch spriteBatch)
     {
-        spriteBatch.Begin();
-        DrawCenteredText(
-            spriteBatch,
-            GameTitle,
-            _center - new Vector2(0.0f, TextSpacing / 2.0f),
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
+        spriteBatch.Draw(
+            _background,
+            new Rectangle(0, 0, (int)(_center.X * 2), (int)(_center.Y * 2)),
             Color.White);
         DrawCenteredText(
             spriteBatch,
             ContinueText,
-            _center + new Vector2(0.0f, TextSpacing / 2.0f),
-            Color.LightGray);
+            new Vector2(_center.X, _center.Y * 1.7f),
+            ContinueColor);
         spriteBatch.End();
     }
 

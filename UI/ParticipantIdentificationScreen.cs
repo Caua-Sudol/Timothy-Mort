@@ -23,14 +23,25 @@ public sealed class SessionStartScreen
         "W/S ou setas para navegar    Enter para selecionar    Esc para sair";
 
     private readonly SpriteFont _font;
+    private readonly SpriteFont _titleFont;
+    private readonly Texture2D _selector;
+    private static readonly Color BackgroundColor = new Color(21, 25, 31);
+    private static readonly Color PrimaryColor = new Color(216, 208, 187);
+    private static readonly Color SecondaryColor = new Color(181, 173, 161);
     private readonly Vector2 _center;
     private string _activeSessionCode;
     private string _errorMessage;
     private int _selectedOptionIndex;
 
-    public SessionStartScreen(SpriteFont font, Vector2 center)
+    public SessionStartScreen(
+        SpriteFont titleFont,
+        SpriteFont font,
+        Texture2D selector,
+        Vector2 center)
     {
+        _titleFont = titleFont;
         _font = font;
+        _selector = selector;
         _center = center;
     }
 
@@ -80,32 +91,33 @@ public sealed class SessionStartScreen
 
     public void Draw(SpriteBatch spriteBatch)
     {
-        spriteBatch.Begin();
-        DrawCenteredText(TitleText, _center.Y - 180.0f, Color.White, spriteBatch);
-        DrawCenteredText(InstructionText, _center.Y - 100.0f, Color.LightGray, spriteBatch);
+        spriteBatch.GraphicsDevice.Clear(BackgroundColor);
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
+        DrawCenteredText(TitleText, _center.Y - 270.0f, PrimaryColor, spriteBatch, _titleFont);
+        DrawCenteredText(InstructionText, _center.Y - 175.0f, SecondaryColor, spriteBatch);
 
         if (!string.IsNullOrEmpty(_activeSessionCode))
         {
             DrawCenteredText(
                 $"Sessão: {_activeSessionCode}",
-                _center.Y - 30.0f,
-                Color.LightGray,
+                _center.Y - 115.0f,
+                SecondaryColor,
                 spriteBatch);
-            DrawOption("Continuar", 0, _center.Y + 60.0f, spriteBatch);
-            DrawOption("Nova sessão", 1, _center.Y + 120.0f, spriteBatch);
+            DrawOption("Continuar", 0, _center.Y - 5.0f, spriteBatch);
+            DrawOption("Nova sessão", 1, _center.Y + 125.0f, spriteBatch);
             DrawCenteredText(
                 ReplacementWarningText,
-                _center.Y + 190.0f,
-                Color.Gray,
+                _center.Y + 235.0f,
+                SecondaryColor,
                 spriteBatch);
         }
 
         if (!string.IsNullOrEmpty(_errorMessage))
         {
-            DrawCenteredText(_errorMessage, _center.Y + 250.0f, Color.OrangeRed, spriteBatch);
+            DrawCenteredText(_errorMessage, _center.Y + 290.0f, Color.OrangeRed, spriteBatch);
         }
 
-        DrawCenteredText(NavigationText, _center.Y + 330.0f, Color.LightGray, spriteBatch);
+        DrawCenteredText(NavigationText, _center.Y + 360.0f, SecondaryColor, spriteBatch, scale: 0.75f);
         spriteBatch.End();
     }
 
@@ -116,10 +128,24 @@ public sealed class SessionStartScreen
         SpriteBatch spriteBatch)
     {
         bool isSelected = optionIndex == _selectedOptionIndex;
+        if (isSelected)
+        {
+            const int selectorWidth = 480;
+            int selectorHeight = (int)(selectorWidth * _selector.Height / (float)_selector.Width);
+            spriteBatch.Draw(
+                _selector,
+                new Rectangle(
+                    (int)(_center.X - selectorWidth / 2.0f),
+                    (int)(y - selectorHeight / 2.0f),
+                    selectorWidth,
+                    selectorHeight),
+                Color.White);
+        }
+
         DrawCenteredText(
-            isSelected ? $"> {text} <" : text,
+            text,
             y,
-            isSelected ? Color.Yellow : Color.White,
+            isSelected ? PrimaryColor : SecondaryColor,
             spriteBatch);
     }
 
@@ -127,14 +153,22 @@ public sealed class SessionStartScreen
         string text,
         float y,
         Color color,
-        SpriteBatch spriteBatch)
+        SpriteBatch spriteBatch,
+        SpriteFont font = null,
+        float scale = 1.0f)
     {
-        Vector2 textSize = _font.MeasureString(text);
+        font ??= _font;
+        Vector2 textSize = font.MeasureString(text) * scale;
         spriteBatch.DrawString(
-            _font,
+            font,
             text,
-            new Vector2(_center.X - textSize.X / 2.0f, y),
-            color);
+            new Vector2(_center.X - textSize.X / 2.0f, y - textSize.Y / 2.0f),
+            color,
+            0.0f,
+            Vector2.Zero,
+            scale,
+            SpriteEffects.None,
+            0.0f);
     }
 
     private static bool KeyWasPressed(
