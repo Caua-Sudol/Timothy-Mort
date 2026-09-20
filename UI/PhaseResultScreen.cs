@@ -27,9 +27,9 @@ public sealed class PhaseResultScreen
     private float BodyY => HeadingY + (_font.LineSpacing + 24.0f) * _columnScale;
     private float FooterY => _dimensions.Y * 0.83f;
 
-    public PhaseResultScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions)
+    public PhaseResultScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions, Texture2D symbols)
     {
-        _presentation = new PhaseIntroductionScreen(titleFont, font, dimensions);
+        _presentation = new PhaseIntroductionScreen(titleFont, font, dimensions, symbols);
         _titleFont = titleFont;
         _font = font;
         _dimensions = dimensions;

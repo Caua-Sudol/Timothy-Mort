@@ -5,16 +5,17 @@ Layout de referência: 1920 × 1080 pixels lógicos.
 
 ## Cores
 
-| Uso | Hex | RGB | Origem / aplicação |
-| --- | --- | --- | --- |
-| Fundo carvão | `#15191F` | 21, 25, 31 | Sessão, seleção de fases, explicações e finalizações. |
-| Texto principal / marfim | `#D8D0BB` | 216, 208, 187 | Títulos, conteúdo principal e opções selecionadas. |
-| Texto secundário | `#B5ADA1` | 181, 173, 161 | Instruções, navegação, opções não selecionadas e mensagem da tela inicial. |
-| Texto sobre cards claros | `#25282B` | 37, 40, 43 | Texto dos cards na seleção de fases. |
-| Progresso salvo | `#A69BAE` | 166, 155, 174 | Mensagem de persistência bem-sucedida na conclusão da fase. |
-| Fundo da arte do seletor | `#302833` | 48, 40, 51 | Cor informada pelo autor para o PNG do seletor. Não usar como cor atual da mensagem de progresso. |
-| Papel do card não selecionado | `#B8AE91` | 184, 174, 145 | Cor informada pelo autor para a arte do card. |
-| Erro | `#FF4500` | 255, 69, 0 | `Color.OrangeRed`: erros de identificação/persistência. |
+| Uso                          | Hex       | RGB           | Origem / aplicação                                                        |
+|------------------------------|-----------|---------------|---------------------------------------------------------------------------|
+| Fundo carvão                 | `#15191F` | 21, 25, 31    | Sessão, seleção de fases, explicações e finalizações.                     |
+| Texto principal / marfim     | `#D8D0BB` | 216, 208, 187 | Títulos, conteúdo principal e opções selecionadas.                        |
+| Texto secundário             | `#B5ADA1` | 181, 173, 161 | Instruções, navegação, opções não selecionadas e mensagem da tela inicial. |
+| Texto sobre cards claros     | `#25282B` | 37, 40, 43    | Texto dos cards na seleção de fases.                                      |
+| Progresso salvo              | `#A69BAE` | 166, 155, 174 | Mensagem de persistência bem-sucedida na conclusão da fase.               |
+| Fundo da arte do seletor     | `#302833` | 48, 40, 51    | card selecionado                                                          |
+| Papel do card não selecionado | `#B8AE91` | 184, 174, 145 | card não selecionado                                                      |
+| Erro                         | `#FF4500` | 255, 69, 0    | `Color.OrangeRed`: erros de identificação/persistência.                   |
+| Icones flutuantes            | `#A69BAE` | 166, 155, 174 | Icones em loop                                                            |
 
 As cores de fundo e texto acima foram conferidas em `UI/ParticipantIdentificationScreen.cs`,
 `UI/PhaseSelectMenu.cs`, `UI/PhaseIntroductionScreen.cs`, `UI/PhaseResultScreen.cs`,
@@ -31,10 +32,10 @@ esse é um efeito provisório, não uma cor definida para os futuros símbolos m
 
 ## Tipografia
 
-| Função | Família | Arquivo em Content | Asset carregado | Tamanho-base no SpriteFont |
-| --- | --- | --- | --- | --- |
-| Principal: títulos e títulos dos cards | Walter Turncoat Regular | `WalterTurncoat-Regular.ttf` | `walter` | 64 |
-| Leitura: textos, opções, explicações e navegação | Patrick Hand Regular | `PatrickHand-Regular.ttf` | `patrick` | 32 |
+| Função                                           | Família                 | Arquivo em Content           | Asset carregado | Tamanho-base no SpriteFont |
+|--------------------------------------------------|-------------------------|------------------------------|-----------------|----------------------------|
+| Principal: títulos e títulos dos cards           | Walter Turncoat Regular | `WalterTurncoat-Regular.ttf` | `walter`        | 64                         |
+| Leitura: textos, opções, explicações e navegação | Patrick Hand Regular    | `PatrickHand-Regular.ttf`    | `patrick`       | 32                         |
 
 Configurações: `Content/walter.spritefont` e `Content/patrick.spritefont`.
 Ambas usam estilo Regular, espaçamento adicional 0 e kerning ativado.

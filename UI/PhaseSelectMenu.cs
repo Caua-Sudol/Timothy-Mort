@@ -47,6 +47,8 @@ public sealed class PhaseSelectMenu
     private readonly PhaseProgress _progress;
     private Texture2D _selectedCard;
     private Texture2D _unselectedCard;
+    private Texture2D _openLock, _closedLock, _check;
+    private SymbolRain _symbols;
     private int _selectedPhaseIndex;
     private string _sessionCode;
 
@@ -62,7 +64,13 @@ public sealed class PhaseSelectMenu
     {
         _selectedCard = content.Load<Texture2D>("ui/card_selected");
         _unselectedCard = content.Load<Texture2D>("ui/card_unselected");
+        _openLock = content.Load<Texture2D>("ui/icons/cadeado_aberto");
+        _closedLock = content.Load<Texture2D>("ui/icons/cadeado");
+        _check = content.Load<Texture2D>("ui/icons/check");
+        _symbols = new SymbolRain(content.Load<Texture2D>("ui/icons/icons"), _center * 2, 90, 0.5f);
     }
+
+    public void UpdateAnimation(double deltaTime) => _symbols.Update(deltaTime);
 
     public void SetSessionCode(string sessionCode)
     {
@@ -105,6 +113,7 @@ public sealed class PhaseSelectMenu
     {
         spriteBatch.GraphicsDevice.Clear(BackgroundColor);
         spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
+        _symbols.Draw(spriteBatch);
 
         if (!string.IsNullOrEmpty(_sessionCode))
         {
@@ -145,30 +154,11 @@ public sealed class PhaseSelectMenu
             Vector2 statusPosition = cardRectangle.Center.ToVector2() +
                 new Vector2(0.0f, 105.0f);
 
-            if (isCompleted)
-            {
-                DrawCenteredText(
-                    spriteBatch,
-                    "Concluída",
-                    statusPosition,
-                    textColor, scale: 0.85f);
-            }
-            else if (!isUnlocked)
-            {
-                DrawCenteredText(
-                    spriteBatch,
-                    "Bloqueada",
-                    statusPosition,
-                    textColor, scale: 0.85f);
-            }
-            else
-            {
-                DrawCenteredText(
-                    spriteBatch,
-                    "Disponível",
-                    statusPosition,
-                    textColor, scale: 0.85f);
-            }
+            Texture2D statusIcon = isCompleted ? _check : isUnlocked ? _openLock : _closedLock;
+            const int iconSize = 64;
+            spriteBatch.Draw(statusIcon,
+                new Rectangle((int)statusPosition.X - iconSize / 2,
+                    (int)statusPosition.Y - iconSize / 2, iconSize, iconSize), Color.White);
         }
 
         DrawCenteredText(spriteBatch, NavigationText, new Vector2(_center.X, 960.0f), SecondaryColor, scale: 0.75f);

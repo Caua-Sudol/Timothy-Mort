@@ -80,13 +80,24 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         SpriteFont titleFont = Content.Load<SpriteFont>("walter");
         SpriteFont bodyFont = Content.Load<SpriteFont>("patrick");
         Texture2D selector = Content.Load<Texture2D>("ui/selector");
+        Texture2D symbols = Content.Load<Texture2D>("ui/icons/icons");
+        // Recolor only the in-memory rain atlas, preserving its alpha and the source PNG.
+        // White premultiplied RGB lets SymbolRain apply a light tint even to dark artwork.
+        var symbolPixels = new Color[symbols.Width * symbols.Height];
+        symbols.GetData(symbolPixels);
+        for (int index = 0; index < symbolPixels.Length; index++)
+        {
+            byte alpha = symbolPixels[index].A;
+            symbolPixels[index] = new Color(alpha, alpha, alpha, alpha);
+        }
+        symbols.SetData(symbolPixels);
         _debugView = new DebugView(font);
         Vector2 menuCenter = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
 
         _titleScreen = new TitleScreen(
             Content.Load<SpriteFont>("patrick"),
             Content.Load<Texture2D>("ui/sc_press_any_key"),
-            menuCenter);
+            menuCenter, symbols);
         _startMenu = new StartMenu(font, menuCenter);
         _sessionStartScreen = new SessionStartScreen(
             Content.Load<SpriteFont>("walter"),
@@ -99,11 +110,11 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             menuCenter,
             _phaseProgress);
         _phaseIntroductionScreen = new PhaseIntroductionScreen(
-            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight));
+            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight), symbols);
         _phaseResultScreen = new PhaseResultScreen(
-            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight));
+            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight), symbols);
         _studyCompletionScreen = new StudyCompletionScreen(
-            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight));
+            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight), symbols);
         _pauseMenu = new PauseMenu(titleFont, bodyFont, selector, menuCenter);
         _deathMenu = new DeathMenu(titleFont, bodyFont, selector, menuCenter);
         _damageHud = new DamageHud();
@@ -123,7 +134,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _gameRenderTarget = new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
         _scenarioFadeTexture = new Texture2D(GraphicsDevice, 1, 1);
         _scenarioFadeTexture.SetData(new[] { Color.White });
-        _damageHud.LoadContent(GraphicsDevice);
+        _damageHud.LoadContent(Content);
         _interventionChoiceMenu.LoadContent(GraphicsDevice);
         _phaseSelectMenu.LoadContent(Content);
         _debugView.LoadContent(GraphicsDevice);
@@ -147,6 +158,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (_activeScreen == AppScreen.TITLE)
         {
+            _titleScreen.UpdateAnimation(deltaTime);
             UpdateTitleScreen(keyboardState);
         }
         else if (_activeScreen == AppScreen.START_MENU)
@@ -159,6 +171,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         }
         else if (_activeScreen == AppScreen.PHASE_SELECT)
         {
+            _phaseSelectMenu.UpdateAnimation(deltaTime);
             UpdatePhaseSelect(keyboardState);
         }
         else if (_activeScreen == AppScreen.PHASE_INTRODUCTION)
@@ -958,12 +971,16 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _scene.DrawDebug(_spriteBatch, _camera, _debugView);
         _debugView.DrawHud(_spriteBatch, _currentScenarioId, _scene.Player);
 
-        if (_phaseState?.HasDamageSystem == true)
+        if (_phaseState != null)
         {
+            // Affordance has instant death: one heart represents the current attempt.
+            int maximumHealth = _phaseState.HasDamageSystem ? _phaseState.MaximumHealth : 1;
+            int currentHealth = _scene.PlayerIsDead ? 0 :
+                _phaseState.HasDamageSystem ? _phaseState.CurrentHealth : 1;
             _damageHud.Draw(
                 _spriteBatch,
-                _phaseState.CurrentHealth,
-                _phaseState.MaximumHealth,
+                currentHealth,
+                maximumHealth,
                 _phaseState.AppliedVisualModules);
         }
 

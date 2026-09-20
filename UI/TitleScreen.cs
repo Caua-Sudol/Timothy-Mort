@@ -12,13 +12,17 @@ public sealed class TitleScreen
     private readonly SpriteFont _font;
     private readonly Texture2D _background;
     private readonly Vector2 _center;
+    private readonly SymbolRain _symbols;
 
-    public TitleScreen(SpriteFont font, Texture2D background, Vector2 center)
+    public TitleScreen(SpriteFont font, Texture2D background, Vector2 center, Texture2D symbols)
     {
         _font = font;
         _background = background;
         _center = center;
+        _symbols = new SymbolRain(symbols, center * 2);
     }
+
+    public void UpdateAnimation(double deltaTime) => _symbols.Update(deltaTime);
 
     public bool Update(KeyboardState keyboardState, KeyboardState previousKeyboardState)
     {
@@ -33,6 +37,7 @@ public sealed class TitleScreen
             _background,
             new Rectangle(0, 0, (int)(_center.X * 2), (int)(_center.Y * 2)),
             Color.White);
+        _symbols.Draw(spriteBatch);
         DrawCenteredText(
             spriteBatch,
             ContinueText,
