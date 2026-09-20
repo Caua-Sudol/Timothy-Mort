@@ -1,41 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="144" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="18">
- <objectgroup color="#57d957" id="1" name="mapaGeral">
-  <object id="1" name="inicio" x="0" y="832" width="640" height="256"/>
-  <object id="3" name="plataforma_intermediaria" x="1472" y="832" width="448" height="256"/>
-  <object id="5" name="plataforma_apos_parede" x="2688" y="832" width="384" height="256"/>
-  <object id="7" name="plataforma_final" x="3968" y="832" width="640" height="256"/>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="60" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="8" nextobjectid="17">
+ <objectgroup id="1" name="mapaGeral" color="#57d957">
+  <object id="1" name="inicio_checkpoint" x="0" y="832" width="288" height="256"/>
+  <object id="2" name="salto_1" x="352" y="768" width="160" height="32"/>
+  <object id="3" name="porta_intervencao" x="576" y="704" width="192" height="32"/>
+  <object id="4" name="pouso_final" x="1536" y="704" width="128" height="32"/>
+  <object id="5" name="descida_1" x="1696" y="768" width="96" height="32"/>
+  <object id="6" name="saida" x="1824" y="832" width="96" height="256"/>
  </objectgroup>
- <objectgroup color="#ff4fd8" id="2" name="gelatina">
-  <object id="9" name="gelatina_plataforma_1" x="968" y="756" width="160" height="32"/>
-  <object id="10" name="gelatina_parede_1" x="2240" y="608" width="64" height="224"/>
-  <object id="11" name="gelatina_plataforma_2" x="3424" y="704" width="160" height="32"/>
+ <objectgroup id="2" name="gelatina" color="#ff4fd8">
+  <object id="7" name="recarga_1" x="960" y="608" width="144" height="64"/>
+  <object id="8" name="recarga_2" x="1216" y="608" width="144" height="64"/>
  </objectgroup>
- <objectgroup color="#4fa3ff" id="3" name="spawnJogador">
-  <object id="12" name="spawn_inicial" type="SpawnJogador" x="160" y="816" width="16" height="16"/>
- </objectgroup>
- <objectgroup color="#ffd84f" id="4" name="saidaCena">
-  <object id="17" name="concluir_affordance_visibilidade" type="SaidaCena" x="4448" y="704" width="96" height="128">
+ <objectgroup id="3" name="plataformaQuebravel" color="#f4a460">
+  <object id="9" name="apoio_opcional" x="1600" y="640" width="96" height="24">
    <properties>
-    <property name="destino" propertytype="CenarioId" value="simple_cutscene"/>
-    <property name="requerSolucaoAplicada" type="bool" value="true"/>
+    <property name="tempoQuebra" type="float" value="0.8"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="4" name="dano" color="#e84c4c">
+  <object id="10" name="espinhos_poco" x="896" y="1024" width="448" height="32"/>
+  <object id="11" name="espinhos_inicio" x="208" y="808" width="32" height="24"/>
+ </objectgroup>
+ <objectgroup id="5" name="spawnJogador" color="#4fa3ff">
+  <object id="12" name="spawn_inicial" x="96" y="816" width="16" height="16"/>
+  <object id="13" name="retorno_intervencao" x="584" y="688" width="16" height="16"/>
+  <object id="16" name="retorno_tela" x="1840" y="816" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="6" name="entradaIntervencao" color="#ff9f43">
+  <object id="14" name="porta_E" x="624" y="576" width="64" height="128">
+   <properties>
+    <property name="destino" value="affordance_intervencao"/>
     <property name="spawnDestino" value="spawn_inicial"/>
+    <property name="posicao" value="tardia"/>
    </properties>
   </object>
  </objectgroup>
- <objectgroup color="#ff9f43" id="5" name="entradaIntervencao">
-  <object id="15" name="entrada_antecipada" type="EntradaIntervencao" x="1760" y="704" width="64" height="128">
+ <objectgroup id="7" name="saidaCena" color="#ffd84f">
+  <object id="15" name="saida_direita" x="1872" y="0" width="48" height="1080">
    <properties>
-    <property name="destino" propertytype="CenarioId" value="affordance_intervencao"/>
-    <property name="posicao" propertytype="PosicaoEntradaIntervencao" value="antecipada"/>
-    <property name="spawnDestino" value="spawn_entrada"/>
-   </properties>
-  </object>
-  <object id="16" name="entrada_tardia" type="EntradaIntervencao" x="2944" y="704" width="64" height="128">
-   <properties>
-    <property name="destino" propertytype="CenarioId" value="affordance_intervencao"/>
-    <property name="posicao" propertytype="PosicaoEntradaIntervencao" value="tardia"/>
-    <property name="spawnDestino" value="spawn_entrada"/>
+    <property name="destino" value="affordance_tela_2"/>
+    <property name="spawnDestino" value="spawn_inicial"/>
+    <property name="requerSolucaoAplicada" type="bool" value="false"/>
    </properties>
   </object>
  </objectgroup>

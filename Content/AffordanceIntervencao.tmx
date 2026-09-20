@@ -1,59 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="48" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="11" nextobjectid="18">
- <objectgroup color="#57d957" id="1" name="mapaGeral">
-  <object id="1" name="plataforma_inicial" x="0" y="832" width="512" height="256"/>
-  <object id="2" name="plataforma_botao" x="1024" y="640" width="512" height="448"/>
-  <object id="10" name="parede_sobre_porta" x="0" y="0" width="64" height="128"/>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="60" height="34" tilewidth="32" tileheight="32" infinite="0" nextlayerid="7" nextobjectid="13">
+ <objectgroup id="1" name="mapaGeral" color="#57d957">
+  <object id="1" name="inicio_checkpoint" x="0" y="832" width="320" height="256"/>
+  <object id="2" name="degrau_1" x="384" y="768" width="192" height="32"/>
+  <object id="3" name="degrau_2" x="640" y="704" width="192" height="32"/>
+  <object id="4" name="pouso" x="1536" y="704" width="160" height="32"/>
+  <object id="5" name="descida" x="1728" y="768" width="96" height="32"/>
+  <object id="6" name="saida" x="1856" y="832" width="64" height="256"/>
  </objectgroup>
- <objectgroup color="#ff4fd8" id="2" name="gelatina">
-  <object id="5" name="gelatina_demonstracao" x="670" y="674" width="160" height="32"/>
+ <objectgroup id="2" name="gelatina" color="#ff4fd8">
+  <object id="7" name="teste_recarga_1" x="1008" y="608" width="144" height="64"/>
+  <object id="8" name="teste_recarga_2" x="1264" y="608" width="144" height="64"/>
  </objectgroup>
- <objectgroup color="#4fa3ff" id="3" name="spawnJogador">
-  <object id="6" name="spawn_entrada" type="SpawnJogador" x="100" y="814" width="16" height="16"/>
+ <objectgroup id="3" name="botaoIntervencao" color="#ff9f43">
+  <object id="9" name="espada_E" x="224" y="768" width="16" height="64"/>
  </objectgroup>
- <objectgroup color="#ff9f43" id="4" name="botaoIntervencao">
-  <object id="7" name="botao_escolhas" x="1248" y="624" width="64" height="16"/>
+ <objectgroup id="4" name="spawnJogador" color="#4fa3ff">
+  <object id="10" name="spawn_inicial" x="96" y="816" width="16" height="16"/>
  </objectgroup>
- <objectgroup color="#e84c4c" id="5" name="portaSaida">
-  <object id="8" name="porta_retorno" x="4" y="700" width="64" height="128"/>
- </objectgroup>
- <objectgroup color="#f06a6a" id="10" name="destinoPortaSaida">
-  <object id="17" name="destino_porta_retorno" x="10" y="136">
-   <point/>
-  </object>
- </objectgroup>
- <objectgroup color="#ffd84f" id="6" name="saidaCena">
-  <object id="9" name="retorno_affordance_visibilidade" type="SaidaCena" x="4" y="134" width="64" height="128">
+ <objectgroup id="5" name="saidaCena" color="#ffd84f">
+  <object id="11" name="saida_direita" x="1872" y="0" width="48" height="1080">
    <properties>
-    <property name="destino" propertytype="CenarioId" value="affordance_visibilidade"/>
-    <property name="spawnDestino" value="spawn_inicial"/>
+    <property name="destino" value="affordance_visibilidade"/>
+    <property name="spawnDestino" value="retorno_intervencao"/>
+    <property name="requerSolucaoAplicada" type="bool" value="true"/>
    </properties>
   </object>
  </objectgroup>
- <objectgroup color="#74d957" id="7" name="rotaVerticalSolida">
-  <object id="11" name="degrau_intermediario" x="608" y="448" width="192" height="32"/>
-  <object id="12" name="plataforma_porta" x="64" y="256" width="320" height="32"/>
- </objectgroup>
- <objectgroup color="#66d9ff" id="8" name="rotaVerticalGelatina">
-  <object id="13" name="gelatina_subida_1" x="864" y="512" width="160" height="32"/>
-  <object id="14" name="gelatina_subida_2" x="384" y="320" width="160" height="32"/>
- </objectgroup>
- <objectgroup color="#f4e04d" id="9" name="medicaoDebug">
-  <object id="15" name="origem_intervencao_teste_01" x="512" y="832">
+ <objectgroup id="6" name="entradaIntervencao" color="#ff9f43">
+  <object id="12" name="porta_retorno_E" x="32" y="704" width="48" height="128">
    <properties>
-    <property name="acao" value="dash"/>
-    <property name="papel" value="origem"/>
-    <property name="parId" value="intervencao_teste_01"/>
+    <property name="destino" value="affordance_visibilidade"/>
+    <property name="spawnDestino" value="retorno_intervencao"/>
+    <property name="posicao" value="tardia"/>
    </properties>
-   <point/>
-  </object>
-  <object id="16" name="destino_intervencao_teste_01" x="1028" y="642">
-   <properties>
-    <property name="acao" value="dash"/>
-    <property name="papel" value="destino"/>
-    <property name="parId" value="intervencao_teste_01"/>
-   </properties>
-   <point/>
   </object>
  </objectgroup>
 </map>
