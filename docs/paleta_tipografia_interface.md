@@ -1,6 +1,6 @@
 # Paleta e tipografia da interface
 
-Referência das telas integradas até 18/09/2026. Documento de registro; não altera o jogo.
+Referência das telas integradas até 20/09/2026. Documento de registro; não altera o jogo.
 Layout de referência: 1920 × 1080 pixels lógicos.
 
 ## Cores
@@ -50,5 +50,65 @@ os SpriteFonts compilados: o jogador não precisa instalar essas fontes no siste
 No Affinity, usar as mesmas famílias para aproximar o protótipo da apresentação no jogo.
 
 A tela inicial usa a arte do título já no PNG e Patrick na mensagem para continuar.
-O menu de soluções/justificativas ainda recebe o asset legado `font` em `App/Game1.cs`;
-sua migração visual permanece pendente. Não presumir que todas as telas já foram migradas.
+A etapa de soluções usa Walter nos títulos e Patrick nas descrições e navegação.
+A etapa de justificativas usa Walter na pergunta e Patrick nas alternativas e navegação.
+
+## Quadro de soluções
+
+Paleta definida com o autor para a arte no Affinity. As texturas preservam as cores
+e variações pintadas; os valores abaixo são referências, não amostragens dos PNGs.
+
+| Elemento | Hex | RGB |
+| --- | --- | --- |
+| Papel envelhecido do quadro | `#B8AE91` | 184, 174, 145 |
+| Carvão dos contornos da arte | `#15191F` | 21, 25, 31 |
+| Fundo escuro dos cards | `#2A2C35` | 42, 44, 53 |
+| Contorno e divisor selecionados | `#6C5274` | 108, 82, 116 |
+| Olho do quadro | `#C2901C` | 194, 144, 28 |
+| Texto sobre os cards | `#D8D0BB` | 216, 208, 187 |
+| Pergunta e navegação sobre o papel | `#25282B` | 37, 40, 43 |
+
+A cor `#302833` permanece como referência do seletor anterior.
+O dourado `#C2901C` é o detalhe do olho, não o indicador de seleção.
+
+### Layout aprovado no Affinity
+
+Coordenadas em pixels no documento mestre de 1920 × 1080, com origem no canto superior esquerdo.
+
+| Elemento | X | Y | Largura | Altura |
+| --- | ---: | ---: | ---: | ---: |
+| Quadro | 96 | 96 | 1728 | 888 |
+| Card 1 | 227,3 | 300 | 480 | 480 |
+| Card 2 | 736,7 | 300 | 480 | 480 |
+| Card 3 | 1243,3 | 300 | 480 | 480 |
+| Pergunta superior | 248,7 | 185,3 | 1456 | 82,7 |
+| Navegação inferior | 488,7 | 833,3 | 994,7 | 53,3 |
+
+Assets: `assets/frame_cards.png`, `assets/card_solution_no_selected.png` e
+`assets/card_solution_selected.png`. Os textos são desenhados pelo jogo.
+Os títulos dos cards ficam acima do divisor pintado e as descrições abaixo;
+a escala diminui quando necessário para caber. Rodadas de revisão com menos de
+três opções mantêm os cards centralizados. As justificativas usam o mesmo quadro e a mesma paleta.
+
+## Quadro de justificativas
+
+Layout de seis cards, em duas colunas e três linhas, no mestre de 1920 × 1080.
+Quadro compartilhado com soluções: X = 96, Y = 96, largura = 1728, altura = 888.
+
+| Elemento | X | Y | Largura | Altura |
+| --- | ---: | ---: | ---: | ---: |
+| Pergunta superior | 249,3 | 172 | 1456 | 72 |
+| Card superior esquerdo | 249,3 | 266,7 | 720 | 160 |
+| Card superior direito | 1007,3 | 266,7 | 720 | 160 |
+| Card central esquerdo | 249,3 | 460 | 720 | 160 |
+| Card central direito | 1007,3 | 460 | 720 | 160 |
+| Card inferior esquerdo | 249,3 | 653,3 | 720 | 160 |
+| Card inferior direito | 1007,3 | 653,3 | 720 | 160 |
+| Navegação inferior | 488,7 | 841,3 | 994,7 | 45,3 |
+
+Os arquivos `assets/card_intervention_no_selected.png` e
+`assets/card_intervention_selected.png` são os cards de **justificativa**, apesar
+do nome de exportação. A seleção troca a textura. Texto em marfim `#D8D0BB`
+dentro dos cards; pergunta e navegação em `#25282B` sobre o papel.
+As faixas claras do protótipo apenas indicam áreas de texto e não são desenhadas no jogo.
+Alternativas usam margem interna de 32 px e ajuste de escala para caber.
