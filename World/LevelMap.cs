@@ -39,6 +39,7 @@ public class LevelMap
     private const string DebugMeasurementDestinationRole = "destino";
 
     private readonly string _mapPath;
+    private List<DynamicPlatform> _dynamicPlatforms = new List<DynamicPlatform>();
     private List<Rectangle> _platforms = new List<Rectangle>();
     private List<Rectangle> _gelatins = new List<Rectangle>();
     private List<Rectangle> _trampolineGelatins = new List<Rectangle>();
@@ -167,6 +168,16 @@ public void LoadContent(GraphicsDevice graphicsDevice)
     LoadPlatformTexture(graphicsDevice);
 }
 
+public void UpdateDynamicPlatforms(Player player, double deltaTime)
+{
+    foreach (DynamicPlatform platform in _dynamicPlatforms) platform.Update(player, deltaTime);
+}
+
+public void ResetDynamicPlatforms()
+{
+    foreach (DynamicPlatform platform in _dynamicPlatforms) platform.Reset();
+}
+
 public void UpdateVisualEffects(double deltaTime)
 {
     _visualEffectTime += deltaTime;
@@ -277,6 +288,8 @@ public void UpdateVisualEffects(double deltaTime)
         {
             yield return platform;
         }
+        foreach (DynamicPlatform platform in _dynamicPlatforms)
+            if (platform.Active) yield return platform.Bounds;
 
         if (verticalRouteRevealed)
         {
@@ -399,6 +412,17 @@ public void UpdateVisualEffects(double deltaTime)
         bool verticalRouteRevealed,
         SolutionVisualModule visualModules)
     {
+        foreach (DynamicPlatform platform in _dynamicPlatforms)
+        {
+            if (!platform.Active) continue;
+            Color color = platform.IsBreakable
+                ? Color.Lerp(Color.SandyBrown, Color.IndianRed, platform.BreakProgress)
+                : Color.SteelBlue;
+            spriteBatch.Draw(_platformTexture, platform.Bounds, color);
+            spriteBatch.Draw(_platformTexture,
+                new Rectangle(platform.Bounds.X + 8, platform.Bounds.Y + 4,
+                    platform.Bounds.Width - 16, 3), Color.White * 0.5f);
+        }
         foreach (Rectangle platform in _platforms)
         {
             spriteBatch.Draw(_platformTexture, platform, Color.Purple);
@@ -561,6 +585,11 @@ public bool TryReloadObjects(out string errorMessage)
 
 private void LoadObjects(TmxMap map)
 {
+    foreach (var layer in map.ObjectGroups)
+        if (layer.Name == "plataformaMovel" || layer.Name == "plataformaQuebravel")
+            foreach (var obj in layer.Objects)
+                _dynamicPlatforms.Add(new DynamicPlatform(new Rectangle((int)obj.X, (int)obj.Y, (int)obj.Width, (int)obj.Height), obj.Properties, layer.Name == "plataformaQuebravel"));
+
 
         foreach (var row in map.ObjectGroups[PlatformLayerName].Objects)
         {
@@ -705,6 +734,7 @@ private void LoadObjects(TmxMap map)
 private void ApplyObjectState(LevelMap candidate)
 {
     _platforms = candidate._platforms;
+    _dynamicPlatforms = candidate._dynamicPlatforms;
     _gelatins = candidate._gelatins;
     _trampolineGelatins = candidate._trampolineGelatins;
     _cutsceneTriggers = candidate._cutsceneTriggers;

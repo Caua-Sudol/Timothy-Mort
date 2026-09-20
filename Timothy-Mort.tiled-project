@@ -16,6 +16,8 @@
             "values": [
                 "simple_cutscene",
                 "affordance_visibilidade",
+                "affordance_tela_2",
+                "affordance_tela_3",
                 "affordance_intervencao",
                 "feedback_dano",
                 "feedback_intervencao",

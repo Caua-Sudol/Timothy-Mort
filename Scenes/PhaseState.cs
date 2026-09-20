@@ -160,7 +160,27 @@ public sealed class PhaseState
     public void EnterScenario(string scenarioId)
     {
         CurrentScenarioId = scenarioId;
-        BeginAttempt();
+        if (PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        {
+            // A new room sets a checkpoint, but does not refill the five hearts.
+            _deathRegisteredInCurrentAttempt = false;
+            DamageInvulnerabilityRemainingSeconds = 0;
+        }
+        else
+        {
+            BeginAttempt();
+        }
+    }
+
+    public void RegisterAffordanceRespawn(bool lostHeartFromFall)
+    {
+        if (PhaseId != ScenarioCatalog.AffordanceVisibilityScenarioId) return;
+        if (lostHeartFromFall)
+            CurrentHealth = Math.Max(0, CurrentHealth - 1);
+        RegisterDeath();
+        if (CurrentHealth > 0)
+            _deathRegisteredInCurrentAttempt = false;
+        DamageInvulnerabilityRemainingSeconds = _definition.DamageInvulnerabilitySeconds;
     }
 
     public void BeginAttempt()

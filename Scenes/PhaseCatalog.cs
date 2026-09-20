@@ -11,10 +11,14 @@ public static class PhaseCatalog
             new[]
             {
                 ScenarioCatalog.AffordanceVisibilityScenarioId,
+                ScenarioCatalog.AffordanceRoom2ScenarioId,
+                ScenarioCatalog.AffordanceRoom3ScenarioId,
                 ScenarioCatalog.AffordanceInterventionScenarioId
             },
             AffordanceChoiceCatalogAdapter.Instance,
-            true);
+            true,
+            5,
+            0.6);
 
     public static PhaseDefinition DamageFeedback { get; } =
         new PhaseDefinition(

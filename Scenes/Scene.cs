@@ -30,6 +30,13 @@ public class Scene
     private const float ExitDoorRiseSpeed = 768.0f;
 
     private Texture2D _fadeTexture;
+    private SpriteFont _interactionFont;
+    private bool _interactPressed;
+    private float _respawnEffectTime;
+    private bool IsAffordance => _phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId;
+
+    public void SetInteractionPressed(bool pressed) => _interactPressed = pressed;
+    public void AlignCamera(Camera camera) => UpdatePlayingCamera(camera);
     private double _damageParticlesTimer;
     private double _damageImpactMarkTimer;
     private Vector2 _damageContactPoint;
@@ -148,6 +155,7 @@ private Vector2 _checkpoint;
         _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
+        if (IsAffordance) _interactionFont = content.Load<SpriteFont>("patrick");
         _propVisualPresentation?.LoadContent(content);
         _conceptualRuleReminderPresentation?.LoadContent(graphicsDevice, content);
         _exitDoorPosition = GetExitDoorRestingPosition();
@@ -247,6 +255,8 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
 private void UpdatePlaying(Camera camera, double deltaTime)
 {
     _map.UpdateVisualEffects(deltaTime);
+    _respawnEffectTime = Math.Max(0, _respawnEffectTime - (float)deltaTime);
+    _map.UpdateDynamicPlatforms(_player, deltaTime);
     _phaseState?.UpdateDamageInvulnerability(deltaTime);
         _player.Update(deltaTime);
         ApplyGelatinFallSpeed();
@@ -255,7 +265,12 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         ApplyGelatinFallSpeed();
         _damageParticlesTimer = Math.Max(0, _damageParticlesTimer - deltaTime);
         _damageImpactMarkTimer = Math.Max(0, _damageImpactMarkTimer - deltaTime);
-        UpdateDamage();
+        bool damaged = UpdateDamage();
+        if (IsAffordance && damaged)
+        {
+            RecoverAffordance(camera, false);
+            return;
+        }
 
         if (_playerIsDead)
         {
@@ -295,7 +310,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
     if (PlayerFell())
         {
-            KillPlayer();
+            if (IsAffordance) RecoverAffordance(camera, true);
+            else KillPlayer();
             return;
         }
 
@@ -316,7 +332,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             _player.HitBox,
             GetActiveInterventionEntrancePlacement());
 
-        if (interventionEntrance != null)
+        if (interventionEntrance != null && (!IsAffordance || _interactPressed))
         {
             _requestedScenarioId = interventionEntrance.DestinationScenarioId;
             _requestedSpawnId = interventionEntrance.DestinationSpawnId;
@@ -341,11 +357,11 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             deltaTime);
     }
 
-    private void UpdateDamage()
+    private bool UpdateDamage()
     {
         if (_phaseState?.HasDamageSystem != true)
         {
-            return;
+            return false;
         }
 
         SolutionVisualModule visualModules = GetAppliedVisualModules();
@@ -373,19 +389,30 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         if (damageVolume == null ||
             !_phaseState.TryApplyDamage(damageAmount))
         {
-            return;
+            return false;
         }
 
         ApplyDamageFeedback(damageVolume);
 
-        if (_phaseState.CurrentHealth <= 0)
+        if (!IsAffordance && _phaseState.CurrentHealth <= 0)
         {
             KillPlayer();
         }
+        return true;
     }
 
     private void UpdateInterventionButton(double deltaTime)
     {
+        if (IsAffordance)
+        {
+            Rectangle reach = _player.HitBox;
+            reach.Inflate(32, 24);
+            bool nearSword = _map.InterventionButtons.Any(button => reach.Intersects(button));
+            InterventionButtonPressed = nearSword && _interactPressed;
+            if (InterventionButtonPressed)
+                _interventionButtonActivationPending = true;
+            return;
+        }
         bool playerIsOnButton = _map.HasInterventionButtonUnderPlayer(
             _player.HitBox,
             _player.IsGrounded);
@@ -661,9 +688,21 @@ private static bool RectanglesTouchOrIntersect(
         return _map.HasCutsceneTrigger(_player.HitBox);
     }
 
+    private void RecoverAffordance(Camera camera, bool fall)
+    {
+        _phaseState.RegisterAffordanceRespawn(fall);
+        if (_phaseState.CurrentHealth <= 0)
+        {
+            KillPlayer();
+            return;
+        }
+        RespawnPlayer(camera);
+        _respawnEffectTime = 0.22f;
+    }
+
     private bool PlayerFell()
     {
-        return _player.Position.Y > FallLimitY;
+        return _player.Position.Y > (IsAffordance ? ScreenHeight + 16 : FallLimitY);
     }
 
     private void KillPlayer()
@@ -682,6 +721,7 @@ private static bool RectanglesTouchOrIntersect(
 
     private void RespawnPlayer(Camera camera)
     {
+        _map.ResetDynamicPlatforms();
         _playerIsDead = false;
         _usedGelatins.Clear();
         _playerWasTouchingSolidSurface = false;
@@ -755,7 +795,8 @@ private static bool RectanglesTouchOrIntersect(
     private void UpdatePlayingCamera(Camera camera)
     {
         camera.Zoom = 1.0f;
-        camera.Follow(_player);
+        if (IsAffordance) camera.LookAt(new Vector2(ScreenWidth / 2f, ScreenHeight / 2f));
+        else camera.Follow(_player);
     }
 
     private void UpdateCutsceneCamera(Camera camera)
@@ -885,6 +926,7 @@ private static bool RectanglesTouchOrIntersect(
             _phaseState?.VerticalRouteRevealed == true);
     }
 
+    if (IsAffordance) DrawAffordanceEffects(spriteBatch);
     DrawDamageEventEffects(spriteBatch, visualModules);
     _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
     _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
@@ -935,12 +977,47 @@ private static bool RectanglesTouchOrIntersect(
 
     private InterventionEntrancePlacement? GetActiveInterventionEntrancePlacement()
     {
+        if (IsAffordance)
+        {
+            bool returningFromIntervention =
+                _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceInterventionScenarioId;
+            return returningFromIntervention && !_phaseState.HasFirstChoice
+                ? null : InterventionEntrancePlacement.LATE;
+        }
         if (_phaseState == null || !_phaseState.InterventionEntranceIsActive)
         {
             return null;
         }
 
         return _phaseState.InterventionEntrancePlacement;
+    }
+
+    private void DrawAffordanceEffects(SpriteBatch spriteBatch)
+    {
+        foreach (InterventionEntrance entrance in _map.InterventionEntrances)
+            if (entrance.Placement == GetActiveInterventionEntrancePlacement())
+                DrawInteractionPrompt(spriteBatch, entrance.Bounds);
+        foreach (Rectangle sword in _map.InterventionButtons)
+            DrawInteractionPrompt(spriteBatch, sword);
+
+        if (_respawnEffectTime <= 0) return;
+        float progress = 1 - _respawnEffectTime / 0.22f;
+        Vector2 center = _player.HitBox.Center.ToVector2();
+        for (int i = 0; i < 8; i++)
+        {
+            float angle = i * MathHelper.TwoPi / 8;
+            Vector2 point = center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (12 + progress * 36);
+            spriteBatch.Draw(_fadeTexture, new Rectangle((int)point.X, (int)point.Y, 5, 5),
+                new Color(166, 155, 174) * (1 - progress));
+        }
+    }
+
+    private void DrawInteractionPrompt(SpriteBatch spriteBatch, Rectangle bounds)
+    {
+        Vector2 size = _interactionFont.MeasureString("E") * 0.7f;
+        spriteBatch.DrawString(_interactionFont, "E",
+            new Vector2(bounds.Center.X - size.X / 2, bounds.Top - size.Y - 8),
+            new Color(216, 208, 187), 0, Vector2.Zero, 0.7f, SpriteEffects.None, 0);
     }
 
     private void DrawScreenEffects(SpriteBatch spriteBatch)

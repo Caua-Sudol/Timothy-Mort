@@ -13,6 +13,11 @@ public class Game1 : Game
     private const int WindowMargin = 64;
     private const double SecondsPerFrameMenu = 1.0 / 60.0;
     private const float ScenarioFadeDurationSeconds = 0.75f;
+    private const float RoomSlideDuration = 0.3f;
+    private RenderTarget2D _slideOutgoing;
+    private RenderTarget2D _slideIncoming;
+    private float _roomSlideProgress;
+    private int _roomSlideDirection = 1;
 
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
@@ -56,7 +61,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         NONE,
         FADING_OUT,
-        FADING_IN
+        FADING_IN,
+        SLIDING
     }
 
     public Game1()
@@ -647,6 +653,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _phaseState?.AccumulateActiveTime(deltaTime);
         }
 
+        _scene.SetInteractionPressed(KeyWasPressed(keyboardState, Keys.E));
         _scene.Update(_camera, deltaTime);
 
         if (_scene.TryTakeInterventionButtonActivation())
@@ -752,14 +759,52 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         string destinationScenarioId,
         string destinationSpawnId)
     {
+        if (ScenarioCatalog.IsAffordanceChallenge(_currentScenarioId) &&
+            ScenarioCatalog.IsAffordanceChallenge(destinationScenarioId))
+        {
+            _slideOutgoing ??= new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
+            _slideIncoming ??= new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
+            _roomSlideDirection = destinationScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId ||
+                _currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId &&
+                destinationScenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ? -1 : 1;
+            CaptureRoom(_slideOutgoing);
+            ChangeScenario(destinationScenarioId, destinationSpawnId);
+            CaptureRoom(_slideIncoming);
+            _roomSlideProgress = 0;
+            _scenarioFadeAlpha = 0;
+            _scenarioTransitionState = ScenarioTransitionState.SLIDING;
+            return;
+        }
         _pendingScenarioId = destinationScenarioId;
         _pendingScenarioSpawnId = destinationSpawnId;
         _scenarioFadeAlpha = 0.0f;
         _scenarioTransitionState = ScenarioTransitionState.FADING_OUT;
     }
 
+    private void CaptureRoom(RenderTarget2D target)
+    {
+        GraphicsDevice.SetRenderTarget(target);
+        GraphicsDevice.Clear(Color.CornflowerBlue);
+        _scene.Draw(_spriteBatch, _camera);
+        GraphicsDevice.SetRenderTarget(null);
+    }
+
+    protected override void UnloadContent()
+    {
+        _slideOutgoing?.Dispose();
+        _slideIncoming?.Dispose();
+        base.UnloadContent();
+    }
+
     private void UpdateScenarioTransition(double deltaTime)
     {
+        if (_scenarioTransitionState == ScenarioTransitionState.SLIDING)
+        {
+            _roomSlideProgress = Math.Min(1, _roomSlideProgress + (float)deltaTime / RoomSlideDuration);
+            if (_roomSlideProgress >= 1)
+                _scenarioTransitionState = ScenarioTransitionState.NONE;
+            return;
+        }
         float fadeDelta = (float)(deltaTime / ScenarioFadeDurationSeconds);
 
         if (_scenarioTransitionState == ScenarioTransitionState.FADING_OUT)
@@ -818,6 +863,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
         _scene = new Scene(scenario, spawnId, _phaseState);
         _scene.LoadContent(GraphicsDevice, Content);
+        _scene.AlignCamera(_camera);
         _overlayState = OverlayState.NONE;
         _mapReloadErrorMessage = null;
     }
@@ -826,7 +872,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         PhaseDefinition phase = PhaseCatalog.GetForScenario(_currentScenarioId);
         if (phase != null &&
-            _currentScenarioId == phase.ProblemScenarioId &&
+            (_currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId ||
+             phase.Id != ScenarioCatalog.AffordanceVisibilityScenarioId && _currentScenarioId == phase.ProblemScenarioId) &&
             _phaseState?.PhaseId == phase.Id &&
             _phaseState.ExitDoorIsOpen)
         {
@@ -967,13 +1014,24 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private void DrawPlaying()
     {
-        _scene.Draw(_spriteBatch, _camera);
-        _scene.DrawDebug(_spriteBatch, _camera, _debugView);
-        _debugView.DrawHud(_spriteBatch, _currentScenarioId, _scene.Player);
+        if (_scenarioTransitionState == ScenarioTransitionState.SLIDING)
+        {
+            float progress = MathHelper.SmoothStep(0, 1, _roomSlideProgress);
+            int offset = (int)(LogicalWidth * progress) * _roomSlideDirection;
+            _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+            _spriteBatch.Draw(_slideOutgoing, new Rectangle(-offset, 0, LogicalWidth, LogicalHeight), Color.White);
+            _spriteBatch.Draw(_slideIncoming, new Rectangle(LogicalWidth * _roomSlideDirection - offset, 0, LogicalWidth, LogicalHeight), Color.White);
+            _spriteBatch.End();
+        }
+        else
+        {
+            _scene.Draw(_spriteBatch, _camera);
+            _scene.DrawDebug(_spriteBatch, _camera, _debugView);
+            _debugView.DrawHud(_spriteBatch, _currentScenarioId, _scene.Player);
+        }
 
         if (_phaseState != null)
         {
-            // Affordance has instant death: one heart represents the current attempt.
             int maximumHealth = _phaseState.HasDamageSystem ? _phaseState.MaximumHealth : 1;
             int currentHealth = _scene.PlayerIsDead ? 0 :
                 _phaseState.HasDamageSystem ? _phaseState.CurrentHealth : 1;
@@ -1003,7 +1061,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private void DrawScenarioTransition()
     {
-        if (_scenarioTransitionState == ScenarioTransitionState.NONE)
+        if (_scenarioTransitionState == ScenarioTransitionState.NONE ||
+            _scenarioTransitionState == ScenarioTransitionState.SLIDING)
         {
             return;
         }

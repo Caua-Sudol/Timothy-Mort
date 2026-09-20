@@ -8,6 +8,8 @@ public static class ScenarioCatalog
 {
     public const string InitialScenarioId = "simple_cutscene";
     public const string AffordanceVisibilityScenarioId = "affordance_visibilidade";
+    public const string AffordanceRoom2ScenarioId = "affordance_tela_2";
+    public const string AffordanceRoom3ScenarioId = "affordance_tela_3";
     public const string AffordanceInterventionScenarioId = "affordance_intervencao";
     public const string DamageFeedbackScenarioId = "feedback_dano";
     public const string DamageFeedbackInterventionScenarioId = "feedback_intervencao";
@@ -29,6 +31,10 @@ public static class ScenarioCatalog
                 "Content/AffordanceVisibilidade.tmx",
                 new Vector2(160, 816)
             ),
+            [AffordanceRoom2ScenarioId] = new ScenarioDefinition(
+                AffordanceRoom2ScenarioId, "Content/AffordanceTela2.tmx", new Vector2(96, 816)),
+            [AffordanceRoom3ScenarioId] = new ScenarioDefinition(
+                AffordanceRoom3ScenarioId, "Content/AffordanceTela3.tmx", new Vector2(96, 816)),
             [AffordanceInterventionScenarioId] = new ScenarioDefinition(
                 AffordanceInterventionScenarioId,
                 "Content/AffordanceIntervencao.tmx",
@@ -60,6 +66,10 @@ public static class ScenarioCatalog
                 new Vector2(160, 816)
             )
         };
+
+    public static bool IsAffordanceChallenge(string id) =>
+        id == AffordanceVisibilityScenarioId || id == AffordanceRoom2ScenarioId ||
+        id == AffordanceRoom3ScenarioId;
 
     public static ScenarioDefinition Initial
     {
