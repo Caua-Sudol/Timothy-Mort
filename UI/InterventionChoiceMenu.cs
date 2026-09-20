@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -17,17 +18,22 @@ public sealed class InterventionChoiceMenu
     private const int CardTop = 300;
     private const int JustificationCardWidth = 720;
     private const int JustificationCardHeight = 160;
-    private const int JustificationColumnSpacing = 48;
-    private const int JustificationRowSpacing = 32;
-    private const int JustificationTop = 280;
-    private const float TextScale = 1.5f;
-    private const float TitleScale = 2.0f;
     private const int TextPadding = 32;
 
-    private readonly SpriteFont _font;
+    private readonly SpriteFont _solutionTitleFont;
+    private readonly SpriteFont _solutionBodyFont;
+    private Texture2D _solutionFrame;
+    private Texture2D _solutionCard;
+    private Texture2D _selectedSolutionCard;
+    private Texture2D _justificationCard;
+    private Texture2D _selectedJustificationCard;
+    private static readonly float[] JustificationColumns = { 249.3f, 1007.3f };
+    private static readonly float[] JustificationRows = { 266.7f, 460.0f, 653.3f };
+    private static readonly float[] SolutionCardPositions = { 227.3f, 736.7f, 1243.3f };
+    private static readonly Color PaperTextColor = new Color(37, 40, 43);
+    private static readonly Color SolutionTextColor = new Color(216, 208, 187);
     private IReadOnlyList<InterventionSolutionDefinition> _solutions;
     private IReadOnlyList<InterventionJustificationDefinition> _justifications;
-    private Texture2D _pixel;
     private int _selectedIndex;
     private InterventionSolutionDefinition _pendingSolution;
     private InterventionSolutionDefinition _completedSolution;
@@ -42,15 +48,19 @@ public sealed class InterventionChoiceMenu
         JUSTIFICATION
     }
 
-    public InterventionChoiceMenu(SpriteFont font)
+    public InterventionChoiceMenu(SpriteFont font, SpriteFont titleFont, SpriteFont bodyFont)
     {
-        _font = font;
+        _solutionTitleFont = titleFont;
+        _solutionBodyFont = bodyFont;
     }
 
-    public void LoadContent(GraphicsDevice graphicsDevice)
+    public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {
-        _pixel = new Texture2D(graphicsDevice, 1, 1);
-        _pixel.SetData(new[] { Color.White });
+        _solutionFrame = content.Load<Texture2D>("ui/frame_cards");
+        _solutionCard = content.Load<Texture2D>("ui/card_solution_no_selected");
+        _selectedSolutionCard = content.Load<Texture2D>("ui/card_solution_selected");
+        _justificationCard = content.Load<Texture2D>("ui/card_intervention_no_selected");
+        _selectedJustificationCard = content.Load<Texture2D>("ui/card_intervention_selected");
     }
 
     public void OpenInitial(
@@ -211,15 +221,14 @@ public sealed class InterventionChoiceMenu
             return;
         }
 
-        spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
 
         var panel = new Rectangle(
             PanelMargin,
             PanelMargin,
             LogicalWidth - PanelMargin * 2,
             LogicalHeight - PanelMargin * 2);
-        spriteBatch.Draw(_pixel, panel, new Color(20, 22, 32) * 0.97f);
-        DrawOutline(spriteBatch, panel, Color.White, 4);
+        spriteBatch.Draw(_solutionFrame, panel, Color.White);
 
         if (_choiceStep == ChoiceStep.SOLUTION)
         {
@@ -233,178 +242,148 @@ public sealed class InterventionChoiceMenu
         string footer = _choiceStep == ChoiceStep.SOLUTION
             ? "A / D para navegar    Enter para escolher"
             : "W / A / S / D para navegar    Enter para confirmar";
-        DrawCenteredText(
-            spriteBatch,
-            footer,
-            new Vector2(LogicalWidth / 2.0f, 900.0f),
-            Color.White,
-            TextScale);
+        if (_choiceStep == ChoiceStep.SOLUTION)
+        {
+            DrawFittedSolutionText(spriteBatch, _solutionBodyFont, footer,
+                new Vector2(488.7f, 833.3f), new Vector2(994.7f, 53.3f),
+                PaperTextColor, 1.0f, true);
+        }
+        else
+        {
+            DrawFittedSolutionText(spriteBatch, _solutionBodyFont, footer,
+                new Vector2(488.7f, 841.3f), new Vector2(994.7f, 45.3f),
+                PaperTextColor, 1.0f, true);
+        }
 
         spriteBatch.End();
     }
 
     private void DrawSolutionStep(SpriteBatch spriteBatch)
     {
-        DrawCenteredText(
-            spriteBatch,
-            _requiresJustification ? "Que intervenção você aplicaria para resolver esse problema?" : "Como você revisaria a intervenção para resolver o problema?",
-            new Vector2(LogicalWidth / 2.0f, 180.0f),
-            Color.White,
-            TitleScale);
+        string question = _requiresJustification
+            ? "Que intervenção você aplicaria para resolver esse problema?"
+            : "Como você revisaria a intervenção para resolver o problema?";
+        DrawFittedSolutionText(spriteBatch, _solutionTitleFont, question,
+            new Vector2(248.7f, 185.3f), new Vector2(1456.0f, 82.7f),
+            PaperTextColor, 0.55f, true);
 
-        int cardsWidth = _solutions.Count * CardWidth + (_solutions.Count - 1) * CardSpacing;
-        int cardsLeft = (LogicalWidth - cardsWidth) / 2;
-
+        float cardsWidth = _solutions.Count * CardWidth + (_solutions.Count - 1) * CardSpacing;
+        float cardsLeft = (LogicalWidth - cardsWidth) / 2.0f;
         for (int index = 0; index < _solutions.Count; index++)
         {
-            var card = new Rectangle(
-                cardsLeft + index * (CardWidth + CardSpacing),
-                CardTop,
-                CardWidth,
-                CardHeight);
-            DrawSolutionCard(spriteBatch, card, _solutions[index], index);
+            // The three-card layout follows the exact Affinity positions.
+            // Revision rounds with fewer options remain centered.
+            float x = _solutions.Count == 3
+                ? SolutionCardPositions[index]
+                : cardsLeft + index * (CardWidth + CardSpacing);
+            DrawSolutionCard(spriteBatch, new Vector2(x, CardTop), _solutions[index], index);
         }
     }
 
     private void DrawJustificationStep(SpriteBatch spriteBatch)
     {
-        DrawCenteredText(
-            spriteBatch,
-            _justificationQuestion,
-            new Vector2(LogicalWidth / 2.0f, 180.0f),
-            Color.White,
-            TitleScale);
+        DrawFittedSolutionText(spriteBatch, _solutionTitleFont, _justificationQuestion,
+            new Vector2(249.3f, 172.0f), new Vector2(1456.0f, 72.0f),
+            PaperTextColor, 0.55f, true);
 
         const int columns = 2;
-        int gridWidth = columns * JustificationCardWidth + JustificationColumnSpacing;
-        int gridLeft = (LogicalWidth - gridWidth) / 2;
-
         for (int index = 0; index < _justifications.Count; index++)
         {
             int row = index / columns;
             int column = index % columns;
-            var card = new Rectangle(
-                gridLeft + column * (JustificationCardWidth + JustificationColumnSpacing),
-                JustificationTop + row * (JustificationCardHeight + JustificationRowSpacing),
-                JustificationCardWidth,
-                JustificationCardHeight);
-            DrawJustificationCard(spriteBatch, card, _justifications[index], index);
+            var position = new Vector2(JustificationColumns[column], JustificationRows[row]);
+            DrawJustificationCard(spriteBatch, position, _justifications[index], index);
         }
     }
 
     private void DrawSolutionCard(
         SpriteBatch spriteBatch,
-        Rectangle card,
+        Vector2 position,
         InterventionSolutionDefinition solution,
         int index)
     {
-        bool selected = index == _selectedIndex;
-        Color outlineColor = selected ? Color.Yellow : Color.Gray;
+        Texture2D texture = index == _selectedIndex ? _selectedSolutionCard : _solutionCard;
+        spriteBatch.Draw(texture, position, null, Color.White, 0.0f, Vector2.Zero,
+            new Vector2((float)CardWidth / texture.Width, (float)CardHeight / texture.Height),
+            SpriteEffects.None, 0.0f);
 
-        spriteBatch.Draw(_pixel, card, new Color(45, 48, 64));
-        DrawOutline(spriteBatch, card, outlineColor, selected ? 6 : 3);
+        // Keep the heading above the painted divider and the description below it.
+        DrawFittedSolutionText(spriteBatch, _solutionTitleFont, solution.Title,
+            position + new Vector2(TextPadding, 24.0f),
+            new Vector2(CardWidth - TextPadding * 2, 72.0f),
+            SolutionTextColor, 0.42f, true);
+        DrawFittedSolutionText(spriteBatch, _solutionBodyFont, solution.Description,
+            position + new Vector2(TextPadding, 164.0f),
+            new Vector2(CardWidth - TextPadding * 2, CardHeight - 164.0f - TextPadding),
+            SolutionTextColor, 0.9f, false);
+    }
 
-        var titleArea = new Rectangle(
-            card.X + TextPadding,
-            card.Y + TextPadding,
-            card.Width - TextPadding * 2,
-            130);
-        DrawWrappedText(spriteBatch, solution.Title, titleArea, Color.White, TextScale);
+    private static void DrawFittedSolutionText(
+        SpriteBatch spriteBatch, SpriteFont font, string text,
+        Vector2 position, Vector2 bounds, Color color, float maximumScale, bool centered)
+    {
+        float scale = maximumScale;
+        List<string> lines;
+        float width;
+        float height;
+        while (true)
+        {
+            lines = new List<string>();
+            width = 0.0f;
+            foreach (string paragraph in text.Replace("\r\n", "\n").Split('\n'))
+            {
+                string line = string.Empty;
+                foreach (string word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string candidate = line.Length == 0 ? word : line + " " + word;
+                    if (line.Length > 0 && font.MeasureString(candidate).X * scale > bounds.X)
+                    {
+                        lines.Add(line);
+                        line = word;
+                    }
+                    else
+                    {
+                        line = candidate;
+                    }
+                }
+                lines.Add(line);
+            }
+            foreach (string line in lines)
+                width = Math.Max(width, font.MeasureString(line).X * scale);
+            height = (Math.Max(0, lines.Count - 1) * (font.LineSpacing + 4.0f)
+                + font.MeasureString(lines[lines.Count - 1]).Y) * scale;
+            if (width <= bounds.X && height <= bounds.Y)
+                break;
+            scale *= 0.95f;
+        }
 
-        var descriptionArea = new Rectangle(
-            card.X + TextPadding,
-            card.Y + 180,
-            card.Width - TextPadding * 2,
-            card.Height - 210);
-        DrawWrappedText(
-            spriteBatch,
-            solution.Description,
-            descriptionArea,
-            Color.LightGray,
-            TextScale);
+        float y = position.Y + (centered ? (bounds.Y - height) / 2.0f : 0.0f);
+        foreach (string line in lines)
+        {
+            float x = position.X + (centered
+                ? (bounds.X - font.MeasureString(line).X * scale) / 2.0f : 0.0f);
+            spriteBatch.DrawString(font, line, new Vector2(x, y), color,
+                0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
+            y += (font.LineSpacing + 4.0f) * scale;
+        }
     }
 
     private void DrawJustificationCard(
         SpriteBatch spriteBatch,
-        Rectangle card,
+        Vector2 position,
         InterventionJustificationDefinition justification,
         int index)
     {
-        bool selected = index == _selectedIndex;
-        spriteBatch.Draw(_pixel, card, new Color(45, 48, 64));
-        DrawOutline(spriteBatch, card, selected ? Color.Yellow : Color.Gray, selected ? 6 : 3);
-
-        var textArea = new Rectangle(
-            card.X + TextPadding,
-            card.Y + TextPadding,
-            card.Width - TextPadding * 2,
-            card.Height - TextPadding * 2);
-        DrawWrappedText(spriteBatch, justification.Text, textArea, Color.White, TextScale);
-    }
-
-    private void DrawWrappedText(
-        SpriteBatch spriteBatch,
-        string text,
-        Rectangle area,
-        Color color,
-        float scale)
-    {
-        string[] words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        string line = string.Empty;
-        float y = area.Y;
-        float lineHeight = _font.LineSpacing * scale + 8.0f;
-
-        foreach (string word in words)
-        {
-            string candidate = string.IsNullOrEmpty(line) ? word : line + " " + word;
-
-            if (_font.MeasureString(candidate).X * scale > area.Width &&
-                !string.IsNullOrEmpty(line))
-            {
-                spriteBatch.DrawString(_font, line, new Vector2(area.X, y), color, 0.0f,
-                    Vector2.Zero, scale, SpriteEffects.None, 0.0f);
-                line = word;
-                y += lineHeight;
-            }
-            else
-            {
-                line = candidate;
-            }
-        }
-
-        if (!string.IsNullOrEmpty(line) && y < area.Bottom)
-        {
-            spriteBatch.DrawString(_font, line, new Vector2(area.X, y), color, 0.0f,
-                Vector2.Zero, scale, SpriteEffects.None, 0.0f);
-        }
-    }
-
-    private void DrawCenteredText(
-        SpriteBatch spriteBatch,
-        string text,
-        Vector2 center,
-        Color color,
-        float scale)
-    {
-        Vector2 size = _font.MeasureString(text) * scale;
-        spriteBatch.DrawString(
-            _font,
-            text,
-            center - size / 2.0f,
-            color,
-            0.0f,
-            Vector2.Zero,
-            scale,
-            SpriteEffects.None,
-            0.0f);
-    }
-
-    private void DrawOutline(SpriteBatch spriteBatch, Rectangle rectangle, Color color, int thickness)
-    {
-        spriteBatch.Draw(_pixel, new Rectangle(rectangle.Left, rectangle.Top, rectangle.Width, thickness), color);
-        spriteBatch.Draw(_pixel, new Rectangle(rectangle.Left, rectangle.Bottom - thickness, rectangle.Width, thickness), color);
-        spriteBatch.Draw(_pixel, new Rectangle(rectangle.Left, rectangle.Top, thickness, rectangle.Height), color);
-        spriteBatch.Draw(_pixel, new Rectangle(rectangle.Right - thickness, rectangle.Top, thickness, rectangle.Height), color);
+        Texture2D texture = index == _selectedIndex ? _selectedJustificationCard : _justificationCard;
+        spriteBatch.Draw(texture, position, null, Color.White, 0.0f, Vector2.Zero,
+            new Vector2((float)JustificationCardWidth / texture.Width,
+                (float)JustificationCardHeight / texture.Height),
+            SpriteEffects.None, 0.0f);
+        DrawFittedSolutionText(spriteBatch, _solutionBodyFont, justification.Text,
+            position + new Vector2(TextPadding),
+            new Vector2(JustificationCardWidth - TextPadding * 2,
+                JustificationCardHeight - TextPadding * 2),
+            SolutionTextColor, 0.9f, true);
     }
 
     private bool KeyWasPressed(

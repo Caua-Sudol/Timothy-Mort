@@ -118,7 +118,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _pauseMenu = new PauseMenu(titleFont, bodyFont, selector, menuCenter);
         _deathMenu = new DeathMenu(titleFont, bodyFont, selector, menuCenter);
         _damageHud = new DamageHud();
-        _interventionChoiceMenu = new InterventionChoiceMenu(font);
+        _interventionChoiceMenu = new InterventionChoiceMenu(font, titleFont, bodyFont);
 
         Vector2 cameraPosition = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
         Vector2 cameraDimensions = new Vector2(LogicalWidth, LogicalHeight);
@@ -135,7 +135,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _scenarioFadeTexture = new Texture2D(GraphicsDevice, 1, 1);
         _scenarioFadeTexture.SetData(new[] { Color.White });
         _damageHud.LoadContent(Content);
-        _interventionChoiceMenu.LoadContent(GraphicsDevice);
+        _interventionChoiceMenu.LoadContent(GraphicsDevice, Content);
         _phaseSelectMenu.LoadContent(Content);
         _debugView.LoadContent(GraphicsDevice);
 
