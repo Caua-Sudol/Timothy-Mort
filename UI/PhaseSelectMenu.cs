@@ -26,7 +26,7 @@ public sealed class PhaseSelectMenu
     private static readonly string[] PhaseTitles =
     {
         "Affordance\ne visibilidade",
-        "Feedback\nde dano",
+        "Feedback",
         "Modelos conceituais\ne restrições"
     };
 
