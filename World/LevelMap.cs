@@ -953,6 +953,24 @@ private void ApplyObjectState(LevelMap candidate)
                 }
             }
 
+            // Vertical hazard strips repeat sideways spikes along their entire height.
+            if (bounds.Height > bounds.Width)
+            {
+                for (int spikeTop = bounds.Top; spikeTop < bounds.Bottom; spikeTop += spikeWidth)
+                {
+                    int spikeHeight = Math.Min(spikeWidth, bounds.Bottom - spikeTop);
+                    for (int offset = 0; offset < bounds.Width; offset += spikeStepHeight)
+                    {
+                        int inset = (int)(offset / (float)bounds.Width * (spikeHeight - 1) / 2);
+                        spriteBatch.Draw(_platformTexture,
+                            new Rectangle(bounds.Left + offset, spikeTop + inset,
+                                Math.Min(spikeStepHeight, bounds.Width - offset),
+                                Math.Max(1, spikeHeight - inset * 2)), spikeColor);
+                    }
+                }
+                continue;
+            }
+
             for (int spikeLeft = bounds.Left;
                  spikeLeft < bounds.Right;
                  spikeLeft += spikeWidth)

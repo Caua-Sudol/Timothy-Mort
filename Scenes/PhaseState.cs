@@ -25,6 +25,8 @@ public sealed class PhaseState
 
     public string PhaseId { get; }
     public string CurrentScenarioId { get; private set; }
+    public string AffordanceInterventionReturnScenarioId { get; private set; } =
+        ScenarioCatalog.AffordanceVisibilityScenarioId;
     public int DeathCount { get; private set; }
     public int TotalDeathCount { get; private set; }
     public double ElapsedSeconds { get; private set; }
@@ -159,6 +161,11 @@ public sealed class PhaseState
 
     public void EnterScenario(string scenarioId)
     {
+        if (scenarioId == ScenarioCatalog.AffordanceInterventionScenarioId &&
+            ScenarioCatalog.IsAffordanceChallenge(CurrentScenarioId))
+        {
+            AffordanceInterventionReturnScenarioId = CurrentScenarioId;
+        }
         CurrentScenarioId = scenarioId;
         if (PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
         {
@@ -191,6 +198,7 @@ public sealed class PhaseState
 
     public void Reset(string initialScenarioId)
     {
+        AffordanceInterventionReturnScenarioId = ScenarioCatalog.AffordanceVisibilityScenarioId;
         CurrentScenarioId = initialScenarioId;
         DeathCount = 0;
         TotalDeathCount = 0;

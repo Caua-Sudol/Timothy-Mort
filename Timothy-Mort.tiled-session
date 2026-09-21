@@ -8,19 +8,62 @@
             "scaleInDock": 1
         },
         "Content/AffordanceIntervencao.tmx": {
+            "expandedObjectLayers": [
+                4,
+                1,
+                2,
+                5,
+                6,
+                3
+            ],
             "scale": 0.5,
-            "selectedLayer": 5,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 766,
-                "y": 542
+                "x": 1110,
+                "y": 362
+            }
+        },
+        "Content/AffordanceTela2.tmx": {
+            "expandedObjectLayers": [
+                8,
+                4,
+                1,
+                2,
+                7,
+                5,
+                6,
+                3
+            ],
+            "scale": 0.5,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 1208,
+                "y": 390
+            }
+        },
+        "Content/AffordanceTela3.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 942,
+                "y": 336
             }
         },
         "Content/AffordanceVisibilidade.tmx": {
-            "scale": 0.33,
-            "selectedLayer": 0,
+            "expandedObjectLayers": [
+                4,
+                1,
+                2,
+                7,
+                5,
+                6,
+                3
+            ],
+            "scale": 0.5,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 1121.2121212121212,
-                "y": 890.909090909091
+                "x": 906,
+                "y": 438
             }
         },
         "Content/FeedbackIntervencao.tmx": {
@@ -36,10 +79,10 @@
         },
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
-                7,
+                8,
                 2,
-                6,
-                8
+                7,
+                6
             ],
             "scale": 0.75,
             "selectedLayer": 1,
@@ -50,19 +93,19 @@
         },
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
             "expandedObjectLayers": [
-                7,
-                2,
-                6,
-                11,
                 8,
+                2,
+                11,
+                7,
+                6,
                 12,
                 13
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 644,
-                "y": 628
+                "x": 768,
+                "y": 544.6666666666666
             }
         },
         "Content/PropVisual.tmx": {
@@ -71,24 +114,24 @@
                 2,
                 5
             ],
-            "scale": 1.5,
+            "scale": 0.5,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 401.3333333333333,
-                "y": 928
+                "x": 992,
+                "y": 864
             }
         },
         "Content/SimpleCutsceneMap.tmx": {
             "expandedObjectLayers": [
-                7,
                 2,
+                7,
                 6
             ],
             "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 1350,
-                "y": 616
+                "x": 1744,
+                "y": 900
             }
         },
         "Content/SimpleCutsceneMap.tmx#grass": {

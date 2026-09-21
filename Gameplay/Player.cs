@@ -43,6 +43,10 @@ public class Player
     private float _groundAcceleration = 3300f;
     private float _groundDeceleration = 3300f;
     private float _airAcceleration = 1800f;
+    private const float AirBrakingAcceleration = 4800f;
+    private const float ReleasedJumpUpwardSpeed = 240f;
+    private bool _jumpCanBeCut;
+    private bool _dashRequested;
     private double _coyoteTime = 0.10;
     private double _coyoteTimer;
     private double _jumpBufferTime = 0.10;
@@ -51,7 +55,7 @@ public class Player
     public bool CanDash { get; private set; } = true;
     public bool ShowsDashAsAvailable { get; private set; } = true;
     private Vector2 _dashDirection;
-    private float _dashSpeed = DashSpeed;
+    private float _dashSpeed = DashSpeed * 0.75f;
     private float _dashDuration = 0.18f;
     private double _dashTimer;
 
@@ -140,11 +144,19 @@ public void Update(double deltaTime)
         if (State == PlayerState.Dashing)
             return;
 
-        if (CanDash && _input.DashWasPressed)
+        // Capture aim on the update after Shift so near-simultaneous inputs settle.
+        if (_dashRequested)
         {
-            StartDash(horizontalInput);
-            return;
+            _dashRequested = false;
+            if (CanDash)
+            {
+                StartDash(horizontalInput);
+                return;
+            }
         }
+
+        if (CanDash && _input.DashWasPressed)
+            _dashRequested = true;
 
         if (HasBufferedJump() && CanJump())
         {
@@ -198,6 +210,7 @@ public void Update(double deltaTime)
 
     private void StartJump()
     {
+        _jumpCanBeCut = true;
         _velocity = new Vector2(_velocity.X, -_maxVelocity.Y);
         _isGrounded = false;
         _coyoteTimer = 0;
@@ -207,6 +220,7 @@ public void Update(double deltaTime)
 
     private void StartDash(int horizontalInput)
     {
+        _jumpCanBeCut = false;
         int dashHorizontalInput = horizontalInput;
         int dashVerticalInput = _input.Vertical;
 
@@ -346,10 +360,13 @@ public void ClearDashEnergyAbsorption()
         float targetVelocityX = horizontalInput * _maxVelocity.X;
 
         float accelerationRate;
-        if (horizontalInput == 0 && _isGrounded)
-            accelerationRate = _groundDeceleration;
+        if (_isGrounded)
+            accelerationRate = horizontalInput == 0 ? _groundDeceleration : _groundAcceleration;
+        else if (horizontalInput == 0 ||
+                 horizontalInput * _velocity.X < 0)
+            accelerationRate = AirBrakingAcceleration;
         else
-            accelerationRate = _isGrounded ? _groundAcceleration : _airAcceleration;
+            accelerationRate = _airAcceleration;
 
         double velX = MoveToward(_velocity.X, targetVelocityX, accelerationRate * deltaTime);
         double velY = _velocity.Y;
@@ -357,8 +374,15 @@ public void ClearDashEnergyAbsorption()
         if (!_isGrounded)
             velY -= _gravity * deltaTime;
 
-        if (!_input.IsJumpHeld && velY < 0)
-            velY *= 0.85f;
+        if (velY >= 0)
+            _jumpCanBeCut = false;
+
+        if (_jumpCanBeCut && !_input.IsJumpHeld)
+        {
+            // Shorten only a normal jump, once; do not cut dash or external impulses.
+            velY = Math.Max(velY, -ReleasedJumpUpwardSpeed);
+            _jumpCanBeCut = false;
+        }
 
         _velocity = new Vector2((float)velX, (float)velY);
     }
@@ -414,6 +438,8 @@ public void ClearDashEnergyAbsorption()
     public void ResetVelocity()
     {
         _velocity = Vector2.Zero;
+        _dashRequested = false;
+        _jumpCanBeCut = false;
     }
 
     public void LimitFallSpeed(float maximumFallSpeed)
@@ -428,6 +454,7 @@ public void ClearDashEnergyAbsorption()
 
     public void Grounded()
     {
+        _jumpCanBeCut = false;
         _isGrounded = true;
         _coyoteTimer = _coyoteTime;
     }
@@ -455,6 +482,8 @@ public void ClearDashEnergyAbsorption()
             throw new ArgumentOutOfRangeException(nameof(speed));
         }
 
+        _dashRequested = false;
+        _jumpCanBeCut = false;
         CancelDash();
         _velocity = new Vector2(_velocity.X, -speed);
         _isGrounded = false;
@@ -470,6 +499,8 @@ public void ClearDashEnergyAbsorption()
             horizontalDirection = _direction == Direction.Left ? -1 : 1;
         }
 
+        _dashRequested = false;
+        _jumpCanBeCut = false;
         CancelDash();
         _velocity = new Vector2(
             horizontalDirection * DamageFeedbackSettings.KnockbackHorizontalSpeed,

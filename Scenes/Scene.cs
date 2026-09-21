@@ -265,12 +265,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         ApplyGelatinFallSpeed();
         _damageParticlesTimer = Math.Max(0, _damageParticlesTimer - deltaTime);
         _damageImpactMarkTimer = Math.Max(0, _damageImpactMarkTimer - deltaTime);
-        bool damaged = UpdateDamage();
-        if (IsAffordance && damaged)
-        {
-            RecoverAffordance(camera, false);
-            return;
-        }
+        UpdateDamage();
 
         if (_playerIsDead)
         {
@@ -325,6 +320,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         {
             _requestedScenarioId = sceneExit.DestinationScenarioId;
             _requestedSpawnId = sceneExit.DestinationSpawnId;
+            ResolveAffordanceInterventionReturn();
             return;
         }
 
@@ -336,6 +332,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         {
             _requestedScenarioId = interventionEntrance.DestinationScenarioId;
             _requestedSpawnId = interventionEntrance.DestinationSpawnId;
+            ResolveAffordanceInterventionReturn();
             return;
         }
 
@@ -394,7 +391,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
         ApplyDamageFeedback(damageVolume);
 
-        if (!IsAffordance && _phaseState.CurrentHealth <= 0)
+        if (_phaseState.CurrentHealth <= 0)
         {
             KillPlayer();
         }
@@ -975,14 +972,31 @@ private static bool RectanglesTouchOrIntersect(
         return _phaseState?.AppliedVisualModules ?? SolutionVisualModule.NONE;
     }
 
+    private void ResolveAffordanceInterventionReturn()
+    {
+        if (IsAffordance &&
+            _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceInterventionScenarioId &&
+            _requestedScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        {
+            _requestedScenarioId = _phaseState.AffordanceInterventionReturnScenarioId;
+            _requestedSpawnId = "retorno_intervencao";
+        }
+    }
+
     private InterventionEntrancePlacement? GetActiveInterventionEntrancePlacement()
     {
         if (IsAffordance)
         {
             bool returningFromIntervention =
                 _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceInterventionScenarioId;
-            return returningFromIntervention && !_phaseState.HasFirstChoice
-                ? null : InterventionEntrancePlacement.LATE;
+            if (returningFromIntervention)
+                return _phaseState.HasFirstChoice ? InterventionEntrancePlacement.LATE : null;
+
+            bool entranceIsAvailable =
+                _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ||
+                _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId &&
+                _phaseState.DeathCount >= 2;
+            return entranceIsAvailable ? InterventionEntrancePlacement.LATE : null;
         }
         if (_phaseState == null || !_phaseState.InterventionEntranceIsActive)
         {

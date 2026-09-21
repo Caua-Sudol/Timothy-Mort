@@ -18,7 +18,9 @@ public static class PhaseCatalog
             AffordanceChoiceCatalogAdapter.Instance,
             true,
             5,
-            0.6);
+            1,
+            SolutionVisualModule.DAMAGE_KNOCKBACK |
+            SolutionVisualModule.INVULNERABILITY_BLINK);
 
     public static PhaseDefinition DamageFeedback { get; } =
         new PhaseDefinition(

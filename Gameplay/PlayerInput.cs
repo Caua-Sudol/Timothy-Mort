@@ -6,6 +6,7 @@ public class PlayerInput
 {
     private KeyboardState _previousKeyboardState;
     private int _lastHorizontalKeyPressed;
+    private int _lastVerticalKeyPressed;
 
     public int Horizontal { get; private set; }
     public int Vertical { get; private set; }
@@ -28,54 +29,38 @@ public class PlayerInput
 
     private int ReadHorizontalInput(KeyboardState keyboardState)
     {
-        bool dDown = keyboardState.IsKeyDown(Keys.D);
-        bool aDown = keyboardState.IsKeyDown(Keys.A);
-        bool dWasDown = _previousKeyboardState.IsKeyDown(Keys.D);
-        bool aWasDown = _previousKeyboardState.IsKeyDown(Keys.A);
-
-        if (dDown && !dWasDown)
-        {
-            _lastHorizontalKeyPressed = 1;
-        }
-
-        if (aDown && !aWasDown)
-        {
-            _lastHorizontalKeyPressed = -1;
-        }
-
-        if (dDown && aDown)
-        {
-            return _lastHorizontalKeyPressed;
-        }
-
-        if (dDown)
-        {
-            return 1;
-        }
-
-        if (aDown)
-        {
-            return -1;
-        }
-
-        return 0;
+        return ReadAxis(keyboardState, Keys.A, Keys.D, ref _lastHorizontalKeyPressed);
     }
 
     private int ReadVerticalInput(KeyboardState keyboardState)
     {
-        bool wDown = keyboardState.IsKeyDown(Keys.W);
-        bool sDown = keyboardState.IsKeyDown(Keys.S);
+        return ReadAxis(keyboardState, Keys.W, Keys.S, ref _lastVerticalKeyPressed);
+    }
 
-        if (wDown && !sDown)
-        {
+    private int ReadAxis(
+        KeyboardState keyboardState,
+        Keys negativeKey,
+        Keys positiveKey,
+        ref int lastPressed)
+    {
+        bool negativeDown = keyboardState.IsKeyDown(negativeKey);
+        bool positiveDown = keyboardState.IsKeyDown(positiveKey);
+        bool negativePressed = WasKeyPressed(keyboardState, negativeKey);
+        bool positivePressed = WasKeyPressed(keyboardState, positiveKey);
+
+        if (negativePressed && positivePressed)
+            lastPressed = 0; // Same update: neither direction has priority.
+        else if (negativePressed)
+            lastPressed = -1;
+        else if (positivePressed)
+            lastPressed = 1;
+
+        if (negativeDown && positiveDown)
+            return lastPressed;
+        if (negativeDown)
             return -1;
-        }
-
-        if (sDown && !wDown)
-        {
+        if (positiveDown)
             return 1;
-        }
-
         return 0;
     }
 
