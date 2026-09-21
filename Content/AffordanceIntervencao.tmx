@@ -24,13 +24,5 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup color="#ff9f43" id="6" name="entradaIntervencao">
-  <object id="12" name="porta_retorno_E" x="-1.33333" y="670.667" width="66" height="128">
-   <properties>
-    <property name="destino" value="affordance_visibilidade"/>
-    <property name="posicao" value="tardia"/>
-    <property name="spawnDestino" value="retorno_intervencao"/>
-   </properties>
-  </object>
- </objectgroup>
+ <objectgroup color="#ff9f43" id="6" name="entradaIntervencao"/>
 </map>
