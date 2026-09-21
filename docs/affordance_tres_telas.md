@@ -8,7 +8,7 @@ A margem inferior de 8 px do TMX fica fora da área visível.
 - `AffordanceTela2.tmx`: plataforma móvel, apoio quebrável e sequência de recargas.
 - `AffordanceTela3.tmx`: sequência quebrável/móvel, recargas menores e espinhos no pouso.
 - `AffordanceIntervencao.tmx`: espada retangular E perto do spawn, escada e trecho para
-  experimentar a solução escolhida; saída retorna ao lado da porta na primeira tela.
+  experimentar a solução escolhida; saída retorna à sala pela qual o jogador entrou.
 
 ## Fluxo e checkpoints
 
@@ -19,13 +19,23 @@ A intervenção mantém a transição com fade. Entre as três telas, a transiç
 dura 0,30 s, sem fade; o jogador fica parado durante o deslocamento das telas.
 
 Cada entrada de sala define o ponto de retorno no spawn. A vida começa com 5 corações
-e é preservada nas trocas de sala. Quedas e espinhos retiram um coração e teleportam
+e é preservada nas trocas de sala. Quedas retiram um coração e teleportam
 imediatamente ao checkpoint. O efeito dura 0,22 s sem bloquear o controle.
+Espinhos e outros danos retiram um coração sem mudar a posição do jogador,
+com recuo e 0,6 s de invulnerabilidade, indicada pelo jogador piscando.
 Ao zerar, o menu de morte permite reiniciar a tela atual com 5 corações.
-As quedas/contatos que provocam retorno contam como mortes no registro existente.
+Quedas e perda do último coração contam como mortes no registro existente.
+Danos não letais de espinhos não contam como morte nem reiniciam as plataformas.
 As plataformas dinâmicas são restauradas no retorno ao checkpoint.
 
 ## Editar no Tiled
+
+A porta da primeira sala aparece após duas mortes registradas nessa sala (quedas
+também contam), na posição definida pelo autor. Na segunda sala há uma porta
+disponível desde a chegada, em X = 144, Y = 704. Ambas usam E e retornam ao spawn
+`retorno_intervencao` da sala de origem. A primeira sala continua com passagem livre.
+Espinhos em retângulos mais altos que largos são desenhados lateralmente, apontando
+para a direita e repetindo ao longo de toda a altura do volume de dano.
 
 Abra os arquivos pelo projeto `Timothy-Mort.tiled-project`.
 Salve e use Ctrl esquerdo + R no jogo para recarregar a sala.
@@ -54,6 +64,7 @@ o dash no ar. Não há piso sólido sob essas gelatinas.
 4. Entrar na porta e abrir escolhas somente ao pressionar E.
 5. Testar escolha inadequada, revisão e retorno da intervenção.
 6. Conferir apoio móvel, quebra, restauração ao cair e conclusão apenas na terceira tela.
+7. Tocar em espinhos: perder um coração sem teleportar; ao perder o último, abrir o menu de morte.
 
 Base de layout para ajustes do autor; ainda exige teste de jogabilidade em execução.
 
