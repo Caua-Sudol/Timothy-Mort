@@ -112,3 +112,21 @@ do nome de exportação. A seleção troca a textura. Texto em marfim `#D8D0BB`
 dentro dos cards; pergunta e navegação em `#25282B` sobre o papel.
 As faixas claras do protótipo apenas indicam áreas de texto e não são desenhadas no jogo.
 Alternativas usam margem interna de 32 px e ajuste de escala para caber.
+
+## Background de Affordance
+
+Cores informadas pelo autor para a composição do cenário no Affinity.
+São referências da arte, não amostragens dos PNGs nem alterações de cor no código.
+
+| Elemento | Hex | RGB | Observação |
+| --- | --- | --- | --- |
+| Fundo geral | `#262F39` | 38, 47, 57 | Base do background |
+| Árvores | `#20242C` | 32, 36, 44 | Silhuetas das árvores |
+| Atmosfera | `#303436` | 48, 52, 54 | Variação para deixar o background mais sujo |
+| Luzes | `#2C393D` | 44, 57, 61 | 60% de transparência, conforme informado pelo autor |
+
+Os PNGs `affordance_visibility_bg.png`, `affordance_visibility_mg.png` e
+`affordance_visibility_fg.png` compõem juntos o background, atrás das plataformas
+e do jogador. Apenas `affordance_visibility_lgt.png` é sobreposto ao mapa inteiro,
+abaixo da interface. Todos ficam em `assets/` e compartilham o alinhamento do
+panorama das três salas. Essa composição não é aplicada à sala de intervenção.
