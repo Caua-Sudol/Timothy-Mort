@@ -18,6 +18,8 @@ public class Game1 : Game
     private RenderTarget2D _slideIncoming;
     private float _roomSlideProgress;
     private int _roomSlideDirection = 1;
+    private float _roomSlideStartOffset;
+    private AffordanceBackground _affordanceBackground;
 
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
@@ -70,6 +72,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         Point initialWindowSize = GetInitialWindowSize();
 
         _graphics = new GraphicsDeviceManager(this);
+        // The Affordance panoramas are 5760 px wide.
+        _graphics.GraphicsProfile = GraphicsProfile.HiDef;
         _graphics.PreferredBackBufferWidth = initialWindowSize.X;
         _graphics.PreferredBackBufferHeight = initialWindowSize.Y;
         _graphics.ApplyChanges();
@@ -768,6 +772,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                 _currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId &&
                 destinationScenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ? -1 : 1;
             CaptureRoom(_slideOutgoing);
+            _roomSlideStartOffset = AffordanceBackground.GetRoomOffset(_currentScenarioId);
             ChangeScenario(destinationScenarioId, destinationSpawnId);
             CaptureRoom(_slideIncoming);
             _roomSlideProgress = 0;
@@ -784,7 +789,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     private void CaptureRoom(RenderTarget2D target)
     {
         GraphicsDevice.SetRenderTarget(target);
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        // Capture gameplay only; the continuous panorama is drawn behind both rooms.
+        GraphicsDevice.Clear(Color.Transparent);
         _scene.Draw(_spriteBatch, _camera);
         GraphicsDevice.SetRenderTarget(null);
     }
@@ -859,6 +865,9 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         }
 
         _currentScenarioId = scenarioId;
+
+        if (destinationPhase?.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
+            _affordanceBackground ??= new AffordanceBackground(Content);
 
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
         _scene = new Scene(scenario, spawnId, _phaseState);
@@ -1017,15 +1026,28 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         if (_scenarioTransitionState == ScenarioTransitionState.SLIDING)
         {
             float progress = MathHelper.SmoothStep(0, 1, _roomSlideProgress);
+            float backgroundOffset = MathHelper.Lerp(_roomSlideStartOffset,
+                AffordanceBackground.GetRoomOffset(_currentScenarioId), progress);
+            _affordanceBackground.DrawBackground(_spriteBatch, backgroundOffset);
             int offset = (int)(LogicalWidth * progress) * _roomSlideDirection;
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
             _spriteBatch.Draw(_slideOutgoing, new Rectangle(-offset, 0, LogicalWidth, LogicalHeight), Color.White);
             _spriteBatch.Draw(_slideIncoming, new Rectangle(LogicalWidth * _roomSlideDirection - offset, 0, LogicalWidth, LogicalHeight), Color.White);
             _spriteBatch.End();
+            _affordanceBackground.DrawForeground(_spriteBatch, backgroundOffset);
         }
         else
         {
+            bool hasAffordanceBackground = ScenarioCatalog.IsAffordanceChallenge(_currentScenarioId);
+            if (hasAffordanceBackground)
+            {
+                _affordanceBackground.DrawBackground(_spriteBatch,
+                    AffordanceBackground.GetRoomOffset(_currentScenarioId));
+            }
             _scene.Draw(_spriteBatch, _camera);
+            if (hasAffordanceBackground)
+                _affordanceBackground.DrawForeground(_spriteBatch,
+                    AffordanceBackground.GetRoomOffset(_currentScenarioId));
             _scene.DrawDebug(_spriteBatch, _camera, _debugView);
             _debugView.DrawHud(_spriteBatch, _currentScenarioId, _scene.Player);
         }

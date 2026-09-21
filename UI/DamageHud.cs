@@ -12,6 +12,12 @@ public sealed class DamageHud
     public void LoadContent(ContentManager content)
     {
         _heart = content.Load<Texture2D>("ui/icons/coracao");
+        // Recolor the icon's strokes in memory, preserving transparent areas and edges.
+        var pixels = new Color[_heart.Width * _heart.Height];
+        _heart.GetData(pixels);
+        for (int index = 0; index < pixels.Length; index++)
+            pixels[index] = Color.Red * (pixels[index].A / 255f);
+        _heart.SetData(pixels);
     }
 
     public void Draw(SpriteBatch spriteBatch, int currentHealth, int maximumHealth,

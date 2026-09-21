@@ -42,11 +42,20 @@
             }
         },
         "Content/AffordanceTela3.tmx": {
-            "scale": 0.5,
-            "selectedLayer": 3,
+            "expandedObjectLayers": [
+                4,
+                1,
+                2,
+                7,
+                5,
+                6,
+                3
+            ],
+            "scale": 0.75,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 942,
-                "y": 336
+                "x": 1140,
+                "y": 606.6666666666665
             }
         },
         "Content/AffordanceVisibilidade.tmx": {
