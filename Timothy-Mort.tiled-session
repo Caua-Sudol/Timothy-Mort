@@ -1,5 +1,5 @@
 {
-    "activeFile": "Content/PropVisual.tmx",
+    "activeFile": "Content/ModelosConceituaisRestricoesIntervencao.tmx",
     "expandedProjectPaths": [
         "Content"
     ],
@@ -9,70 +9,70 @@
         },
         "Content/AffordanceIntervencao.tmx": {
             "expandedObjectLayers": [
-                4,
-                1,
                 2,
+                1,
                 5,
                 6,
-                3
+                3,
+                4
             ],
             "scale": 0.5,
-            "selectedLayer": 0,
+            "selectedLayer": 5,
             "viewCenter": {
-                "x": 1110,
-                "y": 362
+                "x": 981,
+                "y": 521
             }
         },
         "Content/AffordanceTela2.tmx": {
             "expandedObjectLayers": [
-                8,
-                4,
-                1,
                 2,
-                7,
+                8,
+                1,
                 5,
                 6,
-                3
+                3,
+                4,
+                7
             ],
             "scale": 0.5,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 1208,
-                "y": 390
+                "x": 929,
+                "y": 533
             }
         },
         "Content/AffordanceTela3.tmx": {
             "expandedObjectLayers": [
-                4,
-                1,
                 2,
-                7,
+                1,
                 5,
                 6,
-                3
+                3,
+                4,
+                7
             ],
             "scale": 0.75,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 1140,
-                "y": 606.6666666666665
+                "x": 914,
+                "y": 564.6666666666667
             }
         },
         "Content/AffordanceVisibilidade.tmx": {
             "expandedObjectLayers": [
-                4,
                 1,
-                2,
                 7,
+                3,
+                2,
                 5,
                 6,
-                3
+                4
             ],
             "scale": 0.5,
-            "selectedLayer": 1,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 906,
-                "y": 438
+                "x": 1291,
+                "y": 572
             }
         },
         "Content/FeedbackIntervencao.tmx": {
@@ -88,33 +88,34 @@
         },
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
+                7,
                 8,
                 2,
-                7,
+                5,
                 6
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2304,
-                "y": 544.6666666666666
+                "x": 2304.6666666666665,
+                "y": 544
             }
         },
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
             "expandedObjectLayers": [
+                7,
+                13,
                 8,
                 2,
                 11,
-                7,
-                6,
                 12,
-                13
+                6
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 768,
-                "y": 544.6666666666666
+                "x": 749.9999999999999,
+                "y": 716.6666666666667
             }
         },
         "Content/PropVisual.tmx": {
@@ -169,20 +170,20 @@
         }
     },
     "openFiles": [
-        "Content/PropVisual.tmx",
-        "Content/SimpleCutsceneMap.tmx",
+        "Content/AffordanceVisibilidade.tmx",
         "Content/ModelosConceituaisRestricoesIntervencao.tmx",
-        "Content/ModelosConceituaisRestricoes.tmx",
-        "Content/FeedbackIntervencao.tmx"
+        "Content/ModelosConceituaisRestricoes.tmx"
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
-        "Content/FeedbackIntervencao.tmx",
+        "Content/AffordanceVisibilidade.tmx",
         "Content/ModelosConceituaisRestricoes.tmx",
         "Content/ModelosConceituaisRestricoesIntervencao.tmx",
-        "Content/SimpleCutsceneMap.tmx",
         "Content/PropVisual.tmx",
-        "Content/AffordanceIntervencao.tmx",
-        "Content/AffordanceVisibilidade.tmx"
+        "Content/SimpleCutsceneMap.tmx",
+        "Content/FeedbackIntervencao.tmx",
+        "Content/AffordanceTela2.tmx",
+        "Content/AffordanceTela3.tmx",
+        "Content/AffordanceIntervencao.tmx"
     ]
 }

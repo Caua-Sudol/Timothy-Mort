@@ -155,6 +155,11 @@ private Vector2 _checkpoint;
         _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
+        if (_phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        {
+            _map.SetWoodPlatformTexture(content.Load<Texture2D>("visual/platformer_wood"));
+            _map.SetInitialCheckpointTexture(content.Load<Texture2D>("visual/ini_ckp"));
+        }
         if (IsAffordance) _interactionFont = content.Load<SpriteFont>("patrick");
         _propVisualPresentation?.LoadContent(content);
         _conceptualRuleReminderPresentation?.LoadContent(graphicsDevice, content);

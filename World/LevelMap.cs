@@ -56,6 +56,20 @@ public class LevelMap
     private List<Rectangle> _propVisualForegrounds = new List<Rectangle>();
     private Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
     private Texture2D _platformTexture;
+    private Texture2D _woodPlatformTexture;
+    private Texture2D _initialCheckpointTexture;
+    private Rectangle? _initialCheckpointBounds;
+
+    public void SetInitialCheckpointTexture(Texture2D texture)
+    {
+        _initialCheckpointTexture = texture;
+    }
+    private HashSet<Rectangle> _woodPlatforms = new HashSet<Rectangle>();
+
+    public void SetWoodPlatformTexture(Texture2D texture)
+    {
+        _woodPlatformTexture = texture;
+    }
     private double _visualEffectTime;
 
     public Vector2? PlayerSpawn { get; private set; }
@@ -425,7 +439,12 @@ public void UpdateVisualEffects(double deltaTime)
         }
         foreach (Rectangle platform in _platforms)
         {
-            spriteBatch.Draw(_platformTexture, platform, Color.Purple);
+            if (_initialCheckpointTexture != null && _initialCheckpointBounds == platform)
+                spriteBatch.Draw(_initialCheckpointTexture, platform, Color.White);
+            else if (_woodPlatformTexture != null && _woodPlatforms.Contains(platform))
+                spriteBatch.Draw(_woodPlatformTexture, platform, Color.White);
+            else
+                spriteBatch.Draw(_platformTexture, platform, Color.Purple);
             DrawSharedPlatformDecoration(spriteBatch, platform, visualModules);
             DrawSharedPlatformOutline(spriteBatch, platform, visualModules);
         }
@@ -593,7 +612,13 @@ private void LoadObjects(TmxMap map)
 
         foreach (var row in map.ObjectGroups[PlatformLayerName].Objects)
         {
-            _platforms.Add(new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height));
+            var bounds = new Rectangle((int)row.X, (int)row.Y, (int)row.Width, (int)row.Height);
+            _platforms.Add(bounds);
+            if (row.Name == "inicio_checkpoint")
+                _initialCheckpointBounds = bounds;
+            if (row.Name != null && row.Name.StartsWith("wood", StringComparison.OrdinalIgnoreCase) &&
+                row.Name.Length > 4 && row.Name.Skip(4).All(char.IsDigit))
+                _woodPlatforms.Add(bounds);
         }
 
         var gelatinLayer = map.ObjectGroups.FirstOrDefault(
@@ -734,6 +759,8 @@ private void LoadObjects(TmxMap map)
 private void ApplyObjectState(LevelMap candidate)
 {
     _platforms = candidate._platforms;
+    _initialCheckpointBounds = candidate._initialCheckpointBounds;
+    _woodPlatforms = candidate._woodPlatforms;
     _dynamicPlatforms = candidate._dynamicPlatforms;
     _gelatins = candidate._gelatins;
     _trampolineGelatins = candidate._trampolineGelatins;

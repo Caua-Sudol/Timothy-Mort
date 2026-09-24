@@ -130,3 +130,23 @@ Os PNGs `affordance_visibility_bg.png`, `affordance_visibility_mg.png` e
 e do jogador. Apenas `affordance_visibility_lgt.png` é sobreposto ao mapa inteiro,
 abaixo da interface. Todos ficam em `assets/` e compartilham o alinhamento do
 panorama das três salas. Essa composição não é aplicada à sala de intervenção.
+
+## Plataformas de tronco — Affordance, primeira sala
+
+Paleta informada pelo autor:
+
+| Elemento | Hex | RGB |
+| --- | --- | --- |
+| Base do tronco | `#664F37` | 102, 79, 55 |
+| Musgo | `#4C5F33` | 76, 95, 51 |
+| Sombra da madeira | `#44362D` | 68, 54, 45 |
+| Contorno preto | `#000000` | 0, 0, 0 |
+
+Asset: `assets/mg/platformer_wood.png`. Documento no Affinity com largura e altura
+4 vezes maiores que a plataforma: 640 × 128 px para uma plataforma de 160 × 32 px.
+No jogo, a imagem inteira é reduzida para o retângulo do objeto no Tiled,
+preservando suas cores e transparência.
+
+Aplicação apenas em `Content/AffordanceVisibilidade.tmx`, nos objetos da camada
+`mapaGeral` nomeados `wood` seguido de número (atualmente `wood1` a `wood4`).
+A arte substitui o retângulo visual de blockout; a colisão mantém as medidas do mapa.
