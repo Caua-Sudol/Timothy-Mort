@@ -159,6 +159,10 @@ private Vector2 _checkpoint;
         {
             _map.SetWoodPlatformTexture(content.Load<Texture2D>("visual/platformer_wood"));
             _map.SetInitialCheckpointTexture(content.Load<Texture2D>("visual/ini_ckp"));
+            _map.SetObjectTexture("parede_esquerda", content.Load<Texture2D>("visual/parede_esquerda"));
+            _map.SetObjectTexture("plat_solida1", content.Load<Texture2D>("visual/plat_solid_1"));
+            _map.SetObjectTexture("recarga_2", content.Load<Texture2D>("visual/recarga2"));
+            _map.SetObjectTexture("espinhos1", content.Load<Texture2D>("visual/espinhos1"));
         }
         if (IsAffordance) _interactionFont = content.Load<SpriteFont>("patrick");
         _propVisualPresentation?.LoadContent(content);

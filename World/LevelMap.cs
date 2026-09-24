@@ -56,6 +56,21 @@ public class LevelMap
     private List<Rectangle> _propVisualForegrounds = new List<Rectangle>();
     private Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
     private Texture2D _platformTexture;
+    private readonly Dictionary<string, Texture2D> _objectTextures = new Dictionary<string, Texture2D>();
+    private Dictionary<(string Layer, Rectangle Bounds), string> _objectNames =
+        new Dictionary<(string Layer, Rectangle Bounds), string>();
+
+    public void SetObjectTexture(string objectName, Texture2D texture)
+    {
+        _objectTextures[objectName] = texture;
+    }
+
+    private bool TryGetObjectTexture(string layer, Rectangle bounds, out Texture2D texture)
+    {
+        texture = null;
+        return _objectNames.TryGetValue((layer, bounds), out string name) &&
+            _objectTextures.TryGetValue(name, out texture);
+    }
     private Texture2D _woodPlatformTexture;
     private Texture2D _initialCheckpointTexture;
     private Rectangle? _initialCheckpointBounds;
@@ -439,7 +454,9 @@ public void UpdateVisualEffects(double deltaTime)
         }
         foreach (Rectangle platform in _platforms)
         {
-            if (_initialCheckpointTexture != null && _initialCheckpointBounds == platform)
+            if (TryGetObjectTexture(PlatformLayerName, platform, out Texture2D objectTexture))
+                spriteBatch.Draw(objectTexture, platform, Color.White);
+            else if (_initialCheckpointTexture != null && _initialCheckpointBounds == platform)
                 spriteBatch.Draw(_initialCheckpointTexture, platform, Color.White);
             else if (_woodPlatformTexture != null && _woodPlatforms.Contains(platform))
                 spriteBatch.Draw(_woodPlatformTexture, platform, Color.White);
@@ -605,6 +622,19 @@ public bool TryReloadObjects(out string errorMessage)
 private void LoadObjects(TmxMap map)
 {
     foreach (var layer in map.ObjectGroups)
+    {
+        if (layer.Name != PlatformLayerName && layer.Name != GelatinLayerName &&
+            layer.Name != DamageLayerName)
+            continue;
+        foreach (var obj in layer.Objects)
+        {
+            if (string.IsNullOrWhiteSpace(obj.Name)) continue;
+            var bounds = new Rectangle((int)obj.X, (int)obj.Y, (int)obj.Width, (int)obj.Height);
+            _objectNames[(layer.Name, bounds)] = obj.Name;
+        }
+    }
+
+    foreach (var layer in map.ObjectGroups)
         if (layer.Name == "plataformaMovel" || layer.Name == "plataformaQuebravel")
             foreach (var obj in layer.Objects)
                 _dynamicPlatforms.Add(new DynamicPlatform(new Rectangle((int)obj.X, (int)obj.Y, (int)obj.Width, (int)obj.Height), obj.Properties, layer.Name == "plataformaQuebravel"));
@@ -759,6 +789,7 @@ private void LoadObjects(TmxMap map)
 private void ApplyObjectState(LevelMap candidate)
 {
     _platforms = candidate._platforms;
+    _objectNames = candidate._objectNames;
     _initialCheckpointBounds = candidate._initialCheckpointBounds;
     _woodPlatforms = candidate._woodPlatforms;
     _dynamicPlatforms = candidate._dynamicPlatforms;
@@ -981,6 +1012,12 @@ private void ApplyObjectState(LevelMap candidate)
             }
 
             // Vertical hazard strips repeat sideways spikes along their entire height.
+            if (TryGetObjectTexture(DamageLayerName, bounds, out Texture2D spikeTexture))
+            {
+                spriteBatch.Draw(spikeTexture, bounds, Color.White);
+                continue;
+            }
+
             if (bounds.Height > bounds.Width)
             {
                 for (int spikeTop = bounds.Top; spikeTop < bounds.Bottom; spikeTop += spikeWidth)
@@ -1058,6 +1095,7 @@ private void ApplyObjectState(LevelMap candidate)
         SolutionVisualModule visualModules,
         Color? colorOverride = null)
     {
+        TryGetObjectTexture(GelatinLayerName, gelatin, out Texture2D gelatinTexture);
         gelatin = GetGelatinVisualBounds(gelatin, visualModules);
 
         Color gelatinColor = colorOverride ?? (
@@ -1088,7 +1126,14 @@ private void ApplyObjectState(LevelMap candidate)
             spriteBatch.Draw(_platformTexture, glow, Color.Cyan * glowOpacity);
         }
 
-        spriteBatch.Draw(_platformTexture, gelatin, gelatinColor);
+        if (gelatinTexture != null)
+        {
+            Color tint = colorOverride ??
+                (visualModules.HasFlag(SolutionVisualModule.GELATIN_COLOR) ? gelatinColor : Color.White);
+            spriteBatch.Draw(gelatinTexture, gelatin, tint);
+        }
+        else
+            spriteBatch.Draw(_platformTexture, gelatin, gelatinColor);
 
         if ((visualModules & SolutionVisualModule.GELATIN_DASH_SYMBOL) != 0)
         {
