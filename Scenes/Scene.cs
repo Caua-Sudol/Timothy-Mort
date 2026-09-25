@@ -163,6 +163,9 @@ private Vector2 _checkpoint;
             _map.SetObjectTexture("plat_solida1", content.Load<Texture2D>("visual/plat_solid_1"));
             _map.SetObjectTexture("recarga_2", content.Load<Texture2D>("visual/recarga2"));
             _map.SetObjectTexture("espinhos1", content.Load<Texture2D>("visual/espinhos1"));
+            _map.SetObjectTexture("teto", content.Load<Texture2D>("visual/teto"));
+            _map.SetObjectTexture("plat_solida3", content.Load<Texture2D>("visual/plat_solid3"));
+            _map.SetObjectTexture("recarga_1", content.Load<Texture2D>("visual/recarga1"));
         }
         if (IsAffordance) _interactionFont = content.Load<SpriteFont>("patrick");
         _propVisualPresentation?.LoadContent(content);

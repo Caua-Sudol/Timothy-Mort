@@ -1,5 +1,5 @@
 {
-    "activeFile": "Content/ModelosConceituaisRestricoesIntervencao.tmx",
+    "activeFile": "Content/AffordanceVisibilidade.tmx",
     "expandedProjectPaths": [
         "Content"
     ],
@@ -62,17 +62,17 @@
             "expandedObjectLayers": [
                 1,
                 7,
-                3,
-                2,
-                5,
+                4,
                 6,
-                4
+                5,
+                3,
+                2
             ],
-            "scale": 0.5,
+            "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1291,
-                "y": 572
+                "x": 1009.3333333333333,
+                "y": 544
             }
         },
         "Content/FeedbackIntervencao.tmx": {
@@ -88,34 +88,34 @@
         },
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
-                7,
                 8,
-                2,
+                7,
+                6,
                 5,
-                6
+                2
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2304.6666666666665,
+                "x": 2304,
                 "y": 544
             }
         },
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
             "expandedObjectLayers": [
-                7,
-                13,
-                8,
-                2,
                 11,
+                8,
                 12,
-                6
+                7,
+                6,
+                13,
+                2
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 749.9999999999999,
-                "y": 716.6666666666667
+                "x": 768,
+                "y": 544
             }
         },
         "Content/PropVisual.tmx": {
@@ -176,9 +176,9 @@
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
-        "Content/AffordanceVisibilidade.tmx",
         "Content/ModelosConceituaisRestricoes.tmx",
         "Content/ModelosConceituaisRestricoesIntervencao.tmx",
+        "Content/AffordanceVisibilidade.tmx",
         "Content/PropVisual.tmx",
         "Content/SimpleCutsceneMap.tmx",
         "Content/FeedbackIntervencao.tmx",

@@ -18,7 +18,7 @@
   <object id="7" name="recarga_6" x="1631.67" y="224.667" width="192.167" height="30.6667"/>
   <object id="24" name="recarga_5" x="1632.5" y="384" width="192" height="32"/>
   <object id="23" name="recarga_4" x="1602" y="605.333" width="32" height="32"/>
-  <object id="22" name="recarga_3" x="1344" y="864" width="192" height="32"/>
+  <object id="22" name="recarga_3" x="1346" y="832" width="192" height="32"/>
   <object id="21" name="recarga_1" x="288" y="32" width="224" height="128"/>
   <object id="8" name="recarga_2" x="32" y="319.925" width="192" height="32"/>
  </objectgroup>
