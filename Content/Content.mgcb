@@ -379,3 +379,25 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../assets/mg/recarga1.png;visual/recarga1.png
+
+#begin ../assets/mg/wood1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/mg/wood1.png;visual/wood1.png
+
+#begin ../assets/mg/plat_solid_2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/mg/plat_solid_2.png;visual/plat_solid_2.png

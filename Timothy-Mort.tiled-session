@@ -60,19 +60,19 @@
         },
         "Content/AffordanceVisibilidade.tmx": {
             "expandedObjectLayers": [
-                1,
-                7,
                 4,
-                6,
                 5,
+                2,
                 3,
-                2
+                7,
+                1,
+                6
             ],
-            "scale": 0.75,
+            "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1009.3333333333333,
-                "y": 544
+                "x": 904,
+                "y": 701.5
             }
         },
         "Content/FeedbackIntervencao.tmx": {
@@ -89,10 +89,10 @@
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
                 8,
-                7,
-                6,
                 5,
-                2
+                2,
+                7,
+                6
             ],
             "scale": 0.75,
             "selectedLayer": 1,
@@ -103,13 +103,13 @@
         },
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
             "expandedObjectLayers": [
-                11,
                 8,
-                12,
+                2,
+                13,
+                11,
                 7,
                 6,
-                13,
-                2
+                12
             ],
             "scale": 0.75,
             "selectedLayer": 1,

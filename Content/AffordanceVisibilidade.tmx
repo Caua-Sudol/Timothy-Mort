@@ -6,7 +6,7 @@
   <object id="25" name="plat_solida3" x="1088.07" y="32" width="160" height="192"/>
   <object id="20" name="plat_solida2" x="736" y="160" width="256" height="928"/>
   <object id="19" name="plat_solida1" x="0" y="511.994" width="256" height="128"/>
-  <object id="18" name="wood1" x="576.583" y="672.583" width="160" height="32"/>
+  <object id="18" name="wood1" x="576.583" y="648" width="160" height="32"/>
   <object id="17" name="inicio_checkpoint" x="0" y="800" width="288" height="288"/>
   <object id="2" name="wood3" x="1660" y="512" width="160" height="32"/>
   <object id="3" name="wood4" x="1568" y="132" width="160" height="32"/>
