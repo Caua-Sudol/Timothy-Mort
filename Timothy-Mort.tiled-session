@@ -25,20 +25,20 @@
         },
         "Content/AffordanceTela2.tmx": {
             "expandedObjectLayers": [
-                2,
                 8,
-                1,
-                5,
-                6,
                 3,
+                7,
                 4,
-                7
+                6,
+                1,
+                2,
+                5
             ],
             "scale": 0.5,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 929,
-                "y": 533
+                "x": 960,
+                "y": 544
             }
         },
         "Content/AffordanceTela3.tmx": {
@@ -60,19 +60,19 @@
         },
         "Content/AffordanceVisibilidade.tmx": {
             "expandedObjectLayers": [
-                4,
-                5,
-                2,
                 3,
                 7,
+                4,
+                6,
                 1,
-                6
+                2,
+                5
             ],
-            "scale": 1,
+            "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 904,
-                "y": 701.5
+                "x": 1009.3333333333333,
+                "y": 544
             }
         },
         "Content/FeedbackIntervencao.tmx": {
@@ -89,10 +89,10 @@
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
                 8,
-                5,
-                2,
                 7,
-                6
+                6,
+                2,
+                5
             ],
             "scale": 0.75,
             "selectedLayer": 1,
@@ -104,12 +104,12 @@
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
             "expandedObjectLayers": [
                 8,
-                2,
-                13,
-                11,
+                12,
                 7,
                 6,
-                12
+                2,
+                13,
+                11
             ],
             "scale": 0.75,
             "selectedLayer": 1,
@@ -172,17 +172,18 @@
     "openFiles": [
         "Content/AffordanceVisibilidade.tmx",
         "Content/ModelosConceituaisRestricoesIntervencao.tmx",
-        "Content/ModelosConceituaisRestricoes.tmx"
+        "Content/ModelosConceituaisRestricoes.tmx",
+        "Content/AffordanceTela2.tmx"
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
+        "Content/AffordanceTela2.tmx",
         "Content/ModelosConceituaisRestricoes.tmx",
         "Content/ModelosConceituaisRestricoesIntervencao.tmx",
         "Content/AffordanceVisibilidade.tmx",
         "Content/PropVisual.tmx",
         "Content/SimpleCutsceneMap.tmx",
         "Content/FeedbackIntervencao.tmx",
-        "Content/AffordanceTela2.tmx",
         "Content/AffordanceTela3.tmx",
         "Content/AffordanceIntervencao.tmx"
     ]

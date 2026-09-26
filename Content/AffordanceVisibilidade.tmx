@@ -8,15 +8,15 @@
   <object id="19" name="plat_solida1" x="0" y="511.994" width="256" height="128"/>
   <object id="18" name="wood1" x="576.583" y="648" width="160" height="32"/>
   <object id="17" name="inicio_checkpoint" x="0" y="800" width="288" height="288"/>
-  <object id="2" name="wood3" x="1660" y="512" width="160" height="32"/>
-  <object id="3" name="wood4" x="1568" y="132" width="160" height="32"/>
+  <object id="2" name="wood3" x="1632.5" y="509" width="192" height="32"/>
+  <object id="3" name="wood4" x="1568.3" y="135" width="160" height="32"/>
   <object id="4" name="plat_solida4" x="1440.35" y="64" width="96" height="224"/>
-  <object id="5" name="wood2" x="1664.67" y="767.333" width="160" height="32"/>
-  <object id="6" name="saida" x="1824" y="96.0416" width="96" height="992"/>
+  <object id="5" name="wood2" x="1632.5" y="766" width="192" height="32"/>
+  <object id="6" name="parede_direita" x="1824" y="86" width="96" height="992"/>
  </objectgroup>
  <objectgroup color="#ff4fd8" id="2" name="gelatina">
-  <object id="7" name="recarga_6" x="1631.67" y="224.667" width="192.167" height="30.6667"/>
-  <object id="24" name="recarga_5" x="1632.5" y="384" width="192" height="32"/>
+  <object id="7" name="recarga_6" x="1632.5" y="381" width="192.167" height="30.6667"/>
+  <object id="24" name="recarga_5" x="1632.5" y="221" width="192" height="32"/>
   <object id="23" name="recarga_4" x="1602" y="605.333" width="32" height="32"/>
   <object id="22" name="recarga_3" x="1346" y="832" width="192" height="32"/>
   <object id="21" name="recarga_1" x="288" y="32" width="224" height="128"/>
@@ -30,7 +30,7 @@
  <objectgroup color="#4fa3ff" id="5" name="spawnJogador">
   <object id="12" name="spawn_inicial" x="79.3333" y="783.333" width="16" height="16"/>
   <object id="13" name="retorno_intervencao" x="954.333" y="140" width="16" height="16"/>
-  <object id="16" name="retorno_tela" x="1836" y="78.6667" width="16" height="16"/>
+  <object id="16" name="retorno_tela" x="1836.5" y="69.4167" width="16" height="16"/>
  </objectgroup>
  <objectgroup color="#ff9f43" id="6" name="entradaIntervencao">
   <object id="14" name="porta_E" x="864.167" y="95.75" width="64" height="64">
@@ -42,7 +42,7 @@
   </object>
  </objectgroup>
  <objectgroup color="#ffd84f" id="7" name="saidaCena">
-  <object id="15" name="saida_direita" x="1888" y="31.8182" width="32" height="64">
+  <object id="15" name="saida_direita" x="1888" y="31.8182" width="32" height="53.25">
    <properties>
     <property name="destino" value="affordance_tela_2"/>
     <property name="requerSolucaoAplicada" type="bool" value="false"/>
