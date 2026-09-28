@@ -76,6 +76,40 @@ public class Player
     private readonly PlayerInput _input = new PlayerInput();
 
     private Texture2D _texture;
+    private Texture2D _previewSprite;
+    private Rectangle _previewSource;
+    private int _previewHeight;
+    private int _previewWidth;
+
+    public void SetPreviewSprite(Texture2D texture, Rectangle source, int width, int height)
+    {
+        _previewSprite = texture;
+        _previewSource = source;
+        _previewWidth = width;
+        _previewHeight = height;
+    }
+
+    public void SetPreviewSprite(Texture2D texture, int height)
+    {
+        var pixels = new Color[texture.Width * texture.Height];
+        texture.GetData(pixels);
+        int left = texture.Width, top = texture.Height, right = -1, bottom = -1;
+        for (int y = 0; y < texture.Height; y++)
+        for (int x = 0; x < texture.Width; x++)
+        {
+            if (pixels[y * texture.Width + x].A == 0) continue;
+            left = Math.Min(left, x);
+            top = Math.Min(top, y);
+            right = Math.Max(right, x);
+            bottom = Math.Max(bottom, y);
+        }
+        if (right < left || bottom < top) return;
+        _previewSprite = texture;
+        _previewSource = new Rectangle(left, top, right - left + 1, bottom - top + 1);
+        _previewHeight = height;
+        _previewWidth = Math.Max(1, (int)Math.Round(
+            height * _previewSource.Width / (double)_previewSource.Height));
+    }
     private Color[] _color;
 
     public Player(int x, int y, double gravity, int width, int height)
@@ -578,6 +612,14 @@ public void ClearDashEnergyAbsorption()
             ((int)(invulnerabilityRemainingSeconds / DamageFeedbackSettings.BlinkIntervalSeconds) & 1) == 0;
 
         Rectangle drawBounds = HitBox;
+        if (_previewSprite != null)
+        {
+            int width = _previewWidth;
+            drawBounds = new Rectangle(HitBox.Center.X - width / 2,
+                HitBox.Bottom - _previewHeight, width, _previewHeight);
+            color = visualModules.HasFlag(SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) &&
+                !ShowsDashAsAvailable ? Color.SlateGray : Color.White;
+        }
         if (_damageCompressionTimer > 0 &&
             visualModules.HasFlag(SolutionVisualModule.DAMAGE_COMPRESSION))
         {
@@ -629,7 +671,10 @@ public void ClearDashEnergyAbsorption()
 
         if (!hideForBlink)
         {
-            spriteBatch.Draw(_texture, drawBounds, color);
+            if (_previewSprite != null)
+                spriteBatch.Draw(_previewSprite, drawBounds, _previewSource, color);
+            else
+                spriteBatch.Draw(_texture, drawBounds, color);
         }
     }
 

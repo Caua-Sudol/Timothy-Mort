@@ -195,6 +195,13 @@ private Vector2 _checkpoint;
 
         _player = new Player((int)_playerStart.X, (int)_playerStart.Y, PlayerGravity, PlayerWidth, PlayerHeight);
         _player.LoadContent(graphicsDevice, PlayerWidth, PlayerHeight);
+        if (_phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        {
+            Texture2D timothy = content.Load<Texture2D>("player/timothy_mort_10x");
+            _player.SetPreviewSprite(timothy, timothy.Bounds,
+                (int)Math.Round(timothy.Width / 10.0),
+                (int)Math.Round(timothy.Height / 10.0));
+        }
 
         SceneMode = SceneMode.PLAYING;
         SecondsPerFrame = SecondsPerFramePlaying;
