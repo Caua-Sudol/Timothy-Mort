@@ -77,20 +77,63 @@ public class Player
 
     private Texture2D _texture;
     private Texture2D _previewSprite;
+    private Texture2D _leftPreviewSprite;
+    private Texture2D[] _walkFrames;
+    private const double WalkFramesPerSecond = 10.0;
+    private double _walkAnimationTime;
+    private bool IsWalking => _walkFrames != null && _walkFrames.Length > 0 &&
+        _input.Horizontal != 0;
+
+    public void SetWalkAnimation(Texture2D[] frames)
+    {
+        _walkFrames = frames;
+        _walkAnimationTime = 0;
+    }
+
+    public void UpdateWalkAnimation(double deltaTime)
+    {
+        if (!IsWalking)
+        {
+            _walkAnimationTime = 0;
+            return;
+        }
+
+        _walkAnimationTime += deltaTime;
+        double animationDuration = _walkFrames.Length / WalkFramesPerSecond;
+        if (_walkAnimationTime >= animationDuration)
+        {
+            // walk0001 introduces the movement; subsequent cycles start at walk0002.
+            double loopStart = _walkFrames.Length > 1 ? 1.0 / WalkFramesPerSecond : 0;
+            _walkAnimationTime = loopStart +
+                (_walkAnimationTime - animationDuration) % (animationDuration - loopStart);
+        }
+    }
+    private float _directionalPreviewScale;
     private Rectangle _previewSource;
     private int _previewHeight;
     private int _previewWidth;
 
     public void SetPreviewSprite(Texture2D texture, Rectangle source, int width, int height)
     {
+        _leftPreviewSprite = null;
         _previewSprite = texture;
         _previewSource = source;
         _previewWidth = width;
         _previewHeight = height;
     }
 
+    public void SetDirectionalPreviewSprites(Texture2D right, Texture2D left, float scale)
+    {
+        SetPreviewSprite(right, right.Bounds,
+            (int)Math.Round(right.Width * scale),
+            (int)Math.Round(right.Height * scale));
+        _leftPreviewSprite = left;
+        _directionalPreviewScale = scale;
+    }
+
     public void SetPreviewSprite(Texture2D texture, int height)
     {
+        _leftPreviewSprite = null;
         var pixels = new Color[texture.Width * texture.Height];
         texture.GetData(pixels);
         int left = texture.Width, top = texture.Height, right = -1, bottom = -1;
@@ -471,6 +514,7 @@ public void ClearDashEnergyAbsorption()
 
     public void ResetVelocity()
     {
+        _walkAnimationTime = 0;
         _velocity = Vector2.Zero;
         _dashRequested = false;
         _jumpCanBeCut = false;
@@ -611,12 +655,36 @@ public void ClearDashEnergyAbsorption()
         bool alternatePhaseIsVisible =
             ((int)(invulnerabilityRemainingSeconds / DamageFeedbackSettings.BlinkIntervalSeconds) & 1) == 0;
 
+        Texture2D sprite = _previewSprite;
+        SpriteEffects spriteEffects = SpriteEffects.None;
+        Rectangle source = _previewSource;
+        int spriteWidth = _previewWidth;
+        int spriteHeight = _previewHeight;
+        if (_direction == Direction.Left && _leftPreviewSprite != null)
+        {
+            sprite = _leftPreviewSprite;
+            source = sprite.Bounds;
+            spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
+            spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
+        }
+
+        if (IsWalking)
+        {
+            int frame = (int)(_walkAnimationTime * WalkFramesPerSecond) % _walkFrames.Length;
+            sprite = _walkFrames[frame];
+            source = sprite.Bounds;
+            spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
+            spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
+            spriteEffects = _direction == Direction.Left
+                ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+        }
+
         Rectangle drawBounds = HitBox;
         if (_previewSprite != null)
         {
-            int width = _previewWidth;
+            int width = spriteWidth;
             drawBounds = new Rectangle(HitBox.Center.X - width / 2,
-                HitBox.Bottom - _previewHeight, width, _previewHeight);
+                HitBox.Bottom - spriteHeight, width, spriteHeight);
             color = visualModules.HasFlag(SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) &&
                 !ShowsDashAsAvailable ? Color.SlateGray : Color.White;
         }
@@ -672,7 +740,8 @@ public void ClearDashEnergyAbsorption()
         if (!hideForBlink)
         {
             if (_previewSprite != null)
-                spriteBatch.Draw(_previewSprite, drawBounds, _previewSource, color);
+                spriteBatch.Draw(sprite, drawBounds, source, color,
+                    0f, Vector2.Zero, spriteEffects, 0f);
             else
                 spriteBatch.Draw(_texture, drawBounds, color);
         }

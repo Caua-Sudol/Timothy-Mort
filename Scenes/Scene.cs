@@ -197,10 +197,14 @@ private Vector2 _checkpoint;
         _player.LoadContent(graphicsDevice, PlayerWidth, PlayerHeight);
         if (_phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId)
         {
-            Texture2D timothy = content.Load<Texture2D>("player/timothy_mort_10x");
-            _player.SetPreviewSprite(timothy, timothy.Bounds,
-                (int)Math.Round(timothy.Width / 10.0),
-                (int)Math.Round(timothy.Height / 10.0));
+            _player.SetDirectionalPreviewSprites(
+                content.Load<Texture2D>("player/timothy_mort_2_right"),
+                content.Load<Texture2D>("player/timothy_mort_2_left"),
+                0.1f);
+            var walkFrames = new Texture2D[7];
+            for (int index = 0; index < walkFrames.Length; index++)
+                walkFrames[index] = content.Load<Texture2D>($"player/walk/walk{index + 1:D4}");
+            _player.SetWalkAnimation(walkFrames);
         }
 
         SceneMode = SceneMode.PLAYING;
@@ -294,6 +298,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         ApplyGelatinFallSpeed();
         bool dashWasAvailableBeforePhysics = _player.CanDash;
         UpdatePlayerPhysics(deltaTime);
+        _player.UpdateWalkAnimation(deltaTime);
         ApplyGelatinFallSpeed();
         _damageParticlesTimer = Math.Max(0, _damageParticlesTimer - deltaTime);
         _damageImpactMarkTimer = Math.Max(0, _damageImpactMarkTimer - deltaTime);
