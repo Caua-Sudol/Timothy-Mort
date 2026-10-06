@@ -81,6 +81,72 @@ public class Player
     private Texture2D[] _walkFrames;
     private const double WalkFramesPerSecond = 10.0;
     private double _walkAnimationTime;
+    private Texture2D[] _jumpFrames;
+    private Texture2D[] _glideFrames;
+    private const double AirFramesPerSecond = 10.0;
+    private enum AirAnimation { None, Jump, Glide, Landing, Dash }
+    private AirAnimation _airAnimation;
+    private double _airAnimationTime;
+    private bool _wasAirborne;
+
+    public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames)
+    {
+        _jumpFrames = jumpFrames;
+        _glideFrames = glideFrames;
+        _airAnimation = AirAnimation.None;
+        _airAnimationTime = 0;
+        _wasAirborne = false;
+    }
+
+    public void UpdateAnimation(double deltaTime)
+    {
+        UpdateWalkAnimation(deltaTime);
+        if (_jumpFrames == null || _glideFrames == null)
+            return;
+
+        if (State == PlayerState.Dashing)
+        {
+            _airAnimation = AirAnimation.Dash;
+            _airAnimationTime = 0;
+        }
+        else if (_isGrounded)
+        {
+            if (_wasAirborne)
+            {
+                _airAnimation = AirAnimation.Landing;
+                _airAnimationTime = 0;
+            }
+            else if (_airAnimation == AirAnimation.Landing)
+            {
+                _airAnimationTime += deltaTime;
+                if (_airAnimationTime >= 3.0 / AirFramesPerSecond)
+                    _airAnimation = AirAnimation.None;
+            }
+            else
+                _airAnimation = AirAnimation.None;
+        }
+        else
+        {
+            if (_airAnimation != AirAnimation.Jump && _airAnimation != AirAnimation.Glide)
+            {
+                _airAnimation = _velocity.Y < 0 ? AirAnimation.Jump : AirAnimation.Glide;
+                _airAnimationTime = 0;
+            }
+            else
+                _airAnimationTime += deltaTime;
+
+            if (_airAnimation == AirAnimation.Jump &&
+                _airAnimationTime >= _jumpFrames.Length / AirFramesPerSecond)
+            {
+                _airAnimationTime -= _jumpFrames.Length / AirFramesPerSecond;
+                _airAnimation = AirAnimation.Glide;
+            }
+            if (_airAnimation == AirAnimation.Glide)
+                _airAnimationTime %= _glideFrames.Length / AirFramesPerSecond;
+        }
+        _wasAirborne = !_isGrounded;
+    }
+
     private bool IsWalking => _walkFrames != null && _walkFrames.Length > 0 &&
         _input.Horizontal != 0;
 
@@ -287,6 +353,8 @@ public void Update(double deltaTime)
 
     private void StartJump()
     {
+        _airAnimation = AirAnimation.Jump;
+        _airAnimationTime = 0;
         _jumpCanBeCut = true;
         _velocity = new Vector2(_velocity.X, -_maxVelocity.Y);
         _isGrounded = false;
@@ -515,6 +583,9 @@ public void ClearDashEnergyAbsorption()
     public void ResetVelocity()
     {
         _walkAnimationTime = 0;
+        _airAnimation = AirAnimation.None;
+        _airAnimationTime = 0;
+        _wasAirborne = false;
         _velocity = Vector2.Zero;
         _dashRequested = false;
         _jumpCanBeCut = false;
@@ -679,6 +750,32 @@ public void ClearDashEnergyAbsorption()
                 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
         }
 
+        float spriteRotation = 0f;
+        if (_jumpFrames != null && _glideFrames != null && _airAnimation != AirAnimation.None)
+        {
+            int frame = (int)(_airAnimationTime * AirFramesPerSecond);
+            sprite = _airAnimation switch
+            {
+                AirAnimation.Jump => _jumpFrames[3],
+                AirAnimation.Glide => _glideFrames[frame % _glideFrames.Length],
+                AirAnimation.Landing => _jumpFrames[2 - Math.Min(frame, 2)],
+                _ => _jumpFrames[_jumpFrames.Length - 1]
+            };
+            bool facingLeft = _direction == Direction.Left;
+            if (_airAnimation == AirAnimation.Dash)
+            {
+                if (_dashDirection.X != 0)
+                    facingLeft = _dashDirection.X < 0;
+                // The final jump pose points diagonally upward; rotate it toward the dash.
+                float poseAngle = facingLeft ? -3f * MathHelper.PiOver4 : -MathHelper.PiOver4;
+                spriteRotation = (float)Math.Atan2(_dashDirection.Y, _dashDirection.X) - poseAngle;
+            }
+            spriteEffects = facingLeft ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            source = sprite.Bounds;
+            spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
+            spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
+        }
+
         Rectangle drawBounds = HitBox;
         if (_previewSprite != null)
         {
@@ -740,8 +837,19 @@ public void ClearDashEnergyAbsorption()
         if (!hideForBlink)
         {
             if (_previewSprite != null)
-                spriteBatch.Draw(sprite, drawBounds, source, color,
-                    0f, Vector2.Zero, spriteEffects, 0f);
+            {
+                if (spriteRotation != 0f)
+                    spriteBatch.Draw(sprite,
+                        new Vector2(drawBounds.X + drawBounds.Width / 2f,
+                            drawBounds.Y + drawBounds.Height / 2f),
+                        source, color, spriteRotation,
+                        new Vector2(source.Width / 2f, source.Height / 2f),
+                        new Vector2(drawBounds.Width / (float)source.Width,
+                            drawBounds.Height / (float)source.Height), spriteEffects, 0f);
+                else
+                    spriteBatch.Draw(sprite, drawBounds, source, color,
+                        0f, Vector2.Zero, spriteEffects, 0f);
+            }
             else
                 spriteBatch.Draw(_texture, drawBounds, color);
         }

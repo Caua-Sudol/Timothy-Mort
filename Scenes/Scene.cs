@@ -205,6 +205,13 @@ private Vector2 _checkpoint;
             for (int index = 0; index < walkFrames.Length; index++)
                 walkFrames[index] = content.Load<Texture2D>($"player/walk/walk{index + 1:D4}");
             _player.SetWalkAnimation(walkFrames);
+            var jumpFrames = new Texture2D[4];
+            for (int index = 0; index < jumpFrames.Length; index++)
+                jumpFrames[index] = content.Load<Texture2D>($"player/jump/jump{index:D4}");
+            var glideFrames = new Texture2D[5];
+            for (int index = 0; index < glideFrames.Length; index++)
+                glideFrames[index] = content.Load<Texture2D>($"player/glide/glide{index:D4}");
+            _player.SetAirAnimations(jumpFrames, glideFrames);
         }
 
         SceneMode = SceneMode.PLAYING;
@@ -298,7 +305,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         ApplyGelatinFallSpeed();
         bool dashWasAvailableBeforePhysics = _player.CanDash;
         UpdatePlayerPhysics(deltaTime);
-        _player.UpdateWalkAnimation(deltaTime);
+        _player.UpdateAnimation(deltaTime);
         ApplyGelatinFallSpeed();
         _damageParticlesTimer = Math.Max(0, _damageParticlesTimer - deltaTime);
         _damageImpactMarkTimer = Math.Max(0, _damageImpactMarkTimer - deltaTime);
