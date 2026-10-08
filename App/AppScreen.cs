@@ -9,5 +9,6 @@ public enum AppScreen
     PHASE_INTRODUCTION = 5,
     PHASE_RESULT = 6,
     SESSION_START = 7,
-    STUDY_COMPLETION = 8
+    STUDY_COMPLETION = 8,
+    SCALE_TEST = 9
 }

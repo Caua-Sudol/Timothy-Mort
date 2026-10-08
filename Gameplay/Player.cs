@@ -25,7 +25,7 @@ public enum PlayerState
 
 public class Player
 {
-    public const float DashSpeed = 960f;
+    public const float DashSpeed = GameScaleConfig.PlayerDashReferenceSpeed;
 
     private static readonly Color DashAvailableColor = Color.Purple;
     private static readonly Color DashSpentColor = Color.SlateGray;
@@ -33,6 +33,11 @@ public class Player
     private Vector2 _player;
     private int _widthPlayer;
     private int _heightPlayer;
+    private readonly int _originalWidth;
+    private readonly int _originalHeight;
+
+    public float RelativeScale { get; private set; } = 1.0f;
+    public bool ScaleChangeBlocked { get; private set; }
 
     private Vector2 _velocity;
     private readonly Vector2 _maxVelocity;
@@ -40,23 +45,23 @@ public class Player
     private bool _isGrounded;
     private Direction _direction = Direction.Right;
 
-    private float _groundAcceleration = 3300f;
-    private float _groundDeceleration = 3300f;
-    private float _airAcceleration = 1800f;
-    private const float AirBrakingAcceleration = 4800f;
-    private const float ReleasedJumpUpwardSpeed = 240f;
+    private float _groundAcceleration = GameScaleConfig.PlayerGroundAcceleration;
+    private float _groundDeceleration = GameScaleConfig.PlayerGroundDeceleration;
+    private float _airAcceleration = GameScaleConfig.PlayerAirAcceleration;
+    private const float AirBrakingAcceleration = GameScaleConfig.PlayerAirBrakingAcceleration;
+    private const float ReleasedJumpUpwardSpeed = GameScaleConfig.PlayerReleasedJumpSpeed;
     private bool _jumpCanBeCut;
     private bool _dashRequested;
-    private double _coyoteTime = 0.10;
+    private double _coyoteTime = GameScaleConfig.PlayerCoyoteTime;
     private double _coyoteTimer;
-    private double _jumpBufferTime = 0.10;
+    private double _jumpBufferTime = GameScaleConfig.PlayerJumpBufferTime;
     private double _jumpBufferTimer;
 
     public bool CanDash { get; private set; } = true;
     public bool ShowsDashAsAvailable { get; private set; } = true;
     private Vector2 _dashDirection;
-    private float _dashSpeed = DashSpeed * 0.75f;
-    private float _dashDuration = 0.18f;
+    private float _dashSpeed = GameScaleConfig.PlayerDashSpeed;
+    private float _dashDuration = GameScaleConfig.PlayerDashDuration;
     private double _dashTimer;
 
     private const int MaximumDashTrailPositions = 12;
@@ -179,6 +184,49 @@ public class Player
     private int _previewHeight;
     private int _previewWidth;
 
+    // Stable idle-frame reference, including transparent padding, not the collider
+    // or the changing silhouette of an animation/rotated dash.
+    public int UnscaledReferenceHeight => _previewSprite != null
+        ? _previewHeight
+        : _originalHeight;
+
+    public float DebugReferenceHeight => UnscaledReferenceHeight * RelativeScale;
+
+    public bool TrySetRelativeScale(float scale, IEnumerable<Rectangle> solidColliders)
+    {
+        if (!float.IsFinite(scale) || scale <= 0)
+            return false;
+
+        ScaleChangeBlocked = false;
+        if (scale == RelativeScale)
+            return true;
+
+        int width = Math.Max(1, (int)Math.Round(_originalWidth * scale));
+        int height = Math.Max(1, (int)Math.Round(_originalHeight * scale));
+        Rectangle current = HitBox;
+        var candidate = new Rectangle(
+            current.Center.X - width / 2, current.Bottom - height, width, height);
+
+        foreach (Rectangle solid in solidColliders)
+        {
+            if (candidate.Intersects(solid))
+            {
+                ScaleChangeBlocked = true;
+                return false;
+            }
+        }
+
+        // Keep the feet and horizontal center fixed; preserve subpixel movement.
+        _player += new Vector2(candidate.X - current.X, candidate.Y - current.Y);
+        _widthPlayer = width;
+        _heightPlayer = height;
+        // Preserve velocity in player-heights/second, including mid-jump/dash swaps.
+        _velocity *= scale / RelativeScale;
+        RelativeScale = scale;
+        _dashTrailPositions.Clear();
+        return true;
+    }
+
     public void SetPreviewSprite(Texture2D texture, Rectangle source, int width, int height)
     {
         _leftPreviewSprite = null;
@@ -225,10 +273,13 @@ public class Player
     {
         _player = new Vector2(x, y);
         _velocity = new Vector2();
-        _maxVelocity = new Vector2(528f, 600f);
+        _maxVelocity = new Vector2(
+            GameScaleConfig.PlayerHorizontalSpeed, GameScaleConfig.PlayerJumpSpeed);
         _gravity = gravity;
         _widthPlayer = width;
         _heightPlayer = height;
+        _originalWidth = width;
+        _originalHeight = height;
     }
 
     public void LoadContent(GraphicsDevice graphicsDevice, int width, int height)
@@ -356,7 +407,7 @@ public void Update(double deltaTime)
         _airAnimation = AirAnimation.Jump;
         _airAnimationTime = 0;
         _jumpCanBeCut = true;
-        _velocity = new Vector2(_velocity.X, -_maxVelocity.Y);
+        _velocity = new Vector2(_velocity.X, -_maxVelocity.Y * RelativeScale);
         _isGrounded = false;
         _coyoteTimer = 0;
         _jumpBufferTimer = 0;
@@ -388,7 +439,7 @@ public void Update(double deltaTime)
 private void UpdateDash(double deltaTime)
 {
     RecordDashTrailPosition();
-    _velocity = _dashDirection * _dashSpeed;
+    _velocity = _dashDirection * (_dashSpeed * RelativeScale);
         _dashTimer -= deltaTime;
 
         if (_dashTimer <= 0f)
@@ -502,7 +553,7 @@ public void ClearDashEnergyAbsorption()
 
     private void ApplyNormalMovement(int horizontalInput, double deltaTime)
     {
-        float targetVelocityX = horizontalInput * _maxVelocity.X;
+        float targetVelocityX = horizontalInput * _maxVelocity.X * RelativeScale;
 
         float accelerationRate;
         if (_isGrounded)
@@ -513,11 +564,12 @@ public void ClearDashEnergyAbsorption()
         else
             accelerationRate = _airAcceleration;
 
-        double velX = MoveToward(_velocity.X, targetVelocityX, accelerationRate * deltaTime);
+        double velX = MoveToward(
+            _velocity.X, targetVelocityX, accelerationRate * RelativeScale * deltaTime);
         double velY = _velocity.Y;
 
         if (!_isGrounded)
-            velY -= _gravity * deltaTime;
+            velY -= _gravity * RelativeScale * deltaTime;
 
         if (velY >= 0)
             _jumpCanBeCut = false;
@@ -525,7 +577,7 @@ public void ClearDashEnergyAbsorption()
         if (_jumpCanBeCut && !_input.IsJumpHeld)
         {
             // Shorten only a normal jump, once; do not cut dash or external impulses.
-            velY = Math.Max(velY, -ReleasedJumpUpwardSpeed);
+            velY = Math.Max(velY, -ReleasedJumpUpwardSpeed * RelativeScale);
             _jumpCanBeCut = false;
         }
 
@@ -778,12 +830,14 @@ public void ClearDashEnergyAbsorption()
             spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
         }
 
+        Vector2 spriteDrawSize = new Vector2(spriteWidth, spriteHeight) * RelativeScale;
         Rectangle drawBounds = HitBox;
         if (_previewSprite != null)
         {
-            int width = spriteWidth;
+            int width = Math.Max(1, (int)Math.Round(spriteDrawSize.X));
+            int height = Math.Max(1, (int)Math.Round(spriteDrawSize.Y));
             drawBounds = new Rectangle(HitBox.Center.X - width / 2,
-                HitBox.Bottom - spriteHeight, width, spriteHeight);
+                HitBox.Bottom - height, width, height);
             color = visualModules.HasFlag(SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) &&
                 !ShowsDashAsAvailable ? Color.SlateGray : Color.White;
         }
@@ -791,6 +845,7 @@ public void ClearDashEnergyAbsorption()
             visualModules.HasFlag(SolutionVisualModule.DAMAGE_COMPRESSION))
         {
             int compressedHeight = (int)(drawBounds.Height * 0.7f);
+            spriteDrawSize.Y *= compressedHeight / (float)drawBounds.Height;
             drawBounds = new Rectangle(
                 drawBounds.X,
                 drawBounds.Bottom - compressedHeight,
@@ -840,7 +895,14 @@ public void ClearDashEnergyAbsorption()
         {
             if (_previewSprite != null)
             {
-                if (spriteRotation != 0f)
+                if (RelativeScale != 1.0f)
+                    spriteBatch.Draw(sprite,
+                        new Vector2(HitBox.Center.X, HitBox.Bottom - spriteDrawSize.Y / 2f),
+                        source, color, spriteRotation,
+                        new Vector2(source.Width / 2f, source.Height / 2f),
+                        new Vector2(spriteDrawSize.X / source.Width,
+                            spriteDrawSize.Y / source.Height), spriteEffects, 0f);
+                else if (spriteRotation != 0f)
                     spriteBatch.Draw(sprite,
                         new Vector2(drawBounds.X + drawBounds.Width / 2f,
                             drawBounds.Y + drawBounds.Height / 2f),

@@ -88,6 +88,8 @@ public class LevelMap
     private double _visualEffectTime;
 
     public Vector2? PlayerSpawn { get; private set; }
+    public int HeightInPixels { get; private set; }
+    public int WidthInPixels { get; private set; }
     public DebugMeasurementPair DebugMeasurementPair { get; private set; }
     public Rectangle? ExitDoorBounds { get; private set; }
     public Vector2 ExitDoorDestination { get; private set; }
@@ -621,6 +623,9 @@ public bool TryReloadObjects(out string errorMessage)
 
 private void LoadObjects(TmxMap map)
 {
+    HeightInPixels = map.Height * map.TileHeight;
+    WidthInPixels = map.Width * map.TileWidth;
+
     foreach (var layer in map.ObjectGroups)
     {
         if (layer.Name != PlatformLayerName && layer.Name != GelatinLayerName &&
@@ -788,6 +793,8 @@ private void LoadObjects(TmxMap map)
 
 private void ApplyObjectState(LevelMap candidate)
 {
+    HeightInPixels = candidate.HeightInPixels;
+    WidthInPixels = candidate.WidthInPixels;
     _platforms = candidate._platforms;
     _objectNames = candidate._objectNames;
     _initialCheckpointBounds = candidate._initialCheckpointBounds;

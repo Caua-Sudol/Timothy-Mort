@@ -12,7 +12,7 @@ public class Scene
     private const int PlayerWidth = 16;
     private const int PlayerHeight = 16;
 
-    private const double PlayerGravity = -1800.0;
+    private const double PlayerGravity = GameScaleConfig.PlayerGravity;
     private const double SecondsPerFramePlaying = 1.0 / 60.0;
     private const double SecondsPerFrameCutscene = 1.0 / 5.0;
 
@@ -24,7 +24,7 @@ public class Scene
     private const float CutsceneCameraZoom = 2.0f;
     private const float CutsceneWalkSpeed = 10.0f;
     private const float CutsceneEndX = 940.0f;
-    private const float GelatinMaximumFallSpeed = 96.0f;
+    private const float GelatinMaximumFallSpeed = GameScaleConfig.PlayerGelatinMaximumFallSpeed;
     private const float InterventionButtonPressedOffset = 8.0f;
     private const float InterventionButtonPressSpeed = 64.0f;
     private const float ExitDoorRiseSpeed = 768.0f;
@@ -45,6 +45,8 @@ public class Scene
 
     private Player _player;
     private readonly LevelMap _map;
+    private readonly bool _isScaleTestRoom;
+    public bool UseOriginalScaleTestCamera { get; set; }
     private readonly PropVisualPresentation _propVisualPresentation;
     private readonly ConceptualRuleReminderPresentation
         _conceptualRuleReminderPresentation;
@@ -104,6 +106,7 @@ private Vector2 _checkpoint;
             phaseState,
             scenario.Id == ScenarioCatalog.PropVisualScenarioId)
     {
+        _isScaleTestRoom = scenario.Id == GameScaleConfig.ScaleTestScenarioId;
     }
 
     public Scene(string mapPath, Vector2 playerStart)
@@ -155,7 +158,7 @@ private Vector2 _checkpoint;
         _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
-        if (_phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        if (SupportsCameraScalePreview)
         {
             _map.SetWoodPlatformTexture(content.Load<Texture2D>("visual/platformer_wood"));
             _map.SetInitialCheckpointTexture(content.Load<Texture2D>("visual/ini_ckp"));
@@ -195,7 +198,7 @@ private Vector2 _checkpoint;
 
         _player = new Player((int)_playerStart.X, (int)_playerStart.Y, PlayerGravity, PlayerWidth, PlayerHeight);
         _player.LoadContent(graphicsDevice, PlayerWidth, PlayerHeight);
-        if (_phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        if (SupportsCameraScalePreview)
         {
             _player.SetDirectionalPreviewSprites(
                 content.Load<Texture2D>("player/timothy_mort_2_right"),
@@ -213,6 +216,9 @@ private Vector2 _checkpoint;
                 glideFrames[index] = content.Load<Texture2D>($"player/glide/glide{index:D4}");
             _player.SetAirAnimations(jumpFrames, glideFrames);
         }
+
+        if (SupportsCameraScalePreview)
+            TrySetPlayerScale(GameScaleConfig.DefaultPlayerScalePreset);
 
         SceneMode = SceneMode.PLAYING;
         SecondsPerFrame = SecondsPerFramePlaying;
@@ -578,7 +584,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
                 continue;
             }
 
-            _player.LimitFallSpeed(GelatinMaximumFallSpeed);
+            _player.LimitFallSpeed(GelatinMaximumFallSpeed * _player.RelativeScale);
             return;
         }
     }
@@ -743,6 +749,12 @@ private static bool RectanglesTouchOrIntersect(
 
     private bool PlayerFell()
     {
+        if (SupportsCameraScalePreview)
+        {
+            return _player.Position.Y >
+                _map.HeightInPixels + GameScaleConfig.AffordanceVisibilityFallMargin;
+        }
+
         return _player.Position.Y > (IsAffordance ? ScreenHeight + 16 : FallLimitY);
     }
 
@@ -767,7 +779,9 @@ private static bool RectanglesTouchOrIntersect(
         _usedGelatins.Clear();
         _playerWasTouchingSolidSurface = false;
         _playerWasTouchingGelatinSurface = false;
-        _player.Move((int)_checkpoint.X, (int)_checkpoint.Y);
+        _player.Move(
+            (int)_checkpoint.X + (PlayerWidth - _player.HitBox.Width) / 2,
+            (int)_checkpoint.Y + PlayerHeight - _player.HitBox.Height);
         _player.CancelDash();
         _player.ClearSurfaceContactFlash();
         _player.ClearDashRechargeSymbol();
@@ -835,9 +849,38 @@ private static bool RectanglesTouchOrIntersect(
 
     private void UpdatePlayingCamera(Camera camera)
     {
-        camera.Zoom = 1.0f;
+        if (_isScaleTestRoom)
+        {
+            camera.Zoom = UseOriginalScaleTestCamera
+                ? GameScaleConfig.OriginalCameraZoom
+                : GameScaleConfig.GetCameraZoom(camera.Dimensions.Y, _player.UnscaledReferenceHeight);
+            camera.LookAt(new Vector2(_map.WidthInPixels / 2f, _map.HeightInPixels / 2f));
+            return;
+        }
+
+        camera.Zoom = SupportsCameraScalePreview
+            ? GameScaleConfig.GetCameraZoom(camera.Dimensions.Y, _player.UnscaledReferenceHeight)
+            : GameScaleConfig.OriginalCameraZoom;
         if (IsAffordance) camera.LookAt(new Vector2(ScreenWidth / 2f, ScreenHeight / 2f));
         else camera.Follow(_player);
+    }
+
+    public bool SupportsCameraScalePreview =>
+        _isScaleTestRoom ||
+        _phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId;
+
+    public bool TrySetPlayerScale(int preset)
+    {
+        if (!SupportsCameraScalePreview || preset < 1 || preset > 4)
+            return false;
+
+        return _player.TrySetRelativeScale(
+            GameScaleConfig.GetPlayerScale(preset),
+            _map.GetSolidColliders(
+                _exitDoorIsOpen,
+                _phaseState?.VerticalRouteRevealed == true,
+                GetAppliedVisualModules().HasFlag(SolutionVisualModule.SAFE_ROUTE),
+                _exitDoorPosition));
     }
 
     private void UpdateCutsceneCamera(Camera camera)
@@ -880,6 +923,13 @@ private static bool RectanglesTouchOrIntersect(
             _map.DebugMeasurementPair,
             GetActiveInterventionEntrancePlacement(),
             _checkpoint);
+
+        debugView.DrawScaleOverlay(
+            spriteBatch,
+            camera,
+            _player,
+            _propVisualPresentation?.DebugReferenceHeight ?? _player.DebugReferenceHeight,
+            SupportsCameraScalePreview && !_isScaleTestRoom);
     }
 
     private void DrawDamageEventEffects(

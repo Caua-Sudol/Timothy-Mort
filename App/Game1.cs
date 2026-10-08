@@ -27,6 +27,7 @@ public class Game1 : Game
     private Camera _camera;
     private DebugView _debugView;
     private Scene _scene;
+    private ScaleTestRoom _scaleTestRoom;
     private TitleScreen _titleScreen;
     private StartMenu _startMenu;
     private SessionStartScreen _sessionStartScreen;
@@ -160,7 +161,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (keyboardState.IsKeyDown(Keys.LeftControl) && KeyWasPressed(keyboardState, Keys.P))
         {
-            _debugView.Toggle();
+            if (_activeScreen == AppScreen.SCALE_TEST) _scaleTestRoom.ToggleDebug();
+            else _debugView.Toggle();
         }
 
         if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
@@ -199,6 +201,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         else if (_activeScreen == AppScreen.PLAYING)
         {
             UpdatePlaying(keyboardState, deltaTime);
+        }
+        else if (_activeScreen == AppScreen.SCALE_TEST)
+        {
+            UpdateScaleTestRoom(keyboardState, deltaTime);
         }
 
         _previousKeyboardState = keyboardState;
@@ -244,6 +250,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         else if (_activeScreen == AppScreen.PLAYING)
         {
             DrawPlaying();
+        }
+        else if (_activeScreen == AppScreen.SCALE_TEST)
+        {
+            _scaleTestRoom.Draw(_spriteBatch);
         }
 
         GraphicsDevice.SetRenderTarget(null);
@@ -409,6 +419,14 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         PhaseSelectOption selectedOption =
             _phaseSelectMenu.Update(keyboardState, _previousKeyboardState);
+
+        if (selectedOption == PhaseSelectOption.SCALE_TEST)
+        {
+            _scaleTestRoom ??= new ScaleTestRoom(GraphicsDevice, Content,
+                new Vector2(LogicalWidth, LogicalHeight));
+            _activeScreen = AppScreen.SCALE_TEST;
+            return;
+        }
 
         string scenarioId = selectedOption switch
         {
@@ -582,6 +600,20 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         return SecondsPerFrameMenu;
     }
 
+    private void UpdateScaleTestRoom(KeyboardState keyboardState, double deltaTime)
+    {
+        if (!IsActive)
+            return;
+
+        if (EscapeWasPressed(keyboardState))
+        {
+            _activeScreen = AppScreen.PHASE_SELECT;
+            return;
+        }
+
+        _scaleTestRoom.Update(keyboardState, _previousKeyboardState, deltaTime);
+    }
+
     private void UpdatePlaying(KeyboardState keyboardState, double deltaTime)
     {
         if (_scenarioTransitionState != ScenarioTransitionState.NONE)
@@ -654,6 +686,18 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (IsActive && _scene.SceneMode == SceneMode.PLAYING)
         {
+            if (_scene.SupportsCameraScalePreview)
+            {
+                if (KeyWasPressed(keyboardState, Keys.D1) || KeyWasPressed(keyboardState, Keys.NumPad1))
+                    _scene.TrySetPlayerScale(1);
+                else if (KeyWasPressed(keyboardState, Keys.D2) || KeyWasPressed(keyboardState, Keys.NumPad2))
+                    _scene.TrySetPlayerScale(2);
+                else if (KeyWasPressed(keyboardState, Keys.D3) || KeyWasPressed(keyboardState, Keys.NumPad3))
+                    _scene.TrySetPlayerScale(3);
+                else if (KeyWasPressed(keyboardState, Keys.D4) || KeyWasPressed(keyboardState, Keys.NumPad4))
+                    _scene.TrySetPlayerScale(4);
+            }
+
             _phaseState?.AccumulateActiveTime(deltaTime);
         }
 

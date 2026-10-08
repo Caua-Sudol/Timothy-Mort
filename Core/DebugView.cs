@@ -32,6 +32,103 @@ public class DebugView
         IsEnabled = !IsEnabled;
     }
 
+    public void DrawScaleOverlay(
+        SpriteBatch spriteBatch,
+        Camera camera,
+        Player player,
+        float referenceHeight,
+        bool showCameraPresets)
+    {
+        if (!IsEnabled || referenceHeight <= 0 || camera.Zoom <= 0)
+        {
+            return;
+        }
+
+        int screenWidth = spriteBatch.GraphicsDevice.Viewport.Width;
+        int screenHeight = spriteBatch.GraphicsDevice.Viewport.Height;
+        float playerPixels = referenceHeight * camera.Zoom;
+        float gridStep = playerPixels * GameScaleConfig.DebugGridPlayerMultiple;
+        // Avoid subpixel spacing and unbounded line counts for invalid settings.
+        if (!float.IsFinite(gridStep) || gridStep < 1)
+        {
+            return;
+        }
+
+        Vector2 worldOrigin = Vector2.Transform(Vector2.Zero, camera.GetTransform());
+        float firstX = ((worldOrigin.X % gridStep) + gridStep) % gridStep;
+        float firstY = ((worldOrigin.Y % gridStep) + gridStep) % gridStep;
+
+        spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        Color gridColor = Color.White * GameScaleConfig.DebugGridOpacity;
+        for (float x = firstX; x < screenWidth; x += gridStep)
+        {
+            spriteBatch.Draw(_pixel,
+                new Rectangle((int)System.Math.Round(x), 0, 1, screenHeight), gridColor);
+        }
+        for (float y = firstY; y < screenHeight; y += gridStep)
+        {
+            spriteBatch.Draw(_pixel,
+                new Rectangle(0, (int)System.Math.Round(y), screenWidth, 1), gridColor);
+        }
+
+        string text =
+            "SCALE DEBUG | Ctrl+P\n" +
+            (showCameraPresets
+                ? $"CAMERA: {GameScaleConfig.SelectedCameraPreset} fixed | SCALE: {player.RelativeScale:F2}\n" +
+                  "PLAYER SCALE: keys 1/2/3/4\n" +
+                  (player.ScaleChangeBlocked ? "SCALE BLOCKED: move away from solids\n" : "")
+                : "") +
+            $"1 player = {playerPixels:F1} px\n" +
+            $"SCREEN: {screenWidth} x {screenHeight} logical px\n" +
+            $"PLAYER/SCREEN: {100f * playerPixels / screenHeight:F2}%\n" +
+            $"VERTICAL: {screenHeight / playerPixels:F2} players\n" +
+            $"ZOOM: {camera.Zoom:F3} | PX/UNIT: {camera.Zoom:F3}\n" +
+            $"REFERENCE: {referenceHeight:F1} world units\n" +
+            $"HITBOX: {player.HitBox.Width} x {player.HitBox.Height} units\n" +
+            $"GRID: {GameScaleConfig.DebugGridPlayerMultiple:F2} player(s)\n" +
+            "Idle frame; includes transparent padding";
+        Vector2 textSize = _font.MeasureString(text);
+        int panelWidth = (int)System.Math.Ceiling(textSize.X) + HudPadding * 2;
+        int panelX = screenWidth - HudMargin - panelWidth;
+        var panel = new Rectangle(panelX, HudMargin, panelWidth,
+            (int)System.Math.Ceiling(textSize.Y) + HudPadding * 2);
+        spriteBatch.Draw(_pixel, panel, Color.Black * GameScaleConfig.DebugPanelOpacity);
+        spriteBatch.DrawString(_font, text,
+            new Vector2(panel.X + HudPadding, panel.Y + HudPadding), Color.White);
+
+        int rulerX = panelX + HudPadding;
+        int rulerTop = panel.Bottom + HudPadding;
+        int rulerBottom = screenHeight - HudMargin;
+        if (rulerBottom > rulerTop)
+        {
+            spriteBatch.Draw(_pixel,
+                new Rectangle(panelX, rulerTop, panelWidth, rulerBottom - rulerTop),
+                Color.Black * GameScaleConfig.DebugPanelOpacity);
+            spriteBatch.Draw(_pixel,
+                new Rectangle(rulerX, rulerTop, 1, rulerBottom - rulerTop), Color.Cyan);
+
+            // Ruler starts at zero on screen; grid remains anchored to world origin.
+            int labelEvery = System.Math.Max(1,
+                (int)System.Math.Ceiling(_font.LineSpacing / gridStep));
+            int tickCount = (int)((rulerBottom - rulerTop) / gridStep);
+            for (int tick = 0; tick <= tickCount; tick++)
+            {
+                int y = rulerTop + (int)System.Math.Round(tick * gridStep);
+                spriteBatch.Draw(_pixel,
+                    new Rectangle(rulerX, y, GameScaleConfig.DebugRulerTickWidth, 1),
+                    Color.Cyan);
+                if (tick % labelEvery == 0 && y + _font.LineSpacing <= rulerBottom)
+                {
+                    spriteBatch.DrawString(_font,
+                        $"{tick * GameScaleConfig.DebugGridPlayerMultiple:0.##} P",
+                        new Vector2(rulerX + GameScaleConfig.DebugRulerTickWidth + HudPadding, y),
+                        Color.Cyan);
+                }
+            }
+        }
+        spriteBatch.End();
+    }
+
 public void DrawHud(SpriteBatch spriteBatch, string scenarioId, Player player)
 {
         if (!IsEnabled)

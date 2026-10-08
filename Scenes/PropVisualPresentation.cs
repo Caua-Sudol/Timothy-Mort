@@ -12,6 +12,8 @@ internal sealed class PropVisualPresentation
     private const int PlayerVisualWidth = 137;
     private const int PlayerVisualHeight = 262;
 
+    public int DebugReferenceHeight => PlayerVisualHeight;
+
     private Texture2D _backgroundTexture;
     private Texture2D _solidPlatformTexture;
     private Texture2D _gelatinPlatformTexture;

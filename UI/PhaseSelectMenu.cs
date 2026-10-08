@@ -11,7 +11,8 @@ public enum PhaseSelectOption
     AFFORDANCE = 1,
     PROP_VISUAL = 2,
     FEEDBACK = 3,
-    CONCEPTUAL_MODELS = 4
+    CONCEPTUAL_MODELS = 4,
+    SCALE_TEST = 5
 }
 
 public sealed class PhaseSelectMenu
@@ -21,7 +22,9 @@ public sealed class PhaseSelectMenu
     private const int CardSpacing = 48;
     private const int MainPhaseCount = 3;
     private const string TitleText = "Selecionar fase";
-    private const string NavigationText = "A/D ou setas para navegar    Enter para selecionar    Esc para voltar";
+    private const string NavigationText = "A/D: fases    S/baixo: teste    W/cima: fases    Enter: selecionar    Esc: voltar";
+    private const int TestButtonHeight = 112;
+    private const int TestButtonGap = 48;
 
     private static readonly string[] PhaseTitles =
     {
@@ -50,6 +53,7 @@ public sealed class PhaseSelectMenu
     private Texture2D _openLock, _closedLock, _check;
     private SymbolRain _symbols;
     private int _selectedPhaseIndex;
+    private bool _testRoomSelected;
     private string _sessionCode;
 
     public PhaseSelectMenu(SpriteFont titleFont, SpriteFont font, Vector2 center, PhaseProgress progress)
@@ -84,6 +88,7 @@ public sealed class PhaseSelectMenu
         if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.A) ||
             KeyWasPressed(keyboardState, previousKeyboardState, Keys.Left))
         {
+            _testRoomSelected = false;
             _selectedPhaseIndex =
                 (_selectedPhaseIndex + PhaseTitles.Length - 1) % PhaseTitles.Length;
         }
@@ -91,10 +96,21 @@ public sealed class PhaseSelectMenu
         if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.D) ||
             KeyWasPressed(keyboardState, previousKeyboardState, Keys.Right))
         {
+            _testRoomSelected = false;
             _selectedPhaseIndex = (_selectedPhaseIndex + 1) % PhaseTitles.Length;
         }
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter) &&
+        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.S) ||
+            KeyWasPressed(keyboardState, previousKeyboardState, Keys.Down))
+            _testRoomSelected = true;
+        else if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.W) ||
+                 KeyWasPressed(keyboardState, previousKeyboardState, Keys.Up))
+            _testRoomSelected = false;
+
+        if (_testRoomSelected && KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter))
+            return PhaseSelectOption.SCALE_TEST;
+
+        if (!_testRoomSelected && KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter) &&
             IsUnlocked(_selectedPhaseIndex))
         {
             return _selectedPhaseIndex switch
@@ -140,7 +156,7 @@ public sealed class PhaseSelectMenu
                 CardHeight);
             bool isCompleted = _progress.IsCompleted(PhaseIds[index]);
             bool isUnlocked = IsUnlocked(index);
-            bool isSelected = index == _selectedPhaseIndex;
+            bool isSelected = !_testRoomSelected && index == _selectedPhaseIndex;
             Color textColor = CardTextColor;
             spriteBatch.Draw(isSelected ? _selectedCard : _unselectedCard, cardRectangle, Color.White);
             DrawCenteredText(
@@ -160,6 +176,15 @@ public sealed class PhaseSelectMenu
                 new Rectangle((int)statusPosition.X - iconSize / 2,
                     (int)statusPosition.Y - iconSize / 2, iconSize, iconSize), Color.White);
         }
+
+        var testButton = new Rectangle(
+            (int)_center.X - CardWidth / 2,
+            cardY + CardHeight + TestButtonGap,
+            CardWidth,
+            TestButtonHeight);
+        spriteBatch.Draw(_testRoomSelected ? _selectedCard : _unselectedCard, testButton, Color.White);
+        DrawCenteredText(spriteBatch, "Sala de teste / composição",
+            testButton.Center.ToVector2(), CardTextColor, _font, 0.75f);
 
         DrawCenteredText(spriteBatch, NavigationText, new Vector2(_center.X, 960.0f), SecondaryColor, scale: 0.75f);
         spriteBatch.End();
