@@ -759,6 +759,8 @@ public void ClearDashEnergyAbsorption()
                 AirAnimation.Jump => _jumpFrames[3],
                 AirAnimation.Glide => _glideFrames[frame % _glideFrames.Length],
                 AirAnimation.Landing => _jumpFrames[2 - Math.Min(frame, 2)],
+                AirAnimation.Dash => _dashDuration - _dashTimer < 1.0 / AirFramesPerSecond
+                    ? _glideFrames[2] : _jumpFrames[3],
                 _ => _jumpFrames[_jumpFrames.Length - 1]
             };
             bool facingLeft = _direction == Direction.Left;
