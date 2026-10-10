@@ -196,8 +196,17 @@ private Vector2 _checkpoint;
         _fadeTexture = new Texture2D(graphicsDevice, ScreenWidth, ScreenHeight);
         _fadeTexture.SetData(fadeColor);
 
-        _player = new Player((int)_playerStart.X, (int)_playerStart.Y, PlayerGravity, PlayerWidth, PlayerHeight);
+        int colliderWidth = SupportsCameraScalePreview
+            ? GameScaleConfig.PlayerReferenceColliderWidth : PlayerWidth;
+        int colliderHeight = SupportsCameraScalePreview
+            ? GameScaleConfig.PlayerReferenceColliderHeight : PlayerHeight;
+        _player = new Player(
+            (int)_playerStart.X + (PlayerWidth - colliderWidth) / 2,
+            (int)_playerStart.Y + PlayerHeight - colliderHeight,
+            PlayerGravity, colliderWidth, colliderHeight);
         _player.LoadContent(graphicsDevice, PlayerWidth, PlayerHeight);
+        // 8 * 0.75 player scale * 0.675 camera zoom = 4.05 screen pixels.
+        _player.ColliderOffsetFromSpriteX = SupportsCameraScalePreview ? 8f : 0f;
         if (SupportsCameraScalePreview)
         {
             _player.SetDirectionalPreviewSprites(

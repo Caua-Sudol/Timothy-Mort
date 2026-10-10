@@ -13,7 +13,12 @@ internal static class GameScaleConfig
     public const float PlayerScaleMedium = 0.85f;
     public const float PlayerScaleSmall = 0.75f;
     public const float PlayerScaleSmallest = 0.65f;
-    public const int DefaultPlayerScalePreset = 1;
+    public const int DefaultPlayerScalePreset = 3;
+
+    // Fixed body collider: about 32 x 77 screen pixels at the default 10.5% player size
+    // in a 1920 x 1080 viewport (scale 0.75, camera zoom 0.675).
+    public const int PlayerReferenceColliderWidth = 63;
+    public const int PlayerReferenceColliderHeight = 152;
 
     public const string ScaleTestScenarioId = "scale_test";
     public const string ScaleTestMapPath = "Content/ScaleTest.tmx";

@@ -37,6 +37,7 @@ public class Player
     private readonly int _originalHeight;
 
     public float RelativeScale { get; private set; } = 1.0f;
+    public float ColliderOffsetFromSpriteX { get; set; }
     public bool ScaleChangeBlocked { get; private set; }
 
     private Vector2 _velocity;
@@ -768,6 +769,7 @@ public void ClearDashEnergyAbsorption()
 
 }
 
+
     private void DrawDamageFeedback(
         SpriteBatch spriteBatch,
         SolutionVisualModule visualModules,
@@ -780,6 +782,7 @@ public void ClearDashEnergyAbsorption()
 
         Texture2D sprite = _previewSprite;
         SpriteEffects spriteEffects = SpriteEffects.None;
+        bool facingLeft = _direction == Direction.Left;
         Rectangle source = _previewSource;
         int spriteWidth = _previewWidth;
         int spriteHeight = _previewHeight;
@@ -815,7 +818,6 @@ public void ClearDashEnergyAbsorption()
                     ? _glideFrames[2] : _jumpFrames[3],
                 _ => _jumpFrames[_jumpFrames.Length - 1]
             };
-            bool facingLeft = _direction == Direction.Left;
             if (_airAnimation == AirAnimation.Dash)
             {
                 if (_dashDirection.X != 0)
@@ -831,12 +833,14 @@ public void ClearDashEnergyAbsorption()
         }
 
         Vector2 spriteDrawSize = new Vector2(spriteWidth, spriteHeight) * RelativeScale;
+        float facingSign = facingLeft ? -1f : 1f;
+        float spriteCenterX = HitBox.Center.X - ColliderOffsetFromSpriteX * RelativeScale * facingSign;
         Rectangle drawBounds = HitBox;
         if (_previewSprite != null)
         {
             int width = Math.Max(1, (int)Math.Round(spriteDrawSize.X));
             int height = Math.Max(1, (int)Math.Round(spriteDrawSize.Y));
-            drawBounds = new Rectangle(HitBox.Center.X - width / 2,
+            drawBounds = new Rectangle((int)Math.Round(spriteCenterX - width / 2f),
                 HitBox.Bottom - height, width, height);
             color = visualModules.HasFlag(SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) &&
                 !ShowsDashAsAvailable ? Color.SlateGray : Color.White;
@@ -897,7 +901,7 @@ public void ClearDashEnergyAbsorption()
             {
                 if (RelativeScale != 1.0f)
                     spriteBatch.Draw(sprite,
-                        new Vector2(HitBox.Center.X, HitBox.Bottom - spriteDrawSize.Y / 2f),
+                        new Vector2(spriteCenterX, HitBox.Bottom - spriteDrawSize.Y / 2f),
                         source, color, spriteRotation,
                         new Vector2(source.Width / 2f, source.Height / 2f),
                         new Vector2(spriteDrawSize.X / source.Width,
