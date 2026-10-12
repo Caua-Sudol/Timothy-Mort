@@ -39,6 +39,7 @@ public partial class LevelMap
     private const string DebugMeasurementDestinationRole = "destino";
 
     private readonly string _mapPath;
+    private readonly string _ldtkLevelId;
     private List<DynamicPlatform> _dynamicPlatforms = new List<DynamicPlatform>();
     private List<Rectangle> _platforms = new List<Rectangle>();
     private List<Rectangle> _gelatins = new List<Rectangle>();
@@ -188,9 +189,10 @@ public partial class LevelMap
         get { return _propVisualForegrounds; }
     }
 
-    public LevelMap(string mapPath)
+    public LevelMap(string mapPath, string ldtkLevelId = null)
     {
         _mapPath = mapPath;
+        _ldtkLevelId = ldtkLevelId;
     }
 
 public void LoadContent(GraphicsDevice graphicsDevice)
@@ -986,6 +988,9 @@ private void ApplyObjectState(LevelMap candidate)
         SolutionVisualModule visualModules,
         bool usesDistinctVisual)
     {
+        // LDtk supplies hazard artwork through its tile layers; volumes only cause damage.
+        if (IsLdtk) return;
+
         const int spikeWidth = 16;
         const int spikeStepHeight = 4;
 

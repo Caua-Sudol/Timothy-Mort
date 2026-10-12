@@ -107,7 +107,8 @@ private Vector2 _checkpoint;
             scenario.FallbackPlayerStart,
             entrySpawnId,
             phaseState,
-            scenario.Id == ScenarioCatalog.PropVisualScenarioId)
+            scenario.Id == ScenarioCatalog.PropVisualScenarioId,
+            scenario.LdtkLevelId)
     {
         _isScaleTestRoom = scenario.Id == GameScaleConfig.ScaleTestScenarioId;
     }
@@ -122,9 +123,10 @@ private Vector2 _checkpoint;
         Vector2 playerStart,
         string entrySpawnId,
         PhaseState phaseState,
-        bool usesPropVisualPresentation)
+        bool usesPropVisualPresentation,
+        string ldtkLevelId = null)
     {
-        _map = new LevelMap(mapPath);
+        _map = new LevelMap(mapPath, ldtkLevelId);
         _propVisualPresentation = usesPropVisualPresentation
             ? new PropVisualPresentation()
             : null;
@@ -905,6 +907,7 @@ private static bool RectanglesTouchOrIntersect(
     }
 
     public bool SupportsCameraScalePreview =>
+        _map.IsLdtk ||
         _isScaleTestRoom ||
         _phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId;
 

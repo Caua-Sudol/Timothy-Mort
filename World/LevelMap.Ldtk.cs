@@ -28,7 +28,7 @@ public partial class LevelMap
     {
         try
         {
-            var candidate = new LevelMap(_mapPath);
+            var candidate = new LevelMap(_mapPath, _ldtkLevelId);
             using var document = JsonDocument.Parse(File.ReadAllText(ResolveLdtkPath()));
             candidate.LoadLdtk(document.RootElement);
             ApplyObjectState(candidate);
@@ -45,7 +45,16 @@ public partial class LevelMap
 
     private void LoadLdtk(JsonElement root)
     {
-        JsonElement level = root.GetProperty("levels")[0];
+        JsonElement level = _ldtkLevelId == null ? root.GetProperty("levels")[0] :
+            root.GetProperty("levels").EnumerateArray().First(l =>
+                l.GetProperty("identifier").GetString() == _ldtkLevelId);
+        string levelId = level.GetProperty("identifier").GetString();
+        string nextRoom = levelId == "AffordanceTela1" ? ScenarioCatalog.AffordanceRoom2ScenarioId :
+            levelId == "AffordanceTela2" ? ScenarioCatalog.AffordanceRoom3ScenarioId :
+            levelId == "Sala_intervencao" ? ScenarioCatalog.AffordanceVisibilityScenarioId :
+            ScenarioCatalog.InitialScenarioId;
+        string previousRoom = levelId == "AffordanceTela3" ? ScenarioCatalog.AffordanceRoom2ScenarioId :
+            ScenarioCatalog.AffordanceVisibilityScenarioId;
         WidthInPixels = level.GetProperty("pxWid").GetInt32();
         HeightInPixels = level.GetProperty("pxHei").GetInt32();
         var definitions = root.GetProperty("defs").GetProperty("layers").EnumerateArray()
@@ -71,6 +80,12 @@ public partial class LevelMap
                 {
                     bool gelatin = name.Equals("Gelatina", StringComparison.OrdinalIgnoreCase) ||
                         kind.Value.Equals("gelatina", StringComparison.OrdinalIgnoreCase);
+                    if (kind.Value.Equals("espinhos", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _damageVolumes.AddRange(MergeLdtkCells(cells, columns, size, kind.Key, ox, oy)
+                            .Select(bounds => new DamageVolume(bounds)));
+                        continue;
+                    }
                     if (!gelatin && !kind.Value.Equals("solido", StringComparison.OrdinalIgnoreCase)) continue;
                     var target = gelatin ? _gelatins : _platforms;
                     target.AddRange(MergeLdtkCells(cells, columns, size, kind.Key, ox, oy));
@@ -99,8 +114,13 @@ public partial class LevelMap
                             ScenarioCatalog.AffordanceInterventionScenarioId, "spawn_inicial",
                             InterventionEntrancePlacement.LATE)); break;
                     case "RoomExit":
-                        _sceneExits.Add(new SceneExit(bounds, ScenarioCatalog.AffordanceRoom2ScenarioId,
-                            "spawn_inicial", false)); break;
+                        _sceneExits.Add(new SceneExit(bounds, nextRoom,
+                            levelId == "Sala_intervencao" ? "retorno_intervencao" : "spawn_inicial",
+                            levelId == "AffordanceTela3")); break;
+                    case "RoomBack":
+                        _sceneExits.Add(new SceneExit(bounds, previousRoom, "retorno_tela", false)); break;
+                    case "InterventionSword":
+                        _interventionButtons.Add(bounds); break;
                 }
             }
         }

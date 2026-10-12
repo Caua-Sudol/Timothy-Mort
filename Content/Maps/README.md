@@ -1,28 +1,42 @@
-# Primeira tela do affordance — LDtk
+# Affordance — projeto LDtk
 
-Abra `AffordanceTela1.ldtk` como projeto separado no LDtk. Esta copia e a fonte da primeira tela; o projeto em assets/teste_ldtk continua sendo o teste.
+Abra `Content/Maps/Affordance.ldtk`. Este projeto controla as tres telas e a intervencao. O arquivo de teste continua separado.
 
-- Sala: 2880 x 1600. Terreno: grid de 96.
-- Colisao: valor solido (1) bloqueia; gelatina (2) permite atravessar, limita queda e recarrega dash.
-- Correcoes: tiles manuais sobre a arte automatica. Nao cria colisao.
-- Entidades: grid de 16 para posicionar os marcadores com mais precisao.
+## Salas e destinos
 
-## Marcadores
+| Nivel no LDtk | RoomExit | RoomBack |
+| --- | --- | --- |
+| AffordanceTela1 | Tela 2, passagem livre | — |
+| AffordanceTela2 | Tela 3, passagem livre | Tela 1 |
+| AffordanceTela3 | Conclui a fase depois de aplicar uma solucao | Tela 2 |
+| Sala_intervencao | Retorna a tela de onde entrou, mesmo sem escolher | — |
+
+Mantenha esses identificadores: o jogo seleciona cada nivel pelo nome, independentemente da ordem e da posicao no World. Todas as coordenadas de jogo sao locais a sala.
+
+## Camadas
+
+- Salas: 2880 x 1600; terreno em grid de 96.
+- Colisao: solido (1) bloqueia; gelatina (2) permite atravessar, limita queda e recarrega dash; espinhos (3) causam dano.
+- Correcoes: tiles manuais sobre a arte automatica, sem criar colisao.
+- Entidades: grid de 16 para ajustar os marcadores.
+- Atlas: ../../assets/teste_ldtk/root_tileset.png.
+
+## Entidades
 
 | Entidade | Uso |
 | --- | --- |
-| PlayerSpawn | Inicio e checkpoint da sala. Pivo no centro dos pes. |
-| InterventionEntrance | Area de acesso com E, revelada depois de duas mortes. Leva a intervencao existente. |
+| PlayerSpawn | Inicio e checkpoint da sala, com pivo nos pes. |
+| RoomExit | Area de contato para avancar ou sair da intervencao. |
+| RoomBack | Area de contato para voltar a tela anterior. |
+| RoomReturn | Posicao dos pes ao voltar da proxima tela. Mantenha fora de RoomExit. |
+| InterventionEntrance | Acesso com E: aparece apos duas mortes na tela 1 e fica disponivel na entrada da tela 2. |
 | InterventionReturn | Posicao dos pes ao voltar da intervencao. |
-| RoomExit | Area de contato para ir a affordance_tela_2, sem exigir solucao. |
-| RoomReturn | Posicao dos pes ao voltar da tela 2. Mantenha fora de RoomExit. |
+| InterventionSword | Retangulo interativo com E que abre a escolha da solucao. |
 
-As areas de entrada/saida podem ser redimensionadas no editor. Os destinos desta primeira sala estao ligados pelo tipo da entidade.
+Spawns e retornos devem ficar com os pes no topo de um solido, fora dos espinhos e das areas de passagem automatica. As areas podem ser redimensionadas no editor. O retorno da intervencao e direcionado automaticamente para a sala de origem.
 
-Salve no LDtk e pressione Ctrl+R no jogo, na primeira tela, para recarregar o arquivo e voltar ao spawn. Arquivo invalido mostra erro e preserva o mapa carregado. Alteracoes nos PNGs exigem recompilar o conteudo.
+Salve no LDtk e use Ctrl+R na sala atual para recarregar e voltar ao spawn, ou recompile o jogo. Erros de recarga preservam o mapa anterior. Alteracoes em PNGs exigem recompilar o conteudo.
 
-O atlas referencia ../../assets/teste_ldtk/root_tileset.png, dentro deste projeto. As regras de gelatina usam o mesmo atlas dos solidos.
+Todas estas salas usam escala 1 do jogador e referencia de 14% da altura da tela. O shader experimental continua exclusivo da sala de teste.
 
-O jogador desta sala usa escala 1 e referencia de 14% da altura da tela. O shader experimental fica na sala de teste. As demais salas continuam nos arquivos TMX.
-
-Ao editar o LDtk externamente, reabra o projeto no editor antes de salvar para evitar sobrescrever a versao nova com a antiga.
+Depois desta alteracao externa, abra Affordance.ldtk no editor antes de editar; nao salve uma copia antiga ainda aberta por cima dele.

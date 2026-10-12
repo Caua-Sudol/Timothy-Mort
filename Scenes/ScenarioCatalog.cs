@@ -28,17 +28,17 @@ public static class ScenarioCatalog
             ),
             [AffordanceVisibilityScenarioId] = new ScenarioDefinition(
                 AffordanceVisibilityScenarioId,
-                "Content/Maps/AffordanceTela1.ldtk",
-                new Vector2(160, 816)
+                "Content/Maps/Affordance.ldtk",
+                new Vector2(160, 816), "AffordanceTela1"
             ),
             [AffordanceRoom2ScenarioId] = new ScenarioDefinition(
-                AffordanceRoom2ScenarioId, "Content/AffordanceTela2.tmx", new Vector2(96, 816)),
+                AffordanceRoom2ScenarioId, "Content/Maps/Affordance.ldtk", new Vector2(96, 816), "AffordanceTela2"),
             [AffordanceRoom3ScenarioId] = new ScenarioDefinition(
-                AffordanceRoom3ScenarioId, "Content/AffordanceTela3.tmx", new Vector2(96, 816)),
+                AffordanceRoom3ScenarioId, "Content/Maps/Affordance.ldtk", new Vector2(96, 816), "AffordanceTela3"),
             [AffordanceInterventionScenarioId] = new ScenarioDefinition(
                 AffordanceInterventionScenarioId,
-                "Content/AffordanceIntervencao.tmx",
-                new Vector2(160, 816)
+                "Content/Maps/Affordance.ldtk",
+                new Vector2(160, 816), "Sala_intervencao"
             ),
             [DamageFeedbackScenarioId] = new ScenarioDefinition(
                 DamageFeedbackScenarioId,
