@@ -13,7 +13,7 @@ internal static class GameScaleConfig
     public const float PlayerScaleMedium = 0.85f;
     public const float PlayerScaleSmall = 0.75f;
     public const float PlayerScaleSmallest = 0.65f;
-    public const int DefaultPlayerScalePreset = 3;
+    public const int DefaultPlayerScalePreset = 1;
 
     // Fixed body collider: about 32 x 77 screen pixels at the default 10.5% player size
     // in a 1920 x 1080 viewport (scale 0.75, camera zoom 0.675).
@@ -27,14 +27,14 @@ internal static class GameScaleConfig
     // Baseline at scale 1. Spatial rates scale with the player; times stay fixed.
     public const double PlayerGravity = -1800.0;
     public const float PlayerHorizontalSpeed = 528f;
-    public const float PlayerJumpSpeed = 600f;
+    public const float PlayerJumpSpeed = 620f;
     public const float PlayerGroundAcceleration = 3300f;
     public const float PlayerGroundDeceleration = 3300f;
     public const float PlayerAirAcceleration = 1800f;
     public const float PlayerAirBrakingAcceleration = 4800f;
     public const float PlayerReleasedJumpSpeed = 240f;
     public const float PlayerDashReferenceSpeed = 960f;
-    public const float PlayerDashSpeed = PlayerDashReferenceSpeed * 0.75f;
+    public const float PlayerDashSpeed = PlayerDashReferenceSpeed * 0.80f;
     public const float PlayerDashDuration = 0.18f;
     public const double PlayerCoyoteTime = 0.10;
     public const double PlayerJumpBufferTime = 0.10;

@@ -28,7 +28,7 @@ public static class ScenarioCatalog
             ),
             [AffordanceVisibilityScenarioId] = new ScenarioDefinition(
                 AffordanceVisibilityScenarioId,
-                "Content/AffordanceVisibilidade.tmx",
+                "Content/Maps/AffordanceTela1.ldtk",
                 new Vector2(160, 816)
             ),
             [AffordanceRoom2ScenarioId] = new ScenarioDefinition(

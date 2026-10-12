@@ -1,25 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="90" height="50" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="22">
- <objectgroup id="1" name="mapaGeral">
-  <object id="1" name="parede_esquerda" x="0" y="32" width="32" height="1568"/>
-  <object id="2" name="parede_direita" x="2848" y="32" width="32" height="1568"/>
-  <object id="3" name="teto" x="0" y="0" width="2880" height="32"/>
-  <object id="4" name="inicio_checkpoint" x="32" y="1216" width="288" height="384"/>
-  <object id="5" name="plat_solida1" x="1362.42" y="638.667" width="800" height="384"/>
-  <object id="6" name="plat_solida1" x="2551.03" y="319.03" width="296.97" height="1280.97"/>
-  <object id="7" name="wood1" x="91.697" y="382.303" width="256" height="64"/>
-  <object id="8" name="wood2" x="456.182" y="538.667" width="192" height="32"/>
-  <object id="9" name="wood3" x="445.697" y="1100.48" width="192" height="32"/>
-  <object id="10" name="wood4" x="458" y="755.212" width="152" height="32"/>
-  <object id="11" name="plat_solida2" x="638.788" y="724" width="259.636" height="872"/>
-  <object id="12" name="wood5" x="2233.82" y="325.333" width="256" height="32"/>
-  <object id="13" name="plat_solida3" x="36" y="640" width="280" height="316"/>
-  <object id="14" name="wood6" x="316.727" y="926.545" width="224" height="32"/>
-  <object id="15" name="plat_solida1" x="564.667" y="271.273" width="256" height="128"/>
-  <object id="16" name="wood7" x="2065.21" y="505.939" width="256" height="32"/>
-  <object id="17" name="wood8" x="965.697" y="192.606" width="192" height="32"/>
- </objectgroup>
+ <objectgroup id="1" name="mapaGeral"/>
  <objectgroup id="2" name="spawnJogador">
-  <object id="21" name="spawn_inicial" x="200.588" y="1199.75" width="16" height="16"/>
+  <object id="21" name="spawn_inicial" x="482.523" y="1103.02" width="16" height="16"/>
  </objectgroup>
 </map>

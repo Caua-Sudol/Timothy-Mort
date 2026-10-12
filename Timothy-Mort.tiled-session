@@ -1,5 +1,5 @@
 {
-    "activeFile": "Content/AffordanceVisibilidade.tmx",
+    "activeFile": "Content/ScaleTest.tmx",
     "expandedProjectPaths": [
         "Content"
     ],
@@ -7,32 +7,36 @@
         "": {
             "scaleInDock": 1
         },
+        "C:/Users/cauaz/Downloads/Terrain (32x32).tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "Content/AffordanceIntervencao.tmx": {
             "expandedObjectLayers": [
                 5,
+                3,
                 6,
                 1,
-                3,
-                2,
-                4
+                4,
+                2
             ],
             "scale": 0.5,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 982,
-                "y": 796
+                "x": 961,
+                "y": 543
             }
         },
         "Content/AffordanceTela2.tmx": {
             "expandedObjectLayers": [
-                5,
-                6,
-                8,
-                1,
-                3,
                 7,
-                2,
-                4
+                5,
+                3,
+                6,
+                1,
+                4,
+                8,
+                2
             ],
             "scale": 0.5,
             "selectedLayer": 3,
@@ -60,19 +64,19 @@
         },
         "Content/AffordanceVisibilidade.tmx": {
             "expandedObjectLayers": [
+                7,
                 5,
+                3,
                 6,
                 1,
-                3,
-                7,
-                2,
-                4
+                4,
+                2
             ],
             "scale": 0.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 718,
-                "y": 806
+                "x": 1441,
+                "y": 799
             }
         },
         "Content/FeedbackIntervencao.tmx": {
@@ -88,10 +92,10 @@
         },
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
+                7,
                 5,
                 6,
                 8,
-                7,
                 2
             ],
             "scale": 0.75,
@@ -103,13 +107,13 @@
         },
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
             "expandedObjectLayers": [
-                6,
-                12,
-                8,
-                11,
                 7,
-                13,
-                2
+                12,
+                6,
+                11,
+                8,
+                2,
+                13
             ],
             "scale": 0.75,
             "selectedLayer": 1,
@@ -127,19 +131,20 @@
             "scale": 0.5,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 992,
-                "y": 864
+                "x": 2305,
+                "y": 543
             }
         },
         "Content/ScaleTest.tmx": {
             "expandedObjectLayers": [
-                1
+                1,
+                2
             ],
-            "scale": 0.33,
-            "selectedLayer": 0,
+            "scale": 0.75,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 1348.4848484848485,
-                "y": 800
+                "x": 1440.6666666666665,
+                "y": 800.6666666666666
             }
         },
         "Content/SimpleCutsceneMap.tmx": {
@@ -180,22 +185,30 @@
             "scaleInDock": 1
         }
     },
+    "last.imagePath": "C:/Users/cauaz/Downloads/Kings and Pigs/Sprites/14-TileSets",
     "openFiles": [
         "Content/AffordanceVisibilidade.tmx",
         "Content/ModelosConceituaisRestricoesIntervencao.tmx",
         "Content/ModelosConceituaisRestricoes.tmx",
-        "Content/AffordanceTela2.tmx"
+        "Content/AffordanceTela2.tmx",
+        "Content/ScaleTest.tmx",
+        "Content/PropVisual.tmx",
+        "Content/AffordanceIntervencao.tmx",
+        "C:/Users/cauaz/Downloads/Terrain (32x32).tsx"
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
-        "Content/AffordanceTela2.tmx",
-        "Content/ModelosConceituaisRestricoes.tmx",
-        "Content/ModelosConceituaisRestricoesIntervencao.tmx",
         "Content/AffordanceVisibilidade.tmx",
+        "Content/ModelosConceituaisRestricoesIntervencao.tmx",
+        "Content/ModelosConceituaisRestricoes.tmx",
+        "Content/AffordanceTela2.tmx",
+        "C:/Users/cauaz/Downloads/Terrain (32x32).tsx",
+        "Content/AffordanceIntervencao.tmx",
         "Content/PropVisual.tmx",
+        "Content/ScaleTest.tmx",
         "Content/SimpleCutsceneMap.tmx",
         "Content/FeedbackIntervencao.tmx",
-        "Content/AffordanceTela3.tmx",
-        "Content/AffordanceIntervencao.tmx"
-    ]
+        "Content/AffordanceTela3.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx"
 }

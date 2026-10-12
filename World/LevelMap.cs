@@ -7,7 +7,7 @@ using TiledSharp;
 
 namespace DontLikePoetry;
 
-public class LevelMap
+public partial class LevelMap
 {
     private const int TileSize = 32;
     private const string PlatformLayerName = "mapaGeral";
@@ -443,6 +443,7 @@ public void UpdateVisualEffects(double deltaTime)
         bool verticalRouteRevealed,
         SolutionVisualModule visualModules)
     {
+        if (IsLdtk) DrawLdtk(spriteBatch, visualModules);
         foreach (DynamicPlatform platform in _dynamicPlatforms)
         {
             if (!platform.Active) continue;
@@ -456,7 +457,8 @@ public void UpdateVisualEffects(double deltaTime)
         }
         foreach (Rectangle platform in _platforms)
         {
-            if (TryGetObjectTexture(PlatformLayerName, platform, out Texture2D objectTexture))
+            if (IsLdtk) { }
+            else if (TryGetObjectTexture(PlatformLayerName, platform, out Texture2D objectTexture))
                 spriteBatch.Draw(objectTexture, platform, Color.White);
             else if (_initialCheckpointTexture != null && _initialCheckpointBounds == platform)
                 spriteBatch.Draw(_initialCheckpointTexture, platform, Color.White);
@@ -599,6 +601,7 @@ public void ReloadObjects()
 
 public bool TryReloadObjects(out string errorMessage)
 {
+    if (IsLdtk) return TryReloadLdtk(out errorMessage);
     if (!TmxMapValidator.TryLoad(_mapPath, out TmxMap map, out errorMessage))
     {
         return false;
@@ -1133,7 +1136,8 @@ private void ApplyObjectState(LevelMap candidate)
             spriteBatch.Draw(_platformTexture, glow, Color.Cyan * glowOpacity);
         }
 
-        if (gelatinTexture != null)
+        if (IsLdtk) { }
+        else if (gelatinTexture != null)
         {
             Color tint = colorOverride ??
                 (visualModules.HasFlag(SolutionVisualModule.GELATIN_COLOR) ? gelatinColor : Color.White);

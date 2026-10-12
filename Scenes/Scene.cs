@@ -45,6 +45,9 @@ public class Scene
 
     private Player _player;
     private readonly LevelMap _map;
+    private IEnumerable<Rectangle> _additionalSolidColliders = Enumerable.Empty<Rectangle>();
+    private bool _useAdditionalCollidersOnly;
+    private IEnumerable<Rectangle> _additionalGelatinVolumes = Enumerable.Empty<Rectangle>();
     private readonly bool _isScaleTestRoom;
     public bool UseOriginalScaleTestCamera { get; set; }
     private readonly PropVisualPresentation _propVisualPresentation;
@@ -142,6 +145,20 @@ private Vector2 _checkpoint;
         }
     }
 
+    public void SetAdditionalSolidColliders(IEnumerable<Rectangle> colliders)
+    {
+        _additionalSolidColliders = colliders ?? Enumerable.Empty<Rectangle>();
+    }
+
+    public void SetAdditionalGelatinVolumes(IEnumerable<Rectangle> volumes) =>
+        _additionalGelatinVolumes = volumes ?? Enumerable.Empty<Rectangle>();
+
+    private IEnumerable<Rectangle> GetGelatinVolumes(bool verticalRouteRevealed) =>
+        _useAdditionalCollidersOnly ? _additionalGelatinVolumes :
+        _map.GetGelatinVolumes(verticalRouteRevealed).Concat(_additionalGelatinVolumes);
+
+    public void UseAdditionalCollidersOnly() => _useAdditionalCollidersOnly = true;
+
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {
         _fadeAlpha = 0.0f;
@@ -158,6 +175,8 @@ private Vector2 _checkpoint;
         _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
+        if (_map.IsLdtk)
+            _map.SetLdtkAtlas(content.Load<Texture2D>("visual/teste_ldtk_terrain"));
         if (SupportsCameraScalePreview)
         {
             _map.SetWoodPlatformTexture(content.Load<Texture2D>("visual/platformer_wood"));
@@ -227,7 +246,7 @@ private Vector2 _checkpoint;
         }
 
         if (SupportsCameraScalePreview)
-            TrySetPlayerScale(GameScaleConfig.DefaultPlayerScalePreset);
+            TrySetPlayerScale(_map.IsLdtk ? 1 : GameScaleConfig.DefaultPlayerScalePreset);
 
         SceneMode = SceneMode.PLAYING;
         SecondsPerFrame = SecondsPerFramePlaying;
@@ -351,7 +370,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         UpdateExitDoorRise(deltaTime);
 
         bool playerIsTouchingGelatin = PlayerTouchesAnySurface(
-            _map.GetGelatinVolumes(
+            GetGelatinVolumes(
                 _phaseState?.VerticalRouteRevealed == true));
 
         if (_player.IsGrounded && !playerIsTouchingGelatin)
@@ -405,12 +424,21 @@ private void UpdatePlaying(Camera camera, double deltaTime)
     {
         _playerCollision.MoveAndResolve(
             _player,
-            _map.GetSolidColliders(
+            GetSolidColliders(),
+            deltaTime);
+    }
+
+    private IEnumerable<Rectangle> GetSolidColliders()
+    {
+        if (_useAdditionalCollidersOnly)
+            return _additionalSolidColliders;
+
+        return _map.GetSolidColliders(
                 _exitDoorIsOpen,
                 _phaseState?.VerticalRouteRevealed == true,
                 GetAppliedVisualModules().HasFlag(SolutionVisualModule.SAFE_ROUTE),
-                _exitDoorPosition),
-            deltaTime);
+                _exitDoorPosition)
+            .Concat(_additionalSolidColliders);
     }
 
     private bool UpdateDamage()
@@ -585,7 +613,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
     private void ApplyGelatinFallSpeed()
     {
-        foreach (Rectangle gelatin in _map.GetGelatinVolumes(
+        foreach (Rectangle gelatin in GetGelatinVolumes(
             _phaseState?.VerticalRouteRevealed == true))
         {
             if (!_player.HitBox.Intersects(gelatin))
@@ -600,7 +628,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
 private void UpdateGelatinContact()
 {
-        foreach (Rectangle gelatin in _map.GetGelatinVolumes(
+        foreach (Rectangle gelatin in GetGelatinVolumes(
             _phaseState?.VerticalRouteRevealed == true))
         {
         if (!_player.HitBox.Intersects(gelatin) || _usedGelatins.Contains(gelatin))
@@ -672,7 +700,7 @@ private void UpdateSurfaceContactFeedback()
 
     bool playerIsTouchingGelatinSurface =
         PlayerTouchesAnySurface(
-            _map.GetGelatinVolumes(verticalRouteRevealed));
+            GetGelatinVolumes(verticalRouteRevealed));
 
     bool contactStarted =
         playerIsTouchingSolidSurface &&
@@ -858,11 +886,13 @@ private static bool RectanglesTouchOrIntersect(
 
     private void UpdatePlayingCamera(Camera camera)
     {
-        if (_isScaleTestRoom)
+        if (_isScaleTestRoom || _map.IsLdtk)
         {
             camera.Zoom = UseOriginalScaleTestCamera
                 ? GameScaleConfig.OriginalCameraZoom
-                : GameScaleConfig.GetCameraZoom(camera.Dimensions.Y, _player.UnscaledReferenceHeight);
+                : _map.IsLdtk
+                    ? camera.Dimensions.Y * 0.14f / _player.UnscaledReferenceHeight
+                    : GameScaleConfig.GetCameraZoom(camera.Dimensions.Y, _player.UnscaledReferenceHeight);
             camera.LookAt(new Vector2(_map.WidthInPixels / 2f, _map.HeightInPixels / 2f));
             return;
         }
@@ -885,11 +915,7 @@ private static bool RectanglesTouchOrIntersect(
 
         return _player.TrySetRelativeScale(
             GameScaleConfig.GetPlayerScale(preset),
-            _map.GetSolidColliders(
-                _exitDoorIsOpen,
-                _phaseState?.VerticalRouteRevealed == true,
-                GetAppliedVisualModules().HasFlag(SolutionVisualModule.SAFE_ROUTE),
-                _exitDoorPosition));
+            GetSolidColliders());
     }
 
     private void UpdateCutsceneCamera(Camera camera)
@@ -1009,14 +1035,17 @@ private static bool RectanglesTouchOrIntersect(
         spriteBatch,
         visualModules,
         _phaseState?.DamageInvulnerabilityRemainingSeconds ?? 0);
-    _map.Draw(
-        spriteBatch,
-            GetActiveInterventionEntrancePlacement(),
-            _interventionButtonPressOffset,
-        _exitDoorPosition,
-        _exitDoorIsOpen,
-        _phaseState?.VerticalRouteRevealed == true,
-        visualModules);
+    if (!_useAdditionalCollidersOnly)
+    {
+        _map.Draw(
+            spriteBatch,
+                GetActiveInterventionEntrancePlacement(),
+                _interventionButtonPressOffset,
+            _exitDoorPosition,
+            _exitDoorIsOpen,
+            _phaseState?.VerticalRouteRevealed == true,
+            visualModules);
+    }
 
     if (visualModules.HasFlag(SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS))
     {
