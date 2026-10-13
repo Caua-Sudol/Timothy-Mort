@@ -1151,6 +1151,19 @@ private void ApplyObjectState(LevelMap candidate)
         else
             spriteBatch.Draw(_platformTexture, gelatin, gelatinColor);
 
+        if (visualModules.HasFlag(SolutionVisualModule.GELATIN_TERRAIN_MARK))
+        {
+            // Temporary neutral mark until the marked-terrain asset is ready.
+            int size = Math.Max(1, Math.Min(12, Math.Min(gelatin.Width, gelatin.Height) / 2));
+            var mark = new Rectangle(gelatin.Center.X - size / 2, gelatin.Center.Y - size / 2,
+                size, size);
+            spriteBatch.Draw(_platformTexture, mark, new Color(216, 208, 187));
+            if (size > 4)
+                spriteBatch.Draw(_platformTexture,
+                    new Rectangle(mark.X + 2, mark.Y + 2, size - 4, size - 4),
+                    new Color(37, 40, 43));
+        }
+
         if ((visualModules & SolutionVisualModule.GELATIN_DASH_SYMBOL) != 0)
         {
             DrawGelatinDashSymbol(spriteBatch, gelatin);

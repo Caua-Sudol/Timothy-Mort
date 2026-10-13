@@ -14,7 +14,6 @@ internal sealed class ScaleTestRoom
     private readonly SpriteFont _font;
     private readonly Texture2D _background;
     private readonly Texture2D _lights;
-    private readonly PulsingLightPreview _lightPreview;
     private readonly Texture2D _pixel;
     private readonly LdtkMolduraPreview _ldtkMoldura;
     private bool _showOriginal;
@@ -26,7 +25,6 @@ internal sealed class ScaleTestRoom
         _font = content.Load<SpriteFont>("font");
         _background = content.Load<Texture2D>("visual/bg_prot");
         _lights = content.Load<Texture2D>("visual/affordance_visibility_lgt");
-        _lightPreview = new PulsingLightPreview(content);
         _ldtkMoldura = new LdtkMolduraPreview(content,
             "assets/teste_ldtk/teste_moldura.ldtk");
         _pixel = new Texture2D(graphics, 1, 1);
@@ -49,7 +47,6 @@ internal sealed class ScaleTestRoom
     public void Update(KeyboardState keys, KeyboardState previous, double deltaTime)
     {
         bool Pressed(Keys key) => keys.IsKeyDown(key) && previous.IsKeyUp(key);
-        _lightPreview.Update(keys, previous, deltaTime);
 
         if (keys.IsKeyDown(Keys.LeftControl) && Pressed(Keys.R))
         {
@@ -107,7 +104,7 @@ internal sealed class ScaleTestRoom
         spriteBatch.End();
         // Preview the first room's light layer at its original panorama proportions.
         spriteBatch.Begin(blendState: BlendState.AlphaBlend,
-            samplerState: SamplerState.LinearClamp, effect: _lightPreview.Prepare());
+            samplerState: SamplerState.LinearClamp);
         spriteBatch.Draw(_lights, Vector2.Zero, null, Color.White,
             0f, Vector2.Zero, viewport.Height / (float)_lights.Height, SpriteEffects.None, 0f);
         spriteBatch.End();
@@ -119,7 +116,7 @@ internal sealed class ScaleTestRoom
             $"zoom {_camera.Zoom:F3} | player {_scene.Player.RelativeScale:F2}\n" +
             "B: antes/depois | 1/2/3/4: escala | R: spawn | Ctrl+R: TMX\n" +
             "Ctrl+P: grade | Esc: seleção de fases\n" +
-            _lightPreview.Status +
+            "LUZ: estática" +
             (_scene.Player.ScaleChangeBlocked ? " | ESCALA BLOQUEADA" : "");
         int margin = GameScaleConfig.ScaleTestHudMargin;
         Vector2 size = _font.MeasureString(label);

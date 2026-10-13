@@ -1,5 +1,5 @@
 {
-    "activeFile": "Content/ScaleTest.tmx",
+    "activeFile": "Content/AffordanceVisibilidade.tmx",
     "expandedProjectPaths": [
         "Content"
     ],
@@ -7,76 +7,72 @@
         "": {
             "scaleInDock": 1
         },
-        "C:/Users/cauaz/Downloads/Terrain (32x32).tsx": {
-            "scaleInDock": 1,
-            "scaleInEditor": 1
-        },
         "Content/AffordanceIntervencao.tmx": {
             "expandedObjectLayers": [
-                5,
-                3,
-                6,
+                2,
                 1,
-                4,
-                2
+                5,
+                6,
+                3,
+                4
             ],
             "scale": 0.5,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 961,
-                "y": 543
+                "x": 981,
+                "y": 521
             }
         },
         "Content/AffordanceTela2.tmx": {
             "expandedObjectLayers": [
-                7,
-                5,
-                3,
-                6,
-                1,
                 4,
+                3,
+                7,
+                6,
+                5,
+                2,
                 8,
-                2
+                1
             ],
             "scale": 0.5,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 1108,
-                "y": 434
+                "x": 960,
+                "y": 545
             }
         },
         "Content/AffordanceTela3.tmx": {
             "expandedObjectLayers": [
-                7,
-                5,
-                3,
-                6,
+                2,
                 1,
+                5,
+                6,
+                3,
                 4,
-                2
+                7
             ],
-            "scale": 0.5,
+            "scale": 0.75,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 1000,
-                "y": 726
+                "x": 914,
+                "y": 564.6666666666667
             }
         },
         "Content/AffordanceVisibilidade.tmx": {
             "expandedObjectLayers": [
-                7,
-                5,
-                3,
-                6,
-                1,
                 4,
-                2
+                3,
+                7,
+                6,
+                5,
+                2,
+                1
             ],
-            "scale": 0.5,
+            "scale": 0.25,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1441,
-                "y": 799
+                "x": 1142,
+                "y": 748
             }
         },
         "Content/FeedbackIntervencao.tmx": {
@@ -93,58 +89,46 @@
         "Content/ModelosConceituaisRestricoes.tmx": {
             "expandedObjectLayers": [
                 7,
-                5,
                 6,
-                8,
-                2
+                5,
+                2,
+                8
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2304.6666666666665,
-                "y": 544.6666666666666
+                "x": 2304,
+                "y": 544.6666666666667
             }
         },
         "Content/ModelosConceituaisRestricoesIntervencao.tmx": {
             "expandedObjectLayers": [
-                7,
-                12,
-                6,
                 11,
-                8,
+                12,
+                7,
+                13,
+                6,
                 2,
-                13
+                8
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 768.6666666666666,
-                "y": 544.6666666666666
+                "x": 768,
+                "y": 544.6666666666667
             }
         },
         "Content/PropVisual.tmx": {
             "expandedObjectLayers": [
-                5,
                 1,
-                2
+                2,
+                5
             ],
             "scale": 0.5,
             "selectedLayer": 5,
             "viewCenter": {
-                "x": 2305,
-                "y": 543
-            }
-        },
-        "Content/ScaleTest.tmx": {
-            "expandedObjectLayers": [
-                1,
-                2
-            ],
-            "scale": 0.25,
-            "selectedLayer": 0,
-            "viewCenter": {
-                "x": 1576,
-                "y": 1108
+                "x": 992,
+                "y": 864
             }
         },
         "Content/SimpleCutsceneMap.tmx": {
@@ -185,30 +169,22 @@
             "scaleInDock": 1
         }
     },
-    "last.imagePath": "C:/Users/cauaz/Downloads/Kings and Pigs/Sprites/14-TileSets",
     "openFiles": [
         "Content/AffordanceVisibilidade.tmx",
         "Content/ModelosConceituaisRestricoesIntervencao.tmx",
         "Content/ModelosConceituaisRestricoes.tmx",
-        "Content/AffordanceTela2.tmx",
-        "Content/ScaleTest.tmx",
-        "Content/PropVisual.tmx",
-        "Content/AffordanceIntervencao.tmx",
-        "C:/Users/cauaz/Downloads/Terrain (32x32).tsx"
+        "Content/AffordanceTela2.tmx"
     ],
     "project": "Timothy-Mort.tiled-project",
     "recentFiles": [
-        "Content/AffordanceVisibilidade.tmx",
-        "Content/ModelosConceituaisRestricoesIntervencao.tmx",
-        "Content/ModelosConceituaisRestricoes.tmx",
         "Content/AffordanceTela2.tmx",
-        "C:/Users/cauaz/Downloads/Terrain (32x32).tsx",
-        "Content/AffordanceIntervencao.tmx",
+        "Content/ModelosConceituaisRestricoes.tmx",
+        "Content/ModelosConceituaisRestricoesIntervencao.tmx",
+        "Content/AffordanceVisibilidade.tmx",
         "Content/PropVisual.tmx",
-        "Content/ScaleTest.tmx",
         "Content/SimpleCutsceneMap.tmx",
         "Content/FeedbackIntervencao.tmx",
-        "Content/AffordanceTela3.tmx"
-    ],
-    "tileset.lastUsedFormat": "tsx"
+        "Content/AffordanceTela3.tmx",
+        "Content/AffordanceIntervencao.tmx"
+    ]
 }

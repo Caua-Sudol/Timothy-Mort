@@ -1,15 +1,15 @@
-# Affordance — projeto LDtk
+# Affordance (LDTK)
 
 Abra `Content/Maps/Affordance.ldtk`. Este projeto controla as tres telas e a intervencao. O arquivo de teste continua separado.
 
 ## Salas e destinos
 
-| Nivel no LDtk | RoomExit | RoomBack |
-| --- | --- | --- |
-| AffordanceTela1 | Tela 2, passagem livre | — |
-| AffordanceTela2 | Tela 3, passagem livre | Tela 1 |
-| AffordanceTela3 | Conclui a fase depois de aplicar uma solucao | Tela 2 |
-| Sala_intervencao | Retorna a tela de onde entrou, mesmo sem escolher | — |
+| Nivel no LDtk    | RoomExit                                          | RoomBack |
+|------------------|---------------------------------------------------|----------|
+| AffordanceTela1  | Tela 2, passagem livre                            | —        |
+| AffordanceTela2  | Tela 3, passagem livre                            | Tela 1   |
+| AffordanceTela3  | Conclui a fase depois de aplicar uma solucao      | Tela 2   |
+| Sala_intervencao | Retorna a tela de onde entrou, mesmo sem escolher | —        |
 
 Mantenha esses identificadores: o jogo seleciona cada nivel pelo nome, independentemente da ordem e da posicao no World. Todas as coordenadas de jogo sao locais a sala.
 
@@ -23,15 +23,15 @@ Mantenha esses identificadores: o jogo seleciona cada nivel pelo nome, independe
 
 ## Entidades
 
-| Entidade | Uso |
-| --- | --- |
-| PlayerSpawn | Inicio e checkpoint da sala, com pivo nos pes. |
-| RoomExit | Area de contato para avancar ou sair da intervencao. |
-| RoomBack | Area de contato para voltar a tela anterior. |
-| RoomReturn | Posicao dos pes ao voltar da proxima tela. Mantenha fora de RoomExit. |
+| Entidade             | Uso                                                                                      |
+|----------------------|------------------------------------------------------------------------------------------|
+| PlayerSpawn          | Inicio e checkpoint da sala, com pivo nos pes.                                           |
+| RoomExit             | Area de contato para avancar ou sair da intervencao.                                     |
+| RoomBack             | Area de contato para voltar a tela anterior.                                             |
+| RoomReturn           | Posicao dos pes ao voltar da proxima tela. Mantenha fora de RoomExit.                    |
 | InterventionEntrance | Acesso com E: aparece apos duas mortes na tela 1 e fica disponivel na entrada da tela 2. |
-| InterventionReturn | Posicao dos pes ao voltar da intervencao. |
-| InterventionSword | Retangulo interativo com E que abre a escolha da solucao. |
+| InterventionReturn   | Posicao dos pes ao voltar da intervencao.                                                |
+| InterventionSword    | Retangulo interativo com E que abre a escolha da solucao.                                |
 
 Spawns e retornos devem ficar com os pes no topo de um solido, fora dos espinhos e das areas de passagem automatica. As areas podem ser redimensionadas no editor. O retorno da intervencao e direcionado automaticamente para a sala de origem.
 

@@ -24,10 +24,7 @@
 /processorParam:TextureFormat=Color
 /build:../assets/teste_ldtk/root_tileset.png;visual/teste_ldtk_terrain.png
 
-#begin Effects/PulsingLights.fx
-/importer:EffectImporter
-/processor:EffectProcessor
-/build:Effects/PulsingLights.fx
+# PulsingLights.fx temporarily excluded from the content build.
 
 #begin font.spritefont
 /importer:FontDescriptionImporter

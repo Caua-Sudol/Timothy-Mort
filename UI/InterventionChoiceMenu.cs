@@ -39,6 +39,7 @@ public sealed class InterventionChoiceMenu
     private InterventionSolutionDefinition _completedSolution;
     private InterventionJustificationDefinition _completedJustification;
     private string _justificationQuestion;
+    private string _solutionQuestion;
     private ChoiceStep _choiceStep;
     private bool _requiresJustification;
 
@@ -66,13 +67,17 @@ public sealed class InterventionChoiceMenu
     public void OpenInitial(
         IReadOnlyList<InterventionSolutionDefinition> solutions,
         IReadOnlyList<InterventionJustificationDefinition> justifications,
-        string justificationQuestion)
+        string justificationQuestion,
+        string solutionQuestion = null)
     {
+        _solutionQuestion = solutionQuestion;
         Open(solutions, justifications, justificationQuestion, true);
     }
 
-    public void OpenRevision(IReadOnlyList<InterventionSolutionDefinition> solutions)
+    public void OpenRevision(IReadOnlyList<InterventionSolutionDefinition> solutions,
+        string solutionQuestion = null)
     {
+        _solutionQuestion = solutionQuestion;
         Open(
             solutions,
             Array.Empty<InterventionJustificationDefinition>(),
@@ -260,9 +265,9 @@ public sealed class InterventionChoiceMenu
 
     private void DrawSolutionStep(SpriteBatch spriteBatch)
     {
-        string question = _requiresJustification
+        string question = _solutionQuestion ?? (_requiresJustification
             ? "Que intervenção você aplicaria para resolver esse problema?"
-            : "Como você revisaria a intervenção para resolver o problema?";
+            : "Como você revisaria a intervenção para resolver o problema?");
         DrawFittedSolutionText(spriteBatch, _solutionTitleFont, question,
             new Vector2(248.7f, 185.3f), new Vector2(1456.0f, 82.7f),
             PaperTextColor, 0.55f, true);
