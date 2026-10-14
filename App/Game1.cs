@@ -42,6 +42,8 @@ public class Game1 : Game
     private InterventionChoiceMenu _interventionChoiceMenu;
     private MortSubtitle _mortSubtitle;
     private bool _mortCombinationSpoken;
+    private bool _mortPassageSpoken;
+    private readonly EyeBlinkTransition _solutionBlink = new();
     private PhaseState _phaseState;
     private readonly PhaseProgress _phaseProgress = new PhaseProgress();
     private SessionStore _sessionStore;
@@ -261,6 +263,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _scaleTestRoom.Draw(_spriteBatch);
         }
 
+        _solutionBlink.Draw(_spriteBatch, _scenarioFadeTexture, LogicalWidth, LogicalHeight);
         GraphicsDevice.SetRenderTarget(null);
         GraphicsDevice.Clear(Color.Black);
 
@@ -621,9 +624,29 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private void UpdatePlaying(KeyboardState keyboardState, double deltaTime)
     {
+        if (_solutionBlink.Active)
+        {
+            if (IsActive) _solutionBlink.Update(deltaTime);
+            return;
+        }
         if (_scenarioTransitionState != ScenarioTransitionState.NONE)
         {
             UpdateScenarioTransition(deltaTime);
+            return;
+        }
+
+        // Wait until the room slide finishes so the blink reveals the live scene,
+        // rather than a captured image of the room before the demonstration.
+        if (_currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId &&
+            !_mortCombinationSpoken && IsActive)
+        {
+            _mortCombinationSpoken = true;
+            _mortSubtitle.Show(false, MortDialogueCatalog.Conclusion(_phaseState.AppliedSolutionId));
+            _solutionBlink.Start(() =>
+            {
+                _phaseState.RegisterAffordanceDemonstration();
+                _scene.EnableAffordanceCombinationDemo();
+            });
             return;
         }
 
@@ -663,18 +686,12 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                 out InterventionSolutionDefinition solution,
                 out InterventionJustificationDefinition justification))
             {
-                _phaseState.ApplyFirstChoice(solution, justification);
-                ShowMortChoiceComment(solution.Id);
-                _scene.SyncInterventionState();
-                _overlayState = OverlayState.NONE;
+                ApplyChoiceWithBlink(() => _phaseState.ApplyFirstChoice(solution, justification), solution.Id);
             }
             else if (_interventionChoiceMenu.TryTakeCompletedRevision(
                 out InterventionSolutionDefinition revisionSolution))
             {
-                _phaseState.ApplyRevision(revisionSolution);
-                ShowMortChoiceComment(revisionSolution.Id);
-                _scene.SyncInterventionState();
-                _overlayState = OverlayState.NONE;
+                ApplyChoiceWithBlink(() => _phaseState.ApplyRevision(revisionSolution), revisionSolution.Id);
             }
 
             return;
@@ -711,6 +728,12 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         _scene.SetInteractionPressed(KeyWasPressed(keyboardState, Keys.E));
         _scene.Update(_camera, deltaTime);
+
+        if (!_mortPassageSpoken && _scene.HasVisibleAffordancePassage)
+        {
+            _mortPassageSpoken = true;
+            _mortSubtitle.Show(false, MortDialogueCatalog.Passage);
+        }
 
         if (_scene.TryTakeInterventionButtonActivation())
         {
@@ -767,6 +790,21 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _phaseState?.RegisterDeath();
             OpenDeathMenu();
         }
+    }
+
+    private void ApplyChoiceWithBlink(Action applyChoice, string solutionId)
+    {
+        _overlayState = OverlayState.NONE;
+        void Apply()
+        {
+            applyChoice();
+            _scene.SyncInterventionState();
+            ShowMortChoiceComment(solutionId);
+        }
+        if (_phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+            _solutionBlink.Start(Apply);
+        else
+            Apply();
     }
 
     private void ShowMortChoiceComment(string solutionId)
@@ -926,6 +964,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                 scenarioId,
                 baseVisualModulesOverride);
             _mortCombinationSpoken = false;
+            _mortPassageSpoken = false;
             _mortSubtitle.Clear();
             if (destinationPhase.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
                 _mortSubtitle.Show(false, MortDialogueCatalog.Introduction);
@@ -945,11 +984,6 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _scene = new Scene(scenario, spawnId, _phaseState);
         _scene.LoadContent(GraphicsDevice, Content);
         _scene.AlignCamera(_camera);
-        if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && !_mortCombinationSpoken)
-        {
-            _mortSubtitle.Show(false, MortDialogueCatalog.Conclusion);
-            _mortCombinationSpoken = true;
-        }
         if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && _mortCombinationSpoken)
             _scene.EnableAffordanceCombinationDemo();
         _overlayState = OverlayState.NONE;

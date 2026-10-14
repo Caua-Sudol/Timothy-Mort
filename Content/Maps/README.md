@@ -23,6 +23,10 @@ Mantenha esses identificadores: o jogo seleciona cada nivel pelo nome, independe
 
 ## Aparencia por solucao
 
+As escolhas do affordance usam um piscar por codigo: 0,26 s para fechar, 0,07 s fechado e 0,32 s para abrir (0,65 s no total). A escolha e aplicada uma unica vez no fechamento completo. A demonstracao de Mort na tela 3 usa o mesmo piscar, depois da transicao entre salas, e registra a exposicao quando aplica a combinacao com o olho fechado. Voltar a essa tela conserva a combinacao sem repetir a demonstracao. Durante o piscar, o movimento e novas interacoes ficam suspensos.
+
+Entrada e saida da intervencao usam simbolos do atlas da tela inicial flutuando dentro dos retangulos definidos no LDtk. O alcance de E acrescenta 64 unidades horizontais e 24 verticais ao redor do jogador, sem alterar a area visual ou as colisoes do terreno. A saida da intervencao exige E; RoomExit/RoomBack entre as telas de desafio continuam por contato. Mort explica os simbolos na primeira vez que uma entrada fica disponivel na execucao da fase.
+
 - `Solucao_gelatina`: aparece somente com a solucao Aparencia.
 - `Solucao_mark`: aparece somente com a solucao Marcacao.
 - Sem escolha ou com Deformacao, ambas ficam ocultas; Deformacao continua pulsando a terra comum.

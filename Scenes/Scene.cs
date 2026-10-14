@@ -31,6 +31,23 @@ public class Scene
 
     private Texture2D _fadeTexture;
     private SpriteFont _interactionFont;
+    private Texture2D _passageSymbols;
+    private double _passageTime;
+    private bool IsAffordanceIntervention =>
+        _phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceInterventionScenarioId;
+
+    private Rectangle PassageInteractionBounds
+    {
+        get
+        {
+            Rectangle reach = _player.HitBox;
+            reach.Inflate(64, 24);
+            return reach;
+        }
+    }
+
+    public bool HasVisibleAffordancePassage => IsAffordance &&
+        _map.InterventionEntrances.Any(e => e.Placement == GetActiveInterventionEntrancePlacement());
     private bool _interactPressed;
     private float _respawnEffectTime;
     private bool IsAffordance => _phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId;
@@ -204,7 +221,11 @@ private Vector2 _checkpoint;
             _map.SetObjectTexture("parede_direita", content.Load<Texture2D>("visual/parede_direita"));
             _map.SetObjectTexture("espinhos_lateral", content.Load<Texture2D>("visual/espinho_lateral"));
         }
-        if (IsAffordance) _interactionFont = content.Load<SpriteFont>("patrick");
+        if (IsAffordance)
+        {
+            _interactionFont = content.Load<SpriteFont>("patrick");
+            _passageSymbols = content.Load<Texture2D>("ui/icons/icons");
+        }
         _propVisualPresentation?.LoadContent(content);
         _conceptualRuleReminderPresentation?.LoadContent(graphicsDevice, content);
         _exitDoorPosition = GetExitDoorRestingPosition();
@@ -256,6 +277,7 @@ private Vector2 _checkpoint;
 
     public void Update(Camera camera, double deltaTime)
     {
+        _passageTime += deltaTime;
         if (SceneMode == SceneMode.PLAYING)
         {
             UpdatePlaying(camera, deltaTime);
@@ -393,10 +415,10 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         UpdatePlayingCamera(camera);
 
         SceneExit sceneExit = _map.GetSceneExit(
-            _player.HitBox,
+            IsAffordanceIntervention ? PassageInteractionBounds : _player.HitBox,
             _exitDoorIsOpen,
             _phaseState?.ExitDoorIsOpen == true);
-        if (sceneExit != null)
+        if (sceneExit != null && (!IsAffordanceIntervention || _interactPressed))
         {
             _requestedScenarioId = sceneExit.DestinationScenarioId;
             _requestedSpawnId = sceneExit.DestinationSpawnId;
@@ -405,7 +427,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         }
 
         InterventionEntrance interventionEntrance = _map.GetInterventionEntrance(
-            _player.HitBox,
+            IsAffordance ? PassageInteractionBounds : _player.HitBox,
             GetActiveInterventionEntrancePlacement());
 
         if (interventionEntrance != null && (!IsAffordance || _interactPressed))
@@ -1161,7 +1183,16 @@ private static bool RectanglesTouchOrIntersect(
     {
         foreach (InterventionEntrance entrance in _map.InterventionEntrances)
             if (entrance.Placement == GetActiveInterventionEntrancePlacement())
+            {
+                FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols, entrance.Bounds, _passageTime);
                 DrawInteractionPrompt(spriteBatch, entrance.Bounds);
+            }
+        if (IsAffordanceIntervention)
+            foreach (SceneExit exit in _map.SceneExits)
+            {
+                FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols, exit.Bounds, _passageTime);
+                DrawInteractionPrompt(spriteBatch, exit.Bounds);
+            }
         foreach (Rectangle sword in _map.InterventionButtons)
             DrawInteractionPrompt(spriteBatch, sword);
 
@@ -1179,10 +1210,16 @@ private static bool RectanglesTouchOrIntersect(
 
     private void DrawInteractionPrompt(SpriteBatch spriteBatch, Rectangle bounds)
     {
-        Vector2 size = _interactionFont.MeasureString("E") * 0.7f;
+        const float scale = 1.0f;
+        Vector2 size = _interactionFont.MeasureString("E") * scale;
+        Vector2 position = new(bounds.Center.X - size.X / 2, bounds.Top - size.Y - 14);
+        var plate = new Rectangle((int)position.X - 10, (int)position.Y - 4,
+            (int)MathF.Ceiling(size.X) + 20, (int)MathF.Ceiling(size.Y) + 8);
+        spriteBatch.Draw(_fadeTexture, plate, new Color(255, 237, 182));
+        plate.Inflate(-2, -2);
+        spriteBatch.Draw(_fadeTexture, plate, new Color(17, 20, 26));
         spriteBatch.DrawString(_interactionFont, "E",
-            new Vector2(bounds.Center.X - size.X / 2, bounds.Top - size.Y - 8),
-            new Color(216, 208, 187), 0, Vector2.Zero, 0.7f, SpriteEffects.None, 0);
+            position, new Color(255, 237, 182), 0, Vector2.Zero, scale, SpriteEffects.None, 0);
     }
 
     private void DrawScreenEffects(SpriteBatch spriteBatch)

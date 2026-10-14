@@ -35,6 +35,23 @@ public sealed class PhaseState
     public string FirstSolutionId { get; private set; }
     public string FirstJustificationId { get; private set; }
     public string AppliedSolutionId { get; private set; }
+    public PedagogicalDemonstrationData Demonstration { get; private set; }
+
+    public void RegisterAffordanceDemonstration()
+    {
+        if (CurrentScenarioId != ScenarioCatalog.AffordanceRoom3ScenarioId || Demonstration != null)
+            return;
+        Demonstration = new PedagogicalDemonstrationData
+        {
+            ScenarioId = CurrentScenarioId,
+            StartedUtc = DateTimeOffset.UtcNow.ToString("O"),
+            PlayerSolutionIdAtStart = AppliedSolutionId,
+            DemonstratedVisualModules = (long)(SolutionVisualModule.GELATIN_COLOR |
+                SolutionVisualModule.GELATIN_JELLY_MOTION),
+            ActiveSecondsAtStart = ElapsedSeconds,
+            TotalDeathsAtStart = TotalDeathCount
+        };
+    }
     public int SolutionSelectionCount { get; private set; }
     public bool HasRevision { get; private set; }
     public bool VerticalRouteRevealed { get; private set; }
@@ -206,6 +223,7 @@ public sealed class PhaseState
         FirstSolutionId = null;
         FirstJustificationId = null;
         AppliedSolutionId = null;
+        Demonstration = null;
         SolutionSelectionCount = 0;
         HasRevision = false;
         VerticalRouteRevealed = false;
@@ -348,6 +366,7 @@ public sealed class PhaseState
         }
 
         TotalDeathCount++;
+        if (Demonstration != null) Demonstration.DeathsAfterExposure++;
         if (CurrentScenarioId == _deathCountingScenarioId)
         {
             DeathCount++;
@@ -364,6 +383,7 @@ public sealed class PhaseState
         }
 
         ElapsedSeconds += deltaTime;
+        if (Demonstration != null) Demonstration.ActiveSecondsAfterExposure += deltaTime;
     }
 
     public void UpdateDamageInvulnerability(double deltaTime)

@@ -4,6 +4,10 @@ public static class MortDialogueCatalog
 {
     public const double PageDurationSeconds = 7.0;
 
+    public const string Passage =
+        "Está vendo os símbolos flutuando? Aproxime-se e pressione E. " +
+        "Vou te levar a um lugar onde podemos facilitar a travessia.";
+
     public static readonly string[] Introduction =
     {
         "Cuidado, garoto! Não dá para entender o que cada coisa faz só pela aparência.",
@@ -21,6 +25,18 @@ public static class MortDialogueCatalog
         _ => "Experimente. Se quiser comparar, volte aqui e escolha outra alteração."
     };
 
-    public const string Conclusion =
-        "Não precisamos parar em uma só ideia, garoto. Que tal combinar a aparência de gelatina com a pulsação? Vou te mostrar!";
+    public static string Conclusion(string solutionId) => solutionId switch
+    {
+        AffordanceChoiceCatalog.MarkSolutionId =>
+            "Sua marca identifica os terrenos, mas é preciso tocá-los para aprender. " +
+            "A gelatina pode sugerir melhor seu comportamento. Vamos combiná-la com a pulsação!",
+        AffordanceChoiceCatalog.MotionSolutionId =>
+            "O movimento mostra que há algo diferente. Vamos combinar essa pulsação " +
+            "com a aparência de gelatina para dar mais uma pista!",
+        AffordanceChoiceCatalog.AppearanceSolutionId =>
+            "A gelatina já dá uma pista sobre o terreno. Vamos acrescentar a pulsação " +
+            "para mostrar como podemos combinar ideias!",
+        _ => "Podemos combinar ideias para dar pistas sobre o terreno. " +
+             "Vou mostrar a aparência de gelatina junto com a pulsação!"
+    };
 }

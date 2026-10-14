@@ -172,6 +172,7 @@ public sealed class SessionStore
 
         if (telemetryWasInserted)
         {
+            InsertDemonstration(connection, transaction, sessionId, state);
             InsertSolutionPresentation(
                 connection,
                 transaction,
@@ -356,6 +357,26 @@ public sealed class SessionStore
             "$appliedVisualModules",
             (long)state.AppliedVisualModules);
         return command.ExecuteNonQuery() == 1;
+    }
+
+    private static void InsertDemonstration(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string sessionId,
+        PhaseState state)
+    {
+        if (state.Demonstration == null) return;
+        using SqliteCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            """
+            INSERT INTO phase_demonstrations (session_id, phase_id, payload_json)
+            VALUES ($sessionId, $phaseId, $payload);
+            """;
+        command.Parameters.AddWithValue("$sessionId", sessionId);
+        command.Parameters.AddWithValue("$phaseId", state.PhaseId);
+        command.Parameters.AddWithValue("$payload", JsonSerializer.Serialize(state.Demonstration));
+        command.ExecuteNonQuery();
     }
 
     private static void InsertSolutionPresentation(
@@ -554,6 +575,15 @@ public sealed class SessionStore
 
         foreach (PhaseCompletionData phase in session.Phases)
         {
+            using (SqliteCommand demoCommand = connection.CreateCommand())
+            {
+                demoCommand.CommandText =
+                    "SELECT payload_json FROM phase_demonstrations WHERE session_id = $sessionId AND phase_id = $phaseId;";
+                demoCommand.Parameters.AddWithValue("$sessionId", session.SessionId);
+                demoCommand.Parameters.AddWithValue("$phaseId", phase.PhaseId);
+                if (demoCommand.ExecuteScalar() is string payload)
+                    phase.Demonstration = JsonSerializer.Deserialize<PedagogicalDemonstrationData>(payload);
+            }
             LoadPresentedChoices(
                 connection,
                 session.SessionId,
@@ -683,6 +713,16 @@ public sealed class SessionStore
                 PRIMARY KEY (session_id, phase_id),
                 FOREIGN KEY (session_id)
                     REFERENCES sessions(session_id)
+                    ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS phase_demonstrations (
+                session_id TEXT NOT NULL,
+                phase_id TEXT NOT NULL,
+                payload_json TEXT NOT NULL,
+                PRIMARY KEY (session_id, phase_id),
+                FOREIGN KEY (session_id, phase_id)
+                    REFERENCES phase_telemetry(session_id, phase_id)
                     ON DELETE CASCADE
             );
 

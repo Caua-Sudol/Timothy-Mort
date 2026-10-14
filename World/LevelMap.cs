@@ -558,7 +558,7 @@ public void UpdateVisualEffects(double deltaTime)
                 false);
         }
 
-        if (activeInterventionEntrancePlacement.HasValue)
+        if (!IsLdtk && activeInterventionEntrancePlacement.HasValue)
         {
             foreach (InterventionEntrance entrance in _interventionEntrances)
             {
