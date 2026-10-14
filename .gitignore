@@ -183,3 +183,5 @@ AGENTS.md
 # Affinity
 # ---------------------------
 *.af
+
+*.tiled-session
