@@ -40,6 +40,8 @@ public class Game1 : Game
     private DeathMenu _deathMenu;
     private DamageHud _damageHud;
     private InterventionChoiceMenu _interventionChoiceMenu;
+    private MortSubtitle _mortSubtitle;
+    private bool _mortCombinationSpoken;
     private PhaseState _phaseState;
     private readonly PhaseProgress _phaseProgress = new PhaseProgress();
     private SessionStore _sessionStore;
@@ -103,6 +105,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         }
         symbols.SetData(symbolPixels);
         _debugView = new DebugView(font);
+        _mortSubtitle = new MortSubtitle(bodyFont);
         Vector2 menuCenter = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
 
         _titleScreen = new TitleScreen(
@@ -242,6 +245,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         else if (_activeScreen == AppScreen.PHASE_RESULT)
         {
             _phaseResultScreen.Draw(_spriteBatch, _scenarioFadeTexture);
+            _mortSubtitle.Draw(_spriteBatch, _scenarioFadeTexture,
+                new Vector2(LogicalWidth, LogicalHeight), onResult: true);
         }
         else if (_activeScreen == AppScreen.STUDY_COMPLETION)
         {
@@ -659,6 +664,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                 out InterventionJustificationDefinition justification))
             {
                 _phaseState.ApplyFirstChoice(solution, justification);
+                ShowMortChoiceComment(solution.Id);
                 _scene.SyncInterventionState();
                 _overlayState = OverlayState.NONE;
             }
@@ -666,6 +672,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                 out InterventionSolutionDefinition revisionSolution))
             {
                 _phaseState.ApplyRevision(revisionSolution);
+                ShowMortChoiceComment(revisionSolution.Id);
                 _scene.SyncInterventionState();
                 _overlayState = OverlayState.NONE;
             }
@@ -699,6 +706,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             }
 
             _phaseState?.AccumulateActiveTime(deltaTime);
+            _mortSubtitle.Update(deltaTime);
         }
 
         _scene.SetInteractionPressed(KeyWasPressed(keyboardState, Keys.E));
@@ -716,7 +724,9 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                 _interventionChoiceMenu.OpenInitial(
                     GetOrCreateInitialSolutions(),
                     GetOrCreateInitialJustifications(),
-                    _phaseState.ChoiceCatalog.JustificationQuestion);
+                    _phaseState.ChoiceCatalog.JustificationQuestion,
+                    _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
+                        ? AffordanceChoiceCatalog.SolutionQuestion : null);
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
@@ -724,7 +734,11 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             if (_phaseState.NeedsSolutionRevision)
             {
             _interventionChoiceMenu.OpenRevision(
-                _phaseState.ChoiceCatalog.AvailableRevisionSolutions);
+                _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
+                    ? GetOrCreateInitialSolutions()
+                    : _phaseState.ChoiceCatalog.AvailableRevisionSolutions,
+                _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
+                    ? AffordanceChoiceCatalog.SolutionQuestion : null);
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
@@ -753,6 +767,13 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _phaseState?.RegisterDeath();
             OpenDeathMenu();
         }
+    }
+
+    private void ShowMortChoiceComment(string solutionId)
+    {
+        if (_phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+            _mortSubtitle.Show(false, MortDialogueCatalog.AfterChoice(solutionId),
+                "Se quiser comparar, volte aqui e escolha outra alteração.");
     }
 
     private IReadOnlyList<InterventionSolutionDefinition> GetOrCreateInitialSolutions()
@@ -887,6 +908,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (destinationPhase == null)
         {
+            _mortSubtitle.Clear();
             _phaseState = null;
         }
         else if (_phaseState == null ||
@@ -902,6 +924,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                 destinationPhase,
                 scenarioId,
                 baseVisualModulesOverride);
+            _mortCombinationSpoken = false;
+            _mortSubtitle.Clear();
+            if (destinationPhase.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
+                _mortSubtitle.Show(false, MortDialogueCatalog.Introduction);
         }
         else
         {
@@ -917,6 +943,11 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _scene = new Scene(scenario, spawnId, _phaseState);
         _scene.LoadContent(GraphicsDevice, Content);
         _scene.AlignCamera(_camera);
+        if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && !_mortCombinationSpoken)
+        {
+            _mortSubtitle.Show(false, MortDialogueCatalog.Conclusion);
+            _mortCombinationSpoken = true;
+        }
         _overlayState = OverlayState.NONE;
         _mapReloadErrorMessage = null;
     }
@@ -969,6 +1000,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                     "Não foi possível salvar o progresso local.";
             }
 
+            _mortSubtitle.Clear();
             _phaseResultScreen.Open(_phaseState, persistenceMessage);
             _activeScreen = AppScreen.PHASE_RESULT;
             return true;
@@ -979,6 +1011,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private void ReturnToPhaseSelect()
     {
+        _mortSubtitle.Clear();
         _phaseState = null;
         _scene = null;
         _currentScenarioId = ScenarioCatalog.InitialScenarioId;
@@ -1120,6 +1153,12 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             _interventionChoiceMenu.Draw(_spriteBatch);
         }
+
+    if (_overlayState == OverlayState.NONE &&
+        _scenarioTransitionState == ScenarioTransitionState.NONE &&
+        _scene.SceneMode == SceneMode.PLAYING && !_scene.PlayerIsDead)
+        _mortSubtitle.Draw(_spriteBatch, _scenarioFadeTexture,
+            new Vector2(LogicalWidth, LogicalHeight));
 
     DrawScenarioTransition();
     _debugView.DrawReloadError(_spriteBatch, _mapReloadErrorMessage);

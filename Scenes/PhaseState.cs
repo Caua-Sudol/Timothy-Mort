@@ -88,7 +88,7 @@ public sealed class PhaseState
         get
         {
             return HasFirstChoice &&
-                !ExitDoorIsOpen &&
+                (PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId || !ExitDoorIsOpen) &&
                 ChoiceCatalog.AvailableRevisionSolutions.Count > 0;
         }
     }
@@ -472,13 +472,21 @@ public sealed class PhaseState
             throw new InvalidOperationException("A fase nao esta aguardando revisao de solucao.");
         }
 
-        if (HasRevision)
+        if (HasRevision && PhaseId != ScenarioCatalog.AffordanceVisibilityScenarioId)
         {
             throw new InvalidOperationException("A revisao da fase ja foi registrada.");
         }
 
-        if (solution.ChoiceRound != SolutionChoiceRound.REVISION ||
-            solution.Quality == SolutionQuality.INADEQUATE)
+        bool isAffordanceExperiment = PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId;
+        if (isAffordanceExperiment)
+        {
+            // Accept only one of this phase's three alternatives; preserve the first hypothesis.
+            solution = ChoiceCatalog.GetSolution(solution.Id);
+        }
+
+        if (!isAffordanceExperiment &&
+            (solution.ChoiceRound != SolutionChoiceRound.REVISION ||
+             solution.Quality == SolutionQuality.INADEQUATE))
         {
             throw new InvalidOperationException("A revisao deve usar uma solucao parcial ou adequada.");
         }

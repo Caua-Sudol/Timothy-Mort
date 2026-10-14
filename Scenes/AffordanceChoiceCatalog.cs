@@ -5,291 +5,127 @@ namespace DontLikePoetry;
 
 public static class AffordanceChoiceCatalog
 {
-    public const string JustificationQuestion = "Que resultado voce espera obter com essa intervencao?";
+    public const string SolutionQuestion =
+        "Qual aparência ajuda você a prever melhor o comportamento da plataforma?";
+    public const string JustificationQuestion =
+        "Que resultado você espera obter com essa intervenção?";
 
-    public static IReadOnlyList<InterventionSolutionDefinition> InitialInadequateSolutions { get; } =
-        new List<InterventionSolutionDefinition>
-        {
-            new InterventionSolutionDefinition(
-                "I1",
-                "Percurso",
-                "Adicionar indicadores de caminho e destacar o destino",
-                SolutionQuality.INADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.PATH_INDICATOR |
-                SolutionVisualModule.DESTINATION_HIGHLIGHT),
-            new InterventionSolutionDefinition(
-                "I2",
-                "Apresentacao",
-                "Aplicar decoracao nas plataformas e exibir um rastro visual para indicar o impulso",
-                SolutionQuality.INADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.PLATFORM_DECORATION |
-                SolutionVisualModule.PLAYER_DASH_TRAIL),
-            new InterventionSolutionDefinition(
-                "I3",
-                "Contato",
-                "Adicionar contorno em plataformas e exibir flash de impacto",
-                SolutionQuality.INADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.PLATFORM_OUTLINE |
-                SolutionVisualModule.PLAYER_SURFACE_CONTACT_FLASH)
-        };
+    public const string AppearanceSolutionId = "terrain_appearance";
+    public const string MarkSolutionId = "terrain_mark";
+    public const string MotionSolutionId = "terrain_motion";
 
-    public static IReadOnlyList<InterventionSolutionDefinition> InitialPartialSolutions { get; } =
-        new List<InterventionSolutionDefinition>
-        {
-            new InterventionSolutionDefinition(
-                "P1",
-                "Superficies especiais e caminho",
-                "Aplicar uma cor exclusiva nas plataformas especiais e indicar o caminho",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.GELATIN_TEXTURE |
-                SolutionVisualModule.PATH_INDICATOR),
-            new InterventionSolutionDefinition(
-                "P2",
-                "Contraste e decoracao",
-                "Aplicar uma textura nas plataformas especiais e uma decoracao geral as plataformas",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.GELATIN_COLOR |
-                SolutionVisualModule.PLATFORM_DECORATION),
-            new InterventionSolutionDefinition(
-                "P3",
-                "Recarga e visual do impulso",
-                "Exibir a recarga e um rastro visual ao impulso",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR |
-                SolutionVisualModule.PLAYER_DASH_TRAIL)
-        };
-
-    public static IReadOnlyList<InterventionSolutionDefinition> InitialAdequateSolutions { get; } =
-        new List<InterventionSolutionDefinition>
-        {
-            new InterventionSolutionDefinition(
-                "A1",
-                "Contraste e recarga de impulso",
-                "Diferenciar plataformas especiais e restaurar a cor do jogador ao recuperar o impulso",
-                SolutionQuality.ADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.GELATIN_TEXTURE |
-                SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR),
-            new InterventionSolutionDefinition(
-                "A2",
-                "Icone e recarga",
-                "Adicionar icone que indique impulso nas plataformas especiais e confirmacao de recarga do impulso",
-                SolutionQuality.ADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.GELATIN_DASH_SYMBOL |
-                SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL),
-            new InterventionSolutionDefinition(
-                "A3",
-                "Absorcao de energia e destaque",
-                "Aplicar cor exclusiva nas plataformas especiais e comunicar a absorcao de energia ao recuperar o impulso",
-                SolutionQuality.ADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.GELATIN_COLOR |
-                SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION)
-        };
-
+    // The three alternatives change communication, never the terrain's physics.
+    // Material art is still provisional; both other cues have limited semantic specificity.
     public static IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
-        CreateInitialSolutions();
-
-    public static IReadOnlyList<InterventionSolutionDefinition> RevisionSolutions { get; } =
-        new List<InterventionSolutionDefinition>
+        Array.AsReadOnly(new[]
         {
             new InterventionSolutionDefinition(
-                "P4",
-                "Destaque e movimento",
-                "Aplicar brilho as plataformas especiais e adicionar uma pulsacao",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.REVISION,
-                SolutionVisualModule.GELATIN_GLOW |
-                SolutionVisualModule.GELATIN_GLOW_PULSE |
-                SolutionVisualModule.GELATIN_JELLY_MOTION),
-            new InterventionSolutionDefinition(
-                "A4",
-                "Canais e disponibilidade",
-                "Canais energizados nas plataformas especiais e um contorno quando o impulso estiver disponivel",
+                AppearanceSolutionId,
+                "Aparência",
+                "Alterar a aparência dos terrenos estranhos",
                 SolutionQuality.ADEQUATE,
-                SolutionChoiceRound.REVISION,
-                SolutionVisualModule.GELATIN_DIRECTIONAL_ANIMATION |
-                SolutionVisualModule.PLAYER_DASH_AVAILABLE_OUTLINE)
-        };
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.GELATIN_COLOR),
+            new InterventionSolutionDefinition(
+                MarkSolutionId,
+                "Marcação",
+                "Marcar os terrenos estranhos",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.GELATIN_TERRAIN_MARK),
+            new InterventionSolutionDefinition(
+                MotionSolutionId,
+                "Deformação",
+                "Deformar os terrenos estranhos",
+                SolutionQuality.PARTIAL,
+                SolutionChoiceRound.INITIAL,
+                SolutionVisualModule.GELATIN_JELLY_MOTION)
+        });
 
-    public static IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions { get; } =
-        RevisionSolutions;
+    // Reuse the same alternatives: revision is optional experimentation in this phase.
+    public static IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions =>
+        InitialSolutions;
 
     public static IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
-        new List<InterventionJustificationDefinition>
+        Array.AsReadOnly(new[]
         {
             new InterventionJustificationDefinition(
-                "J1",
-                "Facilitar a orientacao ate o objetivo e tornar o destino mais evidente"),
+                "terrain_identification", "Reconhecer quais terrenos possuem um comportamento diferente"),
             new InterventionJustificationDefinition(
-                "J2",
-                "Tornar o cenario e os efeitos das interacoes visualmente mais atraentes"),
+                "terrain_prediction", "Prever o comportamento do terreno antes de entrar em contato"),
             new InterventionJustificationDefinition(
-                "J3",
-                "Destacar plataformas especiais e chamar atencao para elas"),
+                "terrain_attention", "Chamar atenção para os terrenos que merecem ser observados"),
             new InterventionJustificationDefinition(
-                "J4",
-                "Tornar perceptivel quando o impulso foi usado e quando pode ser usado novamente"),
+                "terrain_consistency", "Reconhecer em outros terrenos uma propriedade já experimentada"),
             new InterventionJustificationDefinition(
-                "J5",
-                "Permitir reconhecer quais plataformas sao especiais e indicar recarga do impulso"),
+                "terrain_material", "Associar o material aparente ao comportamento do terreno"),
             new InterventionJustificationDefinition(
-                "J6",
-                "Permitir associar as plataformas especiais ao impulso e indicar sua recarga")
-        };
+                "terrain_motion", "Usar o movimento do terreno como pista sobre seu comportamento")
+        });
 
     public static IReadOnlyList<PresentedSolutionDefinition> CreateInitialSolutionPresentation(
         Random random)
     {
-        if (random == null)
-        {
-            throw new ArgumentNullException(nameof(random));
-        }
-
-        var selectedSolutions = new List<InterventionSolutionDefinition>
-        {
-            PickSolution(InitialInadequateSolutions, random, "inadequado"),
-            PickSolution(InitialPartialSolutions, random, "parcial"),
-            PickSolution(InitialAdequateSolutions, random, "adequado")
-        };
-
-        for (int index = selectedSolutions.Count - 1; index > 0; index--)
+        ArgumentNullException.ThrowIfNull(random);
+        var solutions = new List<InterventionSolutionDefinition>(InitialSolutions);
+        for (int index = solutions.Count - 1; index > 0; index--)
         {
             int swapIndex = random.Next(index + 1);
-            InterventionSolutionDefinition temporary = selectedSolutions[index];
-            selectedSolutions[index] = selectedSolutions[swapIndex];
-            selectedSolutions[swapIndex] = temporary;
+            (solutions[index], solutions[swapIndex]) = (solutions[swapIndex], solutions[index]);
         }
 
-        var presentation =
-            new List<PresentedSolutionDefinition>(selectedSolutions.Count);
-
-        for (int index = 0; index < selectedSolutions.Count; index++)
-        {
-            presentation.Add(new PresentedSolutionDefinition(
-                selectedSolutions[index].Id,
-                index + 1));
-        }
-
+        var presentation = new List<PresentedSolutionDefinition>(solutions.Count);
+        for (int index = 0; index < solutions.Count; index++)
+            presentation.Add(new PresentedSolutionDefinition(solutions[index].Id, index + 1));
         return presentation.AsReadOnly();
     }
 
     public static IReadOnlyList<PresentedJustificationDefinition>
         CreateInitialJustificationPresentation(Random random)
     {
-        if (random == null)
-        {
-            throw new ArgumentNullException(nameof(random));
-        }
-
-        if (Justifications.Count == 0)
-        {
-            throw new InvalidOperationException(
-                "Nao existem justificativas iniciais registradas.");
-        }
-
-        var shuffledJustifications =
-            new List<InterventionJustificationDefinition>(Justifications);
-
-        for (int index = shuffledJustifications.Count - 1; index > 0; index--)
+        ArgumentNullException.ThrowIfNull(random);
+        var justifications = new List<InterventionJustificationDefinition>(Justifications);
+        for (int index = justifications.Count - 1; index > 0; index--)
         {
             int swapIndex = random.Next(index + 1);
-            InterventionJustificationDefinition temporary =
-                shuffledJustifications[index];
-            shuffledJustifications[index] = shuffledJustifications[swapIndex];
-            shuffledJustifications[swapIndex] = temporary;
+            (justifications[index], justifications[swapIndex]) =
+                (justifications[swapIndex], justifications[index]);
         }
 
-        var presentation =
-            new List<PresentedJustificationDefinition>(shuffledJustifications.Count);
-
-        for (int index = 0; index < shuffledJustifications.Count; index++)
-        {
-            presentation.Add(new PresentedJustificationDefinition(
-                shuffledJustifications[index].Id,
-                index + 1));
-        }
-
+        var presentation = new List<PresentedJustificationDefinition>(justifications.Count);
+        for (int index = 0; index < justifications.Count; index++)
+            presentation.Add(new PresentedJustificationDefinition(justifications[index].Id, index + 1));
         return presentation.AsReadOnly();
     }
 
     public static InterventionSolutionDefinition GetSolution(string solutionId)
     {
         foreach (InterventionSolutionDefinition solution in InitialSolutions)
-        {
             if (solution.Id == solutionId)
-            {
                 return solution;
-            }
-        }
-
-        foreach (InterventionSolutionDefinition solution in RevisionSolutions)
-        {
-            if (solution.Id == solutionId)
-            {
-                return solution;
-            }
-        }
-
         throw new InvalidOperationException($"Solucao nao registrada: {solutionId}");
-    }
-
-    private static IReadOnlyList<InterventionSolutionDefinition> CreateInitialSolutions()
-    {
-        var solutions = new List<InterventionSolutionDefinition>(
-            InitialInadequateSolutions.Count +
-            InitialPartialSolutions.Count +
-            InitialAdequateSolutions.Count);
-
-        foreach (InterventionSolutionDefinition solution in InitialInadequateSolutions)
-        {
-            solutions.Add(solution);
-        }
-
-        foreach (InterventionSolutionDefinition solution in InitialPartialSolutions)
-        {
-            solutions.Add(solution);
-        }
-
-        foreach (InterventionSolutionDefinition solution in InitialAdequateSolutions)
-        {
-            solutions.Add(solution);
-        }
-
-        return solutions.AsReadOnly();
-    }
-
-    private static InterventionSolutionDefinition PickSolution(
-        IReadOnlyList<InterventionSolutionDefinition> pool,
-        Random random,
-        string qualityName)
-    {
-        if (pool == null || pool.Count == 0)
-        {
-            throw new InvalidOperationException(
-                $"O pool inicial {qualityName} nao possui solucoes.");
-        }
-
-        return pool[random.Next(pool.Count)];
     }
 
     public static InterventionJustificationDefinition GetJustification(string justificationId)
     {
         foreach (InterventionJustificationDefinition justification in Justifications)
-        {
             if (justification.Id == justificationId)
-            {
                 return justification;
-            }
-        }
-
         throw new InvalidOperationException($"Justificativa nao registrada: {justificationId}");
     }
+
+    public static string GetExplanation(string solutionId) => solutionId switch
+    {
+        AppearanceSolutionId =>
+            "O material aparente oferece uma pista. " +
+            "A superfície gelatinosa é a proposta mais adequada neste cenário, se sua aparência " +
+            "corresponder ao comportamento percebido.",
+        MarkSolutionId =>
+            "A marca diferencia os terrenos, mas seu significado precisa ser aprendido. " +
+            "Ela permite reconhecer onde há uma diferença sem explicar qual é o comportamento.",
+        MotionSolutionId =>
+            "A pulsação oferece uma pista. A terra em movimento sugere uma propriedade " +
+            "incomum, mas também pode sugerir elasticidade ou instabilidade.",
+        _ => "Nenhuma intervenção foi escolhida para comparar a aparência e o comportamento dos terrenos."
+    };
 }

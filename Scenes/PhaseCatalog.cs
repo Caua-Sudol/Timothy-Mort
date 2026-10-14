@@ -20,7 +20,9 @@ public static class PhaseCatalog
             5,
             1,
             SolutionVisualModule.DAMAGE_KNOCKBACK |
-            SolutionVisualModule.INVULNERABILITY_BLINK);
+            SolutionVisualModule.INVULNERABILITY_BLINK |
+            SolutionVisualModule.PLAYER_DASH_TRAIL |
+            SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR);
 
     public static PhaseDefinition DamageFeedback { get; } =
         new PhaseDefinition(

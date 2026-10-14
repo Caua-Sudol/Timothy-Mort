@@ -44,27 +44,38 @@ public sealed class PhaseResultScreen
             ? null
             : state.ChoiceCatalog.GetSolution(state.AppliedSolutionId);
 
+        bool isAffordance = state.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId;
+        string assessment(InterventionSolutionDefinition solution) => isAffordance
+            ? solution == null ? "Sem escolha"
+                : solution.Id == AffordanceChoiceCatalog.AppearanceSolutionId
+                    ? "Pista de material (arte provisória)"
+                    : solution.Id == AffordanceChoiceCatalog.MarkSolutionId
+                        ? "Pista de identificação" : "Pista de movimento"
+            : GetQualityText(solution?.Quality);
+
         long totalSeconds = (long)Math.Floor(state.ElapsedSeconds);
         var text = new StringBuilder();
         if (state.HasRevision)
         {
             text.AppendLine($"Escolha inicial: {GetSolutionText(firstSolution)}");
-            text.AppendLine($"Avaliação: {GetQualityText(firstSolution?.Quality)}");
+            text.AppendLine($"Avaliação: {assessment(firstSolution)}");
             text.AppendLine();
             text.AppendLine($"Após revisão: {GetSolutionText(finalSolution)}");
-            text.AppendLine($"Avaliação: {GetQualityText(finalSolution?.Quality)}");
+            text.AppendLine($"Avaliação: {assessment(finalSolution)}");
         }
         else
         {
             text.AppendLine($"Escolha: {GetSolutionText(finalSolution ?? firstSolution)}");
-            text.AppendLine($"Avaliação: {GetQualityText((finalSolution ?? firstSolution)?.Quality)}");
+            text.AppendLine($"Avaliação: {assessment(finalSolution ?? firstSolution)}");
             text.AppendLine("Sem revisão");
         }
         text.AppendLine();
         text.AppendLine($"Tempo da fase: {totalSeconds / 60:00}:{totalSeconds % 60:00}");
         text.AppendLine($"Mortes: {state.TotalDeathCount}");
         _explanationHeading = state.HasRevision ? "Sobre a escolha inicial" : "Sobre sua escolha";
-        string explanation = PhaseResultTextCatalog.GetExplanation(state.PhaseId, firstSolution?.Quality);
+        string explanation = isAffordance
+            ? AffordanceChoiceCatalog.GetExplanation(firstSolution?.Id)
+            : PhaseResultTextCatalog.GetExplanation(state.PhaseId, firstSolution?.Quality);
         if (!state.HasRevision)
         {
             explanation = explanation.Replace("A primeira intervenção", "A intervenção");

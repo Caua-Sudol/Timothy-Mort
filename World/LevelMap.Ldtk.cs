@@ -183,7 +183,22 @@ public partial class LevelMap
             var gelatin = _gelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center));
             Color tint = gelatin.Width > 0 && modules.HasFlag(SolutionVisualModule.GELATIN_COLOR)
                 ? Color.DeepSkyBlue : Color.White;
-            batch.Draw(_ldtkAtlas, tile.Bounds, tile.Source, tint * tile.Alpha,
+            Rectangle destination = tile.Bounds;
+            if (gelatin.Width > 0 && modules.HasFlag(SolutionVisualModule.GELATIN_JELLY_MOTION))
+            {
+                Rectangle animated = GetGelatinVisualBounds(gelatin, modules);
+                // Transform shared edges relative to the whole volume so adjacent tiles
+                // and correction layers deform together instead of opening seams.
+                int MapX(int x) => animated.X + (int)Math.Round(
+                    (x - gelatin.X) * (double)animated.Width / gelatin.Width);
+                int MapY(int y) => animated.Y + (int)Math.Round(
+                    (y - gelatin.Y) * (double)animated.Height / gelatin.Height);
+                int left = MapX(tile.Bounds.Left);
+                int top = MapY(tile.Bounds.Top);
+                destination = new Rectangle(left, top,
+                    MapX(tile.Bounds.Right) - left, MapY(tile.Bounds.Bottom) - top);
+            }
+            batch.Draw(_ldtkAtlas, destination, tile.Source, tint * tile.Alpha,
                 0, Vector2.Zero, tile.Flip, 0);
         }
     }
