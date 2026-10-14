@@ -161,6 +161,8 @@ private Vector2 _checkpoint;
 
     public void UseAdditionalCollidersOnly() => _useAdditionalCollidersOnly = true;
 
+    public void ReleaseLdtkTextures() => _map.ReleaseLdtkTextures();
+
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {
         _fadeAlpha = 0.0f;
@@ -177,8 +179,6 @@ private Vector2 _checkpoint;
         _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         _map.LoadContent(graphicsDevice);
-        if (_map.IsLdtk)
-            _map.SetLdtkAtlas(content.Load<Texture2D>("visual/teste_ldtk_terrain"));
         if (SupportsCameraScalePreview)
         {
             _map.SetWoodPlatformTexture(content.Load<Texture2D>("visual/platformer_wood"));
@@ -1102,9 +1102,25 @@ private static bool RectanglesTouchOrIntersect(
         spriteBatch.End();
     }
 
+    private bool _affordanceCombinationDemo;
+
+    public void EnableAffordanceCombinationDemo()
+    {
+        _affordanceCombinationDemo =
+            _phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId;
+    }
+
     private SolutionVisualModule GetAppliedVisualModules()
     {
-        return _phaseState?.AppliedVisualModules ?? SolutionVisualModule.NONE;
+        SolutionVisualModule modules = _phaseState?.AppliedVisualModules ?? SolutionVisualModule.NONE;
+        if (_affordanceCombinationDemo)
+        {
+            // Demonstration only: preserve the player's choice and completion records.
+            modules &= ~SolutionVisualModule.GELATIN_TERRAIN_MARK;
+            modules |= SolutionVisualModule.GELATIN_COLOR |
+                       SolutionVisualModule.GELATIN_JELLY_MOTION;
+        }
+        return modules;
     }
 
     private void ResolveAffordanceInterventionReturn()

@@ -862,6 +862,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     protected override void UnloadContent()
     {
+        _scene?.ReleaseLdtkTextures();
         _slideOutgoing?.Dispose();
         _slideIncoming?.Dispose();
         base.UnloadContent();
@@ -940,6 +941,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _affordanceBackground ??= new AffordanceBackground(Content);
 
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
+        _scene?.ReleaseLdtkTextures();
         _scene = new Scene(scenario, spawnId, _phaseState);
         _scene.LoadContent(GraphicsDevice, Content);
         _scene.AlignCamera(_camera);
@@ -948,6 +950,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             _mortSubtitle.Show(false, MortDialogueCatalog.Conclusion);
             _mortCombinationSpoken = true;
         }
+        if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && _mortCombinationSpoken)
+            _scene.EnableAffordanceCombinationDemo();
         _overlayState = OverlayState.NONE;
         _mapReloadErrorMessage = null;
     }
@@ -1013,6 +1017,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         _mortSubtitle.Clear();
         _phaseState = null;
+        _scene?.ReleaseLdtkTextures();
         _scene = null;
         _currentScenarioId = ScenarioCatalog.InitialScenarioId;
         _overlayState = OverlayState.NONE;

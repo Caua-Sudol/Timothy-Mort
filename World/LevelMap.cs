@@ -197,6 +197,7 @@ public partial class LevelMap
 
 public void LoadContent(GraphicsDevice graphicsDevice)
 {
+    if (IsLdtk) _ldtkGraphicsDevice = graphicsDevice;
     ReloadObjects();
     LoadPlatformTexture(graphicsDevice);
 }
@@ -1151,7 +1152,7 @@ private void ApplyObjectState(LevelMap candidate)
         else
             spriteBatch.Draw(_platformTexture, gelatin, gelatinColor);
 
-        if (visualModules.HasFlag(SolutionVisualModule.GELATIN_TERRAIN_MARK))
+        if (!IsLdtk && visualModules.HasFlag(SolutionVisualModule.GELATIN_TERRAIN_MARK))
         {
             // Temporary neutral mark until the marked-terrain asset is ready.
             int size = Math.Max(1, Math.Min(12, Math.Min(gelatin.Width, gelatin.Height) / 2));

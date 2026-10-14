@@ -19,7 +19,16 @@ Mantenha esses identificadores: o jogo seleciona cada nivel pelo nome, independe
 - Colisao: solido (1) bloqueia; gelatina (2) permite atravessar, limita queda e recarrega dash; espinhos (3) causam dano.
 - Correcoes: tiles manuais sobre a arte automatica, sem criar colisao.
 - Entidades: grid de 16 para ajustar os marcadores.
-- Atlas: ../../assets/teste_ldtk/root_tileset.png.
+- Tilesets: cada camada usa o PNG indicado no LDtk, relativo ao arquivo .ldtk. Mantenha as imagens dentro de assets; o build copia os PNGs para a distribuicao automaticamente.
+
+## Aparencia por solucao
+
+- `Solucao_gelatina`: aparece somente com a solucao Aparencia.
+- `Solucao_mark`: aparece somente com a solucao Marcacao.
+- Sem escolha ou com Deformacao, ambas ficam ocultas; Deformacao continua pulsando a terra comum.
+- Os nomes sao reconhecidos sem distinguir maiusculas e minusculas. A visibilidade dessas duas camadas no editor nao controla sua ativacao no jogo.
+- Pinte as variantes completas em tiles de 96x96 alinhados aos tiles originais, acima do terreno. Nas celulas de gelatina cobertas pela solucao ativa, os tiles inferiores coincidentes sao ocultados para preservar a transparencia do novo asset. Celulas sem variante conservam a terra original.
+- A fisica continua definida por `Colisao`; trocar a solucao altera apenas o visual. A cor azul e a marca por codigo nao sao mais usadas nos mapas LDtk.
 
 ## Entidades
 
@@ -35,7 +44,7 @@ Mantenha esses identificadores: o jogo seleciona cada nivel pelo nome, independe
 
 Spawns e retornos devem ficar com os pes no topo de um solido, fora dos espinhos e das areas de passagem automatica. As areas podem ser redimensionadas no editor. O retorno da intervencao e direcionado automaticamente para a sala de origem.
 
-Salve no LDtk e use Ctrl+R na sala atual para recarregar e voltar ao spawn, ou recompile o jogo. Erros de recarga preservam o mapa anterior. Alteracoes em PNGs exigem recompilar o conteudo.
+Salve no LDtk e use Ctrl+R na sala atual para recarregar o mapa e seus PNGs e voltar ao spawn, ou recompile o jogo. Nao e preciso cadastrar novos tilesets no Content.mgcb. Erros de recarga (incluindo imagens ausentes ou recortes invalidos) preservam o mapa anterior.
 
 Todas estas salas usam escala 1 do jogador e referencia de 14% da altura da tela. O shader experimental continua exclusivo da sala de teste.
 

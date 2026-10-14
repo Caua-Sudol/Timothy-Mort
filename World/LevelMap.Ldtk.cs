@@ -11,9 +11,43 @@ namespace DontLikePoetry;
 public partial class LevelMap
 {
     public bool IsLdtk => _mapPath.EndsWith(".ldtk", StringComparison.OrdinalIgnoreCase);
-    private List<(Rectangle Bounds, Rectangle Source, SpriteEffects Flip, float Alpha)> _ldtkTiles = [];
-    private Texture2D _ldtkAtlas;
-    public void SetLdtkAtlas(Texture2D atlas) => _ldtkAtlas = atlas;
+    private List<(Rectangle Bounds, Rectangle Source, SpriteEffects Flip, float Alpha, int TilesetUid, SolutionVisualModule Solution, int LayerOrder)> _ldtkTiles = [];
+    private Dictionary<int, string> _ldtkTilesetPaths = [];
+    private Dictionary<int, Texture2D> _ldtkTextures = [];
+    private GraphicsDevice _ldtkGraphicsDevice;
+
+    public void ReleaseLdtkTextures()
+    {
+        foreach (Texture2D texture in _ldtkTextures.Values) texture.Dispose();
+        _ldtkTextures.Clear();
+    }
+
+    private void LoadLdtkTextures(GraphicsDevice graphicsDevice)
+    {
+        string directory = Path.GetDirectoryName(ResolveLdtkPath());
+        foreach (int uid in _ldtkTiles.Select(tile => tile.TilesetUid).Distinct())
+        {
+            string path = Path.GetFullPath(Path.Combine(directory, _ldtkTilesetPaths[uid]));
+            using var stream = File.OpenRead(path);
+            Texture2D texture = Texture2D.FromStream(graphicsDevice, stream);
+            _ldtkTextures.Add(uid, texture);
+            // Raw PNGs use straight alpha; the game's AlphaBlend expects premultiplied alpha.
+            var pixels = new Color[texture.Width * texture.Height];
+            texture.GetData(pixels);
+            for (int i = 0; i < pixels.Length; i++)
+                pixels[i] = Color.FromNonPremultiplied(
+                    pixels[i].R, pixels[i].G, pixels[i].B, pixels[i].A);
+            texture.SetData(pixels);
+        }
+        foreach (var tile in _ldtkTiles)
+        {
+            Texture2D texture = _ldtkTextures[tile.TilesetUid];
+            if (tile.Source.X < 0 || tile.Source.Y < 0 ||
+                tile.Source.Right > texture.Width || tile.Source.Bottom > texture.Height)
+                throw new InvalidDataException(
+                    $"Recorte fora do PNG do tileset {tile.TilesetUid}: {_ldtkTilesetPaths[tile.TilesetUid]}");
+        }
+    }
 
     private string ResolveLdtkPath()
     {
@@ -26,18 +60,24 @@ public partial class LevelMap
 
     private bool TryReloadLdtk(out string error)
     {
+        var candidate = new LevelMap(_mapPath, _ldtkLevelId);
         try
         {
-            var candidate = new LevelMap(_mapPath, _ldtkLevelId);
             using var document = JsonDocument.Parse(File.ReadAllText(ResolveLdtkPath()));
             candidate.LoadLdtk(document.RootElement);
+            if (_ldtkGraphicsDevice != null)
+                candidate.LoadLdtkTextures(_ldtkGraphicsDevice);
             ApplyObjectState(candidate);
+            ReleaseLdtkTextures();
             _ldtkTiles = candidate._ldtkTiles;
+            _ldtkTilesetPaths = candidate._ldtkTilesetPaths;
+            _ldtkTextures = candidate._ldtkTextures;
             error = null;
             return true;
         }
         catch (Exception ex)
         {
+            candidate.ReleaseLdtkTextures();
             error = "LDtk: " + ex.Message;
             return false;
         }
@@ -127,12 +167,22 @@ public partial class LevelMap
         if (!PlayerSpawn.HasValue)
             throw new InvalidDataException("Adicione a entidade PlayerSpawn ao nivel.");
         // LDtk stores the topmost layer first; render bottom to top.
+        int layerOrder = 0;
         foreach (var layer in layers.Reverse())
         {
-            if (!layer.GetProperty("visible").GetBoolean()) continue;
+            layerOrder++;
+            SolutionVisualModule solution = GetLdtkLayerSolution(layer.GetProperty("__identifier").GetString());
+            // Solution layers can be hidden in the editor while composing the base terrain.
+            if (solution == SolutionVisualModule.NONE && !layer.GetProperty("visible").GetBoolean()) continue;
             var uid = layer.GetProperty("__tilesetDefUid");
             if (uid.ValueKind == JsonValueKind.Null) continue;
-            int size = tilesets[uid.GetInt32()].GetProperty("tileGridSize").GetInt32();
+            int tilesetUid = uid.GetInt32();
+            var tileset = tilesets[tilesetUid];
+            string path = tileset.GetProperty("relPath").GetString();
+            if (string.IsNullOrWhiteSpace(path))
+                throw new InvalidDataException($"Tileset {tilesetUid} sem caminho de imagem.");
+            _ldtkTilesetPaths[tilesetUid] = path;
+            int size = tileset.GetProperty("tileGridSize").GetInt32();
             int ox = layer.GetProperty("__pxTotalOffsetX").GetInt32();
             int oy = layer.GetProperty("__pxTotalOffsetY").GetInt32();
             float alpha = layer.GetProperty("__opacity").GetSingle();
@@ -146,7 +196,7 @@ public partial class LevelMap
                 if ((flip & 2) != 0) effects |= SpriteEffects.FlipVertically;
                 _ldtkTiles.Add((new Rectangle(px[0].GetInt32() + ox, px[1].GetInt32() + oy, size, size),
                     new Rectangle(src[0].GetInt32(), src[1].GetInt32(), size, size),
-                    effects, alpha * tile.GetProperty("a").GetSingle()));
+                    effects, alpha * tile.GetProperty("a").GetSingle(), tilesetUid, solution, layerOrder));
             }
         }
     }
@@ -176,13 +226,34 @@ public partial class LevelMap
         }
     }
 
+    private static SolutionVisualModule GetLdtkLayerSolution(string name)
+    {
+        if (string.Equals(name, "solucao_gelatina", StringComparison.OrdinalIgnoreCase))
+            return SolutionVisualModule.GELATIN_COLOR;
+        if (string.Equals(name, "solucao_mark", StringComparison.OrdinalIgnoreCase))
+            return SolutionVisualModule.GELATIN_TERRAIN_MARK;
+        return SolutionVisualModule.NONE;
+    }
+
     private void DrawLdtk(SpriteBatch batch, SolutionVisualModule modules)
     {
+        // Replace only covered terrain cells; unpainted cells retain their original art.
+        var replacements = new Dictionary<Rectangle, int>();
+        foreach (var tile in _ldtkTiles)
+            if (tile.Solution != SolutionVisualModule.NONE && modules.HasFlag(tile.Solution))
+                replacements[tile.Bounds] = Math.Max(
+                    replacements.GetValueOrDefault(tile.Bounds), tile.LayerOrder);
+
         foreach (var tile in _ldtkTiles)
         {
+            if (tile.Solution != SolutionVisualModule.NONE && !modules.HasFlag(tile.Solution))
+                continue;
             var gelatin = _gelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center));
-            Color tint = gelatin.Width > 0 && modules.HasFlag(SolutionVisualModule.GELATIN_COLOR)
-                ? Color.DeepSkyBlue : Color.White;
+            if (tile.Solution == SolutionVisualModule.NONE && gelatin.Width > 0 &&
+                replacements.TryGetValue(tile.Bounds, out int replacementLayer) &&
+                tile.LayerOrder < replacementLayer)
+                continue;
+            Color tint = Color.White;
             Rectangle destination = tile.Bounds;
             if (gelatin.Width > 0 && modules.HasFlag(SolutionVisualModule.GELATIN_JELLY_MOTION))
             {
@@ -198,7 +269,7 @@ public partial class LevelMap
                 destination = new Rectangle(left, top,
                     MapX(tile.Bounds.Right) - left, MapY(tile.Bounds.Bottom) - top);
             }
-            batch.Draw(_ldtkAtlas, destination, tile.Source, tint * tile.Alpha,
+            batch.Draw(_ldtkTextures[tile.TilesetUid], destination, tile.Source, tint * tile.Alpha,
                 0, Vector2.Zero, tile.Flip, 0);
         }
     }
