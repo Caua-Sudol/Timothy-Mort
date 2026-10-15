@@ -87,6 +87,19 @@ public partial class LevelMap
         _woodPlatformTexture = texture;
     }
     private double _visualEffectTime;
+    private Texture2D _interventionSwordTexture;
+
+    public void SetInterventionSwordTexture(Texture2D texture) =>
+        _interventionSwordTexture = texture;
+
+    public Rectangle GetInterventionSwordBounds(Rectangle marker)
+    {
+        if (_interventionSwordTexture == null) return marker;
+        const int height = 192; // Two LDtk tiles, preserving the PNG's aspect ratio.
+        int width = (int)Math.Round(height * _interventionSwordTexture.Width /
+            (double)_interventionSwordTexture.Height);
+        return new Rectangle(marker.Center.X - width / 2, marker.Bottom - height, width, height);
+    }
 
     public Vector2? PlayerSpawn { get; private set; }
     public int HeightInPixels { get; private set; }
@@ -576,7 +589,10 @@ public void UpdateVisualEffects(double deltaTime)
                 button.Y + (int)interventionButtonPressOffset,
                 button.Width,
                 button.Height);
-            spriteBatch.Draw(_platformTexture, pressedButton, Color.Orange);
+            if (_interventionSwordTexture != null)
+                spriteBatch.Draw(_interventionSwordTexture, GetInterventionSwordBounds(button), Color.White);
+            else
+                spriteBatch.Draw(_platformTexture, pressedButton, Color.Orange);
         }
 
         Rectangle? exitDoorCollider = GetExitDoorCollider(

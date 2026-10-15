@@ -225,6 +225,8 @@ private Vector2 _checkpoint;
         {
             _interactionFont = content.Load<SpriteFont>("patrick");
             _passageSymbols = content.Load<Texture2D>("ui/icons/icons");
+            if (_map.IsLdtk)
+                _map.SetInterventionSwordTexture(content.Load<Texture2D>("visual/intervention_sword"));
         }
         _propVisualPresentation?.LoadContent(content);
         _conceptualRuleReminderPresentation?.LoadContent(graphicsDevice, content);
@@ -514,8 +516,9 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         if (IsAffordance)
         {
             Rectangle reach = _player.HitBox;
-            reach.Inflate(32, 24);
-            bool nearSword = _map.InterventionButtons.Any(button => reach.Intersects(button));
+            reach.Inflate(64, 24);
+            bool nearSword = _map.InterventionButtons.Any(button =>
+                reach.Intersects(_map.GetInterventionSwordBounds(button)));
             InterventionButtonPressed = nearSword && _interactPressed;
             if (InterventionButtonPressed)
                 _interventionButtonActivationPending = true;
@@ -1194,7 +1197,7 @@ private static bool RectanglesTouchOrIntersect(
                 DrawInteractionPrompt(spriteBatch, exit.Bounds);
             }
         foreach (Rectangle sword in _map.InterventionButtons)
-            DrawInteractionPrompt(spriteBatch, sword);
+            DrawInteractionPrompt(spriteBatch, _map.GetInterventionSwordBounds(sword));
 
         if (_respawnEffectTime <= 0) return;
         float progress = 1 - _respawnEffectTime / 0.22f;
