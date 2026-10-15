@@ -28,16 +28,22 @@ public partial class LevelMap
         foreach (int uid in _ldtkTiles.Select(tile => tile.TilesetUid).Distinct())
         {
             string path = Path.GetFullPath(Path.Combine(directory, _ldtkTilesetPaths[uid]));
+            using var timing = new LoadDiagnostics($"tileset {path}");
             using var stream = File.OpenRead(path);
             Texture2D texture = Texture2D.FromStream(graphicsDevice, stream);
+            timing.Mark("abrir PNG e FromStream");
+            timing.Texture(texture);
             _ldtkTextures.Add(uid, texture);
             // Raw PNGs use straight alpha; the game's AlphaBlend expects premultiplied alpha.
             var pixels = new Color[texture.Width * texture.Height];
             texture.GetData(pixels);
+            timing.Mark("alocar pixels e GetData");
             for (int i = 0; i < pixels.Length; i++)
                 pixels[i] = Color.FromNonPremultiplied(
                     pixels[i].R, pixels[i].G, pixels[i].B, pixels[i].A);
+            timing.Mark("converter alpha");
             texture.SetData(pixels);
+            timing.Mark("SetData");
         }
         foreach (var tile in _ldtkTiles)
         {
@@ -60,13 +66,17 @@ public partial class LevelMap
 
     private bool TryReloadLdtk(out string error)
     {
+        using var loading = new LoadDiagnostics($"LDtk {_ldtkLevelId}");
         var candidate = new LevelMap(_mapPath, _ldtkLevelId);
         try
         {
             using var document = JsonDocument.Parse(File.ReadAllText(ResolveLdtkPath()));
+            loading.Mark("ler e interpretar JSON");
             candidate.LoadLdtk(document.RootElement);
+            loading.Mark("montar entidades, colisoes e tiles");
             if (_ldtkGraphicsDevice != null)
                 candidate.LoadLdtkTextures(_ldtkGraphicsDevice);
+            loading.Mark("carregar e validar tilesets");
             ApplyObjectState(candidate);
             ReleaseLdtkTextures();
             _ldtkTiles = candidate._ldtkTiles;

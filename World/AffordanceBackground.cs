@@ -15,10 +15,10 @@ public sealed class AffordanceBackground
 
     public AffordanceBackground(ContentManager content)
     {
-        _background = content.Load<Texture2D>("visual/affordance_visibility_bg");
-        _midground = content.Load<Texture2D>("visual/affordance_visibility_mg");
-        _foreground = content.Load<Texture2D>("visual/affordance_visibility_fg");
-        _lights = content.Load<Texture2D>("visual/affordance_visibility_lgt");
+        _background = LoadDiagnostics.LoadTexture(content, "visual/affordance_visibility_bg");
+        _midground = LoadDiagnostics.LoadTexture(content, "visual/affordance_visibility_mg");
+        _foreground = LoadDiagnostics.LoadTexture(content, "visual/affordance_visibility_fg");
+        _lights = LoadDiagnostics.LoadTexture(content, "visual/affordance_visibility_lgt");
     }
 
     public static float GetRoomOffset(string scenarioId)

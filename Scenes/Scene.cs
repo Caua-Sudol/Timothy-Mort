@@ -186,6 +186,7 @@ private Vector2 _checkpoint;
 
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {
+        using var loading = new LoadDiagnostics("Scene.LoadContent");
         _fadeAlpha = 0.0f;
         _playerIsDead = false;
         _requestedScenarioId = null;
@@ -196,37 +197,40 @@ private Vector2 _checkpoint;
         _playerWasTouchingSolidSurface = false;
         _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
+        loading.Mark("preparacao");
         _map.LoadContent(graphicsDevice);
+        loading.Mark("mapa completo");
         if (SupportsCameraScalePreview)
         {
-            _map.SetWoodPlatformTexture(content.Load<Texture2D>("visual/platformer_wood"));
-            _map.SetInitialCheckpointTexture(content.Load<Texture2D>("visual/ini_ckp"));
-            _map.SetObjectTexture("parede_esquerda", content.Load<Texture2D>("visual/parede_esquerda"));
-            _map.SetObjectTexture("plat_solida1", content.Load<Texture2D>("visual/plat_solid_1"));
-            _map.SetObjectTexture("recarga_2", content.Load<Texture2D>("visual/recarga2"));
-            _map.SetObjectTexture("espinhos1", content.Load<Texture2D>("visual/espinhos1"));
-            _map.SetObjectTexture("teto", content.Load<Texture2D>("visual/teto"));
-            _map.SetObjectTexture("plat_solida3", content.Load<Texture2D>("visual/plat_solid3"));
-            _map.SetObjectTexture("recarga_1", content.Load<Texture2D>("visual/recarga1"));
-            _map.SetObjectTexture("wood1", content.Load<Texture2D>("visual/wood1"));
-            _map.SetObjectTexture("plat_solida2", content.Load<Texture2D>("visual/plat_solid_2"));
-            _map.SetObjectTexture("wood4", content.Load<Texture2D>("visual/wood4"));
-            _map.SetObjectTexture("recarga_3", content.Load<Texture2D>("visual/recarga3"));
-            _map.SetObjectTexture("recarga_4", content.Load<Texture2D>("visual/recarga4"));
-            Texture2D rightPlatform = content.Load<Texture2D>("visual/plat_direita");
+            _map.SetWoodPlatformTexture(LoadDiagnostics.LoadTexture(content, "visual/platformer_wood"));
+            _map.SetInitialCheckpointTexture(LoadDiagnostics.LoadTexture(content, "visual/ini_ckp"));
+            _map.SetObjectTexture("parede_esquerda", LoadDiagnostics.LoadTexture(content, "visual/parede_esquerda"));
+            _map.SetObjectTexture("plat_solida1", LoadDiagnostics.LoadTexture(content, "visual/plat_solid_1"));
+            _map.SetObjectTexture("recarga_2", LoadDiagnostics.LoadTexture(content, "visual/recarga2"));
+            _map.SetObjectTexture("espinhos1", LoadDiagnostics.LoadTexture(content, "visual/espinhos1"));
+            _map.SetObjectTexture("teto", LoadDiagnostics.LoadTexture(content, "visual/teto"));
+            _map.SetObjectTexture("plat_solida3", LoadDiagnostics.LoadTexture(content, "visual/plat_solid3"));
+            _map.SetObjectTexture("recarga_1", LoadDiagnostics.LoadTexture(content, "visual/recarga1"));
+            _map.SetObjectTexture("wood1", LoadDiagnostics.LoadTexture(content, "visual/wood1"));
+            _map.SetObjectTexture("plat_solida2", LoadDiagnostics.LoadTexture(content, "visual/plat_solid_2"));
+            _map.SetObjectTexture("wood4", LoadDiagnostics.LoadTexture(content, "visual/wood4"));
+            _map.SetObjectTexture("recarga_3", LoadDiagnostics.LoadTexture(content, "visual/recarga3"));
+            _map.SetObjectTexture("recarga_4", LoadDiagnostics.LoadTexture(content, "visual/recarga4"));
+            Texture2D rightPlatform = LoadDiagnostics.LoadTexture(content, "visual/plat_direita");
             _map.SetObjectTexture("recarga_5", rightPlatform);
             _map.SetObjectTexture("recarga_6", rightPlatform);
             _map.SetObjectTexture("wood3", rightPlatform);
             _map.SetObjectTexture("wood2", rightPlatform);
-            _map.SetObjectTexture("plat_solida4", content.Load<Texture2D>("visual/plat_solid4"));
-            _map.SetObjectTexture("parede_direita", content.Load<Texture2D>("visual/parede_direita"));
-            _map.SetObjectTexture("espinhos_lateral", content.Load<Texture2D>("visual/espinho_lateral"));
+            _map.SetObjectTexture("plat_solida4", LoadDiagnostics.LoadTexture(content, "visual/plat_solid4"));
+            _map.SetObjectTexture("parede_direita", LoadDiagnostics.LoadTexture(content, "visual/parede_direita"));
+            _map.SetObjectTexture("espinhos_lateral", LoadDiagnostics.LoadTexture(content, "visual/espinho_lateral"));
         }
+        loading.Mark("texturas de plataformas legadas");
         if (IsAffordance)
         {
             _interactionFont = content.Load<SpriteFont>("patrick");
-            _passageSymbols = content.Load<Texture2D>("ui/icons/icons");
-            _interventionTrigger.SetSwordTexture(content.Load<Texture2D>("visual/intervention_sword"));
+            _passageSymbols = LoadDiagnostics.LoadTexture(content, "ui/icons/icons");
+            _interventionTrigger.SetSwordTexture(LoadDiagnostics.LoadTexture(content, "visual/intervention_sword"));
         }
         _propVisualPresentation?.LoadContent(content);
         _conceptualRuleReminderPresentation?.LoadContent(graphicsDevice, content);
@@ -236,9 +240,12 @@ private Vector2 _checkpoint;
             ?? _fallbackPlayerStart;
         _checkpoint = _playerStart;
 
+        loading.Mark("interacao, apresentacoes e spawn");
         var fadeColor = Enumerable.Repeat(Color.White, ScreenWidth * ScreenHeight).ToArray();
         _fadeTexture = new Texture2D(graphicsDevice, ScreenWidth, ScreenHeight);
         _fadeTexture.SetData(fadeColor);
+        loading.Mark("textura branca");
+        loading.Texture(_fadeTexture);
 
         int colliderWidth = SupportsCameraScalePreview
             ? GameScaleConfig.PlayerReferenceColliderWidth : PlayerWidth;
@@ -249,32 +256,35 @@ private Vector2 _checkpoint;
             (int)_playerStart.Y + PlayerHeight - colliderHeight,
             PlayerGravity, colliderWidth, colliderHeight);
         _player.LoadContent(graphicsDevice, PlayerWidth, PlayerHeight);
+        loading.Mark("criacao do player");
         // 8 * 0.75 player scale * 0.675 camera zoom = 4.05 screen pixels.
         _player.ColliderOffsetFromSpriteX = SupportsCameraScalePreview ? 8f : 0f;
         if (SupportsCameraScalePreview)
         {
             _player.SetDirectionalPreviewSprites(
-                content.Load<Texture2D>("player/timothy_mort_2_right"),
-                content.Load<Texture2D>("player/timothy_mort_2_left"),
+                LoadDiagnostics.LoadTexture(content, "player/timothy_mort_2_right"),
+                LoadDiagnostics.LoadTexture(content, "player/timothy_mort_2_left"),
                 0.1f);
             var walkFrames = new Texture2D[7];
             for (int index = 0; index < walkFrames.Length; index++)
-                walkFrames[index] = content.Load<Texture2D>($"player/walk/walk{index + 1:D4}");
+                walkFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/walk/walk{index + 1:D4}");
             _player.SetWalkAnimation(walkFrames);
             var jumpFrames = new Texture2D[4];
             for (int index = 0; index < jumpFrames.Length; index++)
-                jumpFrames[index] = content.Load<Texture2D>($"player/jump/jump{index:D4}");
+                jumpFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/jump/jump{index:D4}");
             var glideFrames = new Texture2D[5];
             for (int index = 0; index < glideFrames.Length; index++)
-                glideFrames[index] = content.Load<Texture2D>($"player/glide/glide{index:D4}");
+                glideFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/glide/glide{index:D4}");
             _player.SetAirAnimations(jumpFrames, glideFrames);
         }
 
+        loading.Mark("sprites e animacoes do player");
         if (SupportsCameraScalePreview)
             TrySetPlayerScale(_map.IsLdtk ? 1 : GameScaleConfig.DefaultPlayerScalePreset);
 
         SceneMode = SceneMode.PLAYING;
         SecondsPerFrame = SecondsPerFramePlaying;
+        loading.Mark("escala e finalizacao");
     }
 
     public void Update(Camera camera, double deltaTime)

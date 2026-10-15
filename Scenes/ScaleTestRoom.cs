@@ -22,11 +22,14 @@ internal sealed class ScaleTestRoom
 
     public ScaleTestRoom(GraphicsDevice graphics, ContentManager content, Vector2 dimensions)
     {
+        using var loading = new LoadDiagnostics("primeira entrada sala de teste");
         _font = content.Load<SpriteFont>("font");
-        _background = content.Load<Texture2D>("visual/bg_prot");
-        _lights = content.Load<Texture2D>("visual/affordance_visibility_lgt");
+        _background = LoadDiagnostics.LoadTexture(content, "visual/bg_prot");
+        _lights = LoadDiagnostics.LoadTexture(content, "visual/affordance_visibility_lgt");
+        loading.Mark("fontes e fundo");
         _ldtkMoldura = new LdtkMolduraPreview(content,
             "assets/teste_ldtk/teste_moldura.ldtk");
+        loading.Mark("moldura LDtk e tileset compilado");
         _pixel = new Texture2D(graphics, 1, 1);
         _pixel.SetData(new[] { Color.White });
         _debug = new DebugView(_font);
@@ -39,7 +42,9 @@ internal sealed class ScaleTestRoom
             Vector2.Zero,
             cameraBehavior: ScenarioCameraBehavior.CENTER_MAP,
             supportsPlayerScalePreview: true));
+        loading.Mark("debug, camera e construcao da cena");
         _scene.LoadContent(graphics, content);
+        loading.Mark("Scene.LoadContent");
         _scene.SetAdditionalSolidColliders(_ldtkMoldura.FrameColliders);
         _scene.SetAdditionalGelatinVolumes(_ldtkMoldura.GelatinVolumes);
         _scene.UseAdditionalCollidersOnly();

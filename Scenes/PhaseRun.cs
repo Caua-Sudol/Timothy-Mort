@@ -400,6 +400,7 @@ public sealed class PhaseRun : IDisposable
 
     public void ChangeScenario(string scenarioId, string spawnId)
     {
+        using var loading = new LoadDiagnostics($"cenario {scenarioId}");
         PhaseDefinition destinationPhase =
             PhaseCatalog.GetForScenario(scenarioId);
 
@@ -434,13 +435,17 @@ public sealed class PhaseRun : IDisposable
 
         _currentScenarioId = scenarioId;
 
+        loading.Mark("estado da fase");
         if (destinationPhase?.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
             _affordanceBackground ??= new AffordanceBackground(_content);
 
+        loading.Mark("cenario de fundo (criar ou reutilizar)");
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
         _scene?.ReleaseLdtkTextures();
+        loading.Mark("liberar tilesets anteriores");
         _scene = new Scene(scenario, spawnId, _phaseState);
         _scene.LoadContent(_graphicsDevice, _content);
+        loading.Mark("criar e carregar Scene");
         _scene.AlignCamera(_camera);
         if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && _mortCombinationSpoken)
             _scene.EnableAffordanceCombinationDemo();
