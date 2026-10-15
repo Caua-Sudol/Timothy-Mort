@@ -34,7 +34,11 @@ internal sealed class ScaleTestRoom
         _debug.Toggle();
         _camera = new Camera(Vector2.Zero, dimensions, GameScaleConfig.OriginalCameraZoom);
         _scene = new Scene(new ScenarioDefinition(
-            GameScaleConfig.ScaleTestScenarioId, GameScaleConfig.ScaleTestMapPath, Vector2.Zero));
+            GameScaleConfig.ScaleTestScenarioId,
+            GameScaleConfig.ScaleTestMapPath,
+            Vector2.Zero,
+            cameraBehavior: ScenarioCameraBehavior.CENTER_MAP,
+            supportsPlayerScalePreview: true));
         _scene.LoadContent(graphics, content);
         _scene.SetAdditionalSolidColliders(_ldtkMoldura.FrameColliders);
         _scene.SetAdditionalGelatinVolumes(_ldtkMoldura.GelatinVolumes);

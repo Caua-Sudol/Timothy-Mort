@@ -87,20 +87,6 @@ public partial class LevelMap
         _woodPlatformTexture = texture;
     }
     private double _visualEffectTime;
-    private Texture2D _interventionSwordTexture;
-
-    public void SetInterventionSwordTexture(Texture2D texture) =>
-        _interventionSwordTexture = texture;
-
-    public Rectangle GetInterventionSwordBounds(Rectangle marker)
-    {
-        if (_interventionSwordTexture == null) return marker;
-        const int height = 192; // Two LDtk tiles, preserving the PNG's aspect ratio.
-        int width = (int)Math.Round(height * _interventionSwordTexture.Width /
-            (double)_interventionSwordTexture.Height);
-        return new Rectangle(marker.Center.X - width / 2, marker.Bottom - height, width, height);
-    }
-
     public Vector2? PlayerSpawn { get; private set; }
     public int HeightInPixels { get; private set; }
     public int WidthInPixels { get; private set; }
@@ -301,35 +287,9 @@ public void UpdateVisualEffects(double deltaTime)
         return null;
     }
 
-    public bool HasInterventionButtonUnderPlayer(Rectangle playerHitBox, bool playerIsGrounded)
-    {
-        if (!playerIsGrounded)
-        {
-            return false;
-        }
-
-        var playerFeet = new Rectangle(
-            playerHitBox.X,
-            playerHitBox.Bottom - 1,
-            playerHitBox.Width,
-            1);
-
-        foreach (Rectangle button in _interventionButtons)
-        {
-            if (playerFeet.Intersects(button))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public IEnumerable<Rectangle> GetSolidColliders(
-        bool exitDoorIsOpen,
         bool verticalRouteRevealed,
-        bool safeRouteRevealed,
-        Vector2 exitDoorPosition)
+        bool safeRouteRevealed)
     {
         foreach (Rectangle platform in _platforms)
         {
@@ -353,32 +313,6 @@ public void UpdateVisualEffects(double deltaTime)
                 yield return platform;
             }
         }
-
-        Rectangle? exitDoorCollider = GetExitDoorCollider(
-            exitDoorIsOpen,
-            exitDoorPosition);
-
-        if (exitDoorCollider.HasValue)
-        {
-            yield return exitDoorCollider.Value;
-        }
-    }
-
-    public Rectangle? GetExitDoorCollider(
-        bool exitDoorIsOpen,
-        Vector2 exitDoorPosition)
-    {
-        if (exitDoorIsOpen || !ExitDoorBounds.HasValue)
-        {
-            return null;
-        }
-
-        Rectangle bounds = ExitDoorBounds.Value;
-        return new Rectangle(
-            (int)exitDoorPosition.X,
-            (int)exitDoorPosition.Y,
-            bounds.Width,
-            bounds.Height);
     }
 
     public IEnumerable<Rectangle> GetGelatinVolumes(bool verticalRouteRevealed)
@@ -453,9 +387,7 @@ public void UpdateVisualEffects(double deltaTime)
     public void Draw(
         SpriteBatch spriteBatch,
         InterventionEntrancePlacement? activeInterventionEntrancePlacement,
-        float interventionButtonPressOffset,
-        Vector2 exitDoorPosition,
-        bool exitDoorIsOpen,
+        InterventionTrigger interventionTrigger,
         bool verticalRouteRevealed,
         SolutionVisualModule visualModules)
     {
@@ -582,27 +514,7 @@ public void UpdateVisualEffects(double deltaTime)
             }
         }
 
-        foreach (Rectangle button in _interventionButtons)
-        {
-            var pressedButton = new Rectangle(
-                button.X,
-                button.Y + (int)interventionButtonPressOffset,
-                button.Width,
-                button.Height);
-            if (_interventionSwordTexture != null)
-                spriteBatch.Draw(_interventionSwordTexture, GetInterventionSwordBounds(button), Color.White);
-            else
-                spriteBatch.Draw(_platformTexture, pressedButton, Color.Orange);
-        }
-
-        Rectangle? exitDoorCollider = GetExitDoorCollider(
-            exitDoorIsOpen,
-            exitDoorPosition);
-
-        if (exitDoorCollider.HasValue)
-        {
-            spriteBatch.Draw(_platformTexture, exitDoorCollider.Value, Color.Red);
-        }
+        interventionTrigger.Draw(spriteBatch, _interventionButtons, _platformTexture);
 
         if ((visualModules & SolutionVisualModule.DESTINATION_HIGHLIGHT) != 0)
         {

@@ -25,9 +25,6 @@ public class Scene
     private const float CutsceneWalkSpeed = 10.0f;
     private const float CutsceneEndX = 940.0f;
     private const float GelatinMaximumFallSpeed = GameScaleConfig.PlayerGelatinMaximumFallSpeed;
-    private const float InterventionButtonPressedOffset = 8.0f;
-    private const float InterventionButtonPressSpeed = 64.0f;
-    private const float ExitDoorRiseSpeed = 768.0f;
 
     private Texture2D _fadeTexture;
     private SpriteFont _interactionFont;
@@ -65,7 +62,9 @@ public class Scene
     private IEnumerable<Rectangle> _additionalSolidColliders = Enumerable.Empty<Rectangle>();
     private bool _useAdditionalCollidersOnly;
     private IEnumerable<Rectangle> _additionalGelatinVolumes = Enumerable.Empty<Rectangle>();
-    private readonly bool _isScaleTestRoom;
+    private readonly ScenarioCameraBehavior _cameraBehavior;
+    private readonly float? _playerScreenHeightRatio;
+    private readonly bool _supportsPlayerScalePreview;
     public bool UseOriginalScaleTestCamera { get; set; }
     private readonly PropVisualPresentation _propVisualPresentation;
     private readonly ConceptualRuleReminderPresentation
@@ -82,11 +81,8 @@ private Vector2 _checkpoint;
     private readonly PhaseState _phaseState;
     private string _requestedScenarioId;
     private string _requestedSpawnId;
-    private float _interventionButtonPressOffset;
-    private Vector2 _exitDoorPosition;
-    private bool _exitDoorIsOpen;
-    private bool _interventionButtonActivationPending;
-    private bool _interventionButtonActivationIssued;
+    private readonly InterventionTrigger _interventionTrigger = new();
+    private readonly ExitDoor _exitDoor = new();
 
     public SceneMode SceneMode { get; private set; }
     public double SecondsPerFrame { get; private set; }
@@ -98,7 +94,7 @@ private Vector2 _checkpoint;
         }
     }
 
-    public bool InterventionButtonPressed { get; private set; }
+    public bool InterventionButtonPressed => _interventionTrigger.IsPressed;
 
     public Scene()
         : this(ScenarioCatalog.Initial, null, null)
@@ -125,9 +121,11 @@ private Vector2 _checkpoint;
             entrySpawnId,
             phaseState,
             scenario.Id == ScenarioCatalog.PropVisualScenarioId,
-            scenario.LdtkLevelId)
+            scenario.LdtkLevelId,
+            scenario.CameraBehavior,
+            scenario.PlayerScreenHeightRatio,
+            scenario.SupportsPlayerScalePreview)
     {
-        _isScaleTestRoom = scenario.Id == GameScaleConfig.ScaleTestScenarioId;
     }
 
     public Scene(string mapPath, Vector2 playerStart)
@@ -141,9 +139,15 @@ private Vector2 _checkpoint;
         string entrySpawnId,
         PhaseState phaseState,
         bool usesPropVisualPresentation,
-        string ldtkLevelId = null)
+        string ldtkLevelId = null,
+        ScenarioCameraBehavior cameraBehavior = ScenarioCameraBehavior.FOLLOW_PLAYER,
+        float? playerScreenHeightRatio = null,
+        bool supportsPlayerScalePreview = false)
     {
         _map = new LevelMap(mapPath, ldtkLevelId);
+        _cameraBehavior = cameraBehavior;
+        _playerScreenHeightRatio = playerScreenHeightRatio;
+        _supportsPlayerScalePreview = supportsPlayerScalePreview;
         _propVisualPresentation = usesPropVisualPresentation
             ? new PropVisualPresentation()
             : null;
@@ -186,11 +190,8 @@ private Vector2 _checkpoint;
         _playerIsDead = false;
         _requestedScenarioId = null;
         _requestedSpawnId = null;
-        InterventionButtonPressed = false;
-        _interventionButtonPressOffset = 0.0f;
+        _interventionTrigger.Reset();
         SyncInterventionState();
-        _interventionButtonActivationPending = false;
-        _interventionButtonActivationIssued = false;
         _usedGelatins.Clear();
         _playerWasTouchingSolidSurface = false;
         _playerWasTouchingGelatinSurface = false;
@@ -225,12 +226,11 @@ private Vector2 _checkpoint;
         {
             _interactionFont = content.Load<SpriteFont>("patrick");
             _passageSymbols = content.Load<Texture2D>("ui/icons/icons");
-            if (_map.IsLdtk)
-                _map.SetInterventionSwordTexture(content.Load<Texture2D>("visual/intervention_sword"));
+            _interventionTrigger.SetSwordTexture(content.Load<Texture2D>("visual/intervention_sword"));
         }
         _propVisualPresentation?.LoadContent(content);
         _conceptualRuleReminderPresentation?.LoadContent(graphicsDevice, content);
-        _exitDoorPosition = GetExitDoorRestingPosition();
+        ConfigureExitDoor();
         _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
             ?? _map.PlayerSpawn
             ?? _fallbackPlayerStart;
@@ -318,12 +318,9 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
 
         _requestedScenarioId = null;
         _requestedSpawnId = null;
-        InterventionButtonPressed = false;
-        _interventionButtonPressOffset = 0.0f;
+        _interventionTrigger.Reset();
         SyncInterventionState();
-        _exitDoorPosition = GetExitDoorRestingPosition();
-        _interventionButtonActivationPending = false;
-        _interventionButtonActivationIssued = false;
+        ConfigureExitDoor();
 
     RespawnPlayer(camera);
     return true;
@@ -344,16 +341,7 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
         return true;
     }
 
-    public bool TryTakeInterventionButtonActivation()
-    {
-        if (!_interventionButtonActivationPending)
-        {
-            return false;
-        }
-
-        _interventionButtonActivationPending = false;
-        return true;
-    }
+    public bool TryTakeInterventionButtonActivation() => _interventionTrigger.TryTakeActivation();
 
 private void UpdatePlaying(Camera camera, double deltaTime)
 {
@@ -392,8 +380,12 @@ private void UpdatePlaying(Camera camera, double deltaTime)
                 _player.HitBox.Bottom + 8));
         }
 
-        UpdateInterventionButton(deltaTime);
-        UpdateExitDoorRise(deltaTime);
+        _interventionTrigger.Update(
+            _map.InterventionButtons, _player.HitBox, _player.IsGrounded,
+            IsAffordance, _interactPressed, deltaTime);
+        _exitDoor.Update(
+            InterventionButtonPressed || _phaseState?.VerticalRouteRevealed == true,
+            deltaTime);
 
         bool playerIsTouchingGelatin = PlayerTouchesAnySurface(
             GetGelatinVolumes(
@@ -418,7 +410,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
         SceneExit sceneExit = _map.GetSceneExit(
             IsAffordanceIntervention ? PassageInteractionBounds : _player.HitBox,
-            _exitDoorIsOpen,
+            _exitDoor.IsOpen,
             _phaseState?.ExitDoorIsOpen == true);
         if (sceneExit != null && (!IsAffordanceIntervention || _interactPressed))
         {
@@ -460,10 +452,11 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             return _additionalSolidColliders;
 
         return _map.GetSolidColliders(
-                _exitDoorIsOpen,
                 _phaseState?.VerticalRouteRevealed == true,
-                GetAppliedVisualModules().HasFlag(SolutionVisualModule.SAFE_ROUTE),
-                _exitDoorPosition)
+                GetAppliedVisualModules().HasFlag(SolutionVisualModule.SAFE_ROUTE))
+            .Concat(_exitDoor.Collider.HasValue
+                ? new[] { _exitDoor.Collider.Value }
+                : Enumerable.Empty<Rectangle>())
             .Concat(_additionalSolidColliders);
     }
 
@@ -511,81 +504,6 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         return true;
     }
 
-    private void UpdateInterventionButton(double deltaTime)
-    {
-        if (IsAffordance)
-        {
-            Rectangle reach = _player.HitBox;
-            reach.Inflate(64, 24);
-            bool nearSword = _map.InterventionButtons.Any(button =>
-                reach.Intersects(_map.GetInterventionSwordBounds(button)));
-            InterventionButtonPressed = nearSword && _interactPressed;
-            if (InterventionButtonPressed)
-                _interventionButtonActivationPending = true;
-            return;
-        }
-        bool playerIsOnButton = _map.HasInterventionButtonUnderPlayer(
-            _player.HitBox,
-            _player.IsGrounded);
-
-        if (playerIsOnButton)
-        {
-            InterventionButtonPressed = true;
-        }
-        else
-        {
-            InterventionButtonPressed = false;
-            _interventionButtonPressOffset = MathHelper.Max(
-                0.0f,
-                _interventionButtonPressOffset - InterventionButtonPressSpeed * (float)deltaTime);
-
-            if (_interventionButtonPressOffset <= 0.0f)
-            {
-                _interventionButtonActivationIssued = false;
-            }
-
-            return;
-        }
-
-        if (_interventionButtonPressOffset < InterventionButtonPressedOffset)
-        {
-            _interventionButtonPressOffset = MathHelper.Min(
-                InterventionButtonPressedOffset,
-                _interventionButtonPressOffset + InterventionButtonPressSpeed * (float)deltaTime);
-        }
-
-        if (_interventionButtonPressOffset >= InterventionButtonPressedOffset &&
-            !_interventionButtonActivationIssued)
-        {
-            _interventionButtonActivationIssued = true;
-            _interventionButtonActivationPending = true;
-        }
-    }
-
-    private void UpdateExitDoorRise(double deltaTime)
-    {
-        bool doorShouldMove = InterventionButtonPressed ||
-            _phaseState?.VerticalRouteRevealed == true;
-
-        if (!doorShouldMove || _exitDoorIsOpen)
-        {
-            return;
-        }
-
-        Vector2 delta = _map.ExitDoorDestination - _exitDoorPosition;
-        float distance = delta.Length();
-
-        if (distance <= 0.0f)
-        {
-            return;
-        }
-
-        float step = ExitDoorRiseSpeed * (float)deltaTime;
-        _exitDoorPosition = distance <= step
-            ? _map.ExitDoorDestination
-            : _exitDoorPosition + delta / distance * step;
-    }
-
     private void ApplyDamageFeedback(DamageVolume damageVolume)
     {
         SolutionVisualModule visualModules = GetAppliedVisualModules();
@@ -627,15 +545,16 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
     public void SyncInterventionState()
     {
-        _exitDoorIsOpen = _phaseState?.ExitDoorIsOpen == true;
+        _exitDoor.SetOpen(_phaseState?.ExitDoorIsOpen == true);
         ClearDamageFeedbackEffects();
     }
 
-    private Vector2 GetExitDoorRestingPosition()
+    private void ConfigureExitDoor()
     {
-        return _phaseState?.VerticalRouteRevealed == true
-            ? _map.ExitDoorDestination
-            : _map.ExitDoorStartPosition;
+        _exitDoor.Configure(_map.ExitDoorBounds, _map.ExitDoorDestination);
+        _exitDoor.Reset(
+            _phaseState?.VerticalRouteRevealed == true,
+            _phaseState?.ExitDoorIsOpen == true);
     }
 
     private void ApplyGelatinFallSpeed()
@@ -913,12 +832,12 @@ private static bool RectanglesTouchOrIntersect(
 
     private void UpdatePlayingCamera(Camera camera)
     {
-        if (_isScaleTestRoom || _map.IsLdtk)
+        if (_cameraBehavior == ScenarioCameraBehavior.CENTER_MAP)
         {
             camera.Zoom = UseOriginalScaleTestCamera
                 ? GameScaleConfig.OriginalCameraZoom
-                : _map.IsLdtk
-                    ? camera.Dimensions.Y * 0.14f / _player.UnscaledReferenceHeight
+                : _playerScreenHeightRatio.HasValue
+                    ? camera.Dimensions.Y * _playerScreenHeightRatio.Value / _player.UnscaledReferenceHeight
                     : GameScaleConfig.GetCameraZoom(camera.Dimensions.Y, _player.UnscaledReferenceHeight);
             camera.LookAt(new Vector2(_map.WidthInPixels / 2f, _map.HeightInPixels / 2f));
             return;
@@ -932,9 +851,7 @@ private static bool RectanglesTouchOrIntersect(
     }
 
     public bool SupportsCameraScalePreview =>
-        _map.IsLdtk ||
-        _isScaleTestRoom ||
-        _phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId;
+        _supportsPlayerScalePreview;
 
     public bool TrySetPlayerScale(int preset)
     {
@@ -982,7 +899,7 @@ private static bool RectanglesTouchOrIntersect(
             _map.SceneExits,
             _map.InterventionEntrances,
             _map.InterventionButtons,
-            _map.GetExitDoorCollider(_exitDoorIsOpen, _exitDoorPosition),
+            _exitDoor.Collider,
             _map.DebugMeasurementPair,
             GetActiveInterventionEntrancePlacement(),
             _checkpoint);
@@ -992,7 +909,7 @@ private static bool RectanglesTouchOrIntersect(
             camera,
             _player,
             _propVisualPresentation?.DebugReferenceHeight ?? _player.DebugReferenceHeight,
-            SupportsCameraScalePreview && !_isScaleTestRoom);
+            _playerScreenHeightRatio.HasValue);
     }
 
     private void DrawDamageEventEffects(
@@ -1068,11 +985,10 @@ private static bool RectanglesTouchOrIntersect(
         _map.Draw(
             spriteBatch,
                 GetActiveInterventionEntrancePlacement(),
-                _interventionButtonPressOffset,
-            _exitDoorPosition,
-            _exitDoorIsOpen,
+                _interventionTrigger,
             _phaseState?.VerticalRouteRevealed == true,
             visualModules);
+        _exitDoor.Draw(spriteBatch, _fadeTexture);
     }
 
     if (visualModules.HasFlag(SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS))
@@ -1197,7 +1113,7 @@ private static bool RectanglesTouchOrIntersect(
                 DrawInteractionPrompt(spriteBatch, exit.Bounds);
             }
         foreach (Rectangle sword in _map.InterventionButtons)
-            DrawInteractionPrompt(spriteBatch, _map.GetInterventionSwordBounds(sword));
+            DrawInteractionPrompt(spriteBatch, _interventionTrigger.GetSwordBounds(sword));
 
         if (_respawnEffectTime <= 0) return;
         float progress = 1 - _respawnEffectTime / 0.22f;

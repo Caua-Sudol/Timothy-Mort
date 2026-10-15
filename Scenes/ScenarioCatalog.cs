@@ -29,16 +29,36 @@ public static class ScenarioCatalog
             [AffordanceVisibilityScenarioId] = new ScenarioDefinition(
                 AffordanceVisibilityScenarioId,
                 "Content/Maps/Affordance.ldtk",
-                new Vector2(160, 816), "AffordanceTela1"
+                new Vector2(160, 816),
+                "AffordanceTela1",
+                ScenarioCameraBehavior.CENTER_MAP,
+                0.14f,
+                true
             ),
             [AffordanceRoom2ScenarioId] = new ScenarioDefinition(
-                AffordanceRoom2ScenarioId, "Content/Maps/Affordance.ldtk", new Vector2(96, 816), "AffordanceTela2"),
+                AffordanceRoom2ScenarioId,
+                "Content/Maps/Affordance.ldtk",
+                new Vector2(96, 816),
+                "AffordanceTela2",
+                ScenarioCameraBehavior.CENTER_MAP,
+                0.14f,
+                true),
             [AffordanceRoom3ScenarioId] = new ScenarioDefinition(
-                AffordanceRoom3ScenarioId, "Content/Maps/Affordance.ldtk", new Vector2(96, 816), "AffordanceTela3"),
+                AffordanceRoom3ScenarioId,
+                "Content/Maps/Affordance.ldtk",
+                new Vector2(96, 816),
+                "AffordanceTela3",
+                ScenarioCameraBehavior.CENTER_MAP,
+                0.14f,
+                true),
             [AffordanceInterventionScenarioId] = new ScenarioDefinition(
                 AffordanceInterventionScenarioId,
                 "Content/Maps/Affordance.ldtk",
-                new Vector2(160, 816), "Sala_intervencao"
+                new Vector2(160, 816),
+                "Sala_intervencao",
+                ScenarioCameraBehavior.CENTER_MAP,
+                0.14f,
+                true
             ),
             [DamageFeedbackScenarioId] = new ScenarioDefinition(
                 DamageFeedbackScenarioId,

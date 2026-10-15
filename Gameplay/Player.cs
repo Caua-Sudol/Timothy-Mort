@@ -27,9 +27,6 @@ public class Player
 {
     public const float DashSpeed = GameScaleConfig.PlayerDashReferenceSpeed;
 
-    private static readonly Color DashAvailableColor = Color.Purple;
-    private static readonly Color DashSpentColor = Color.SlateGray;
-
     private Vector2 _player;
     private int _widthPlayer;
     private int _heightPlayer;
@@ -65,133 +62,35 @@ public class Player
     private float _dashDuration = GameScaleConfig.PlayerDashDuration;
     private double _dashTimer;
 
-    private const int MaximumDashTrailPositions = 12;
-    private const float MinimumDashTrailSpacingSquared = 16.0f;
-    private readonly List<Vector2> _dashTrailPositions = new List<Vector2>();
-    private const double SurfaceContactFlashDuration = 0.12;
-    private double _surfaceContactFlashTimer;
-    private const double DashRechargeSymbolDuration = 0.45;
-    private double _dashRechargeSymbolTimer;
-    private double _damageCompressionTimer;
-    private const double DashEnergyAbsorptionDuration = 0.36;
-    private double _dashEnergyAbsorptionTimer;
-    private Vector2 _dashEnergyAbsorptionSource;
-
     public PlayerState State { get; private set; } = PlayerState.Idle;
 
     private readonly PlayerInput _input = new PlayerInput();
 
-    private Texture2D _texture;
-    private Texture2D _previewSprite;
-    private Texture2D _leftPreviewSprite;
-    private Texture2D[] _walkFrames;
-    private const double WalkFramesPerSecond = 10.0;
-    private double _walkAnimationTime;
-    private Texture2D[] _jumpFrames;
-    private Texture2D[] _glideFrames;
-    private const double AirFramesPerSecond = 10.0;
-    private enum AirAnimation { None, Jump, Glide, Landing, Dash }
-    private AirAnimation _airAnimation;
-    private double _airAnimationTime;
-    private bool _wasAirborne;
+    private readonly PlayerPresentation _presentation = new();
 
-    public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames)
-    {
-        _jumpFrames = jumpFrames;
-        _glideFrames = glideFrames;
-        _airAnimation = AirAnimation.None;
-        _airAnimationTime = 0;
-        _wasAirborne = false;
-    }
-
-    public void UpdateAnimation(double deltaTime)
-    {
-        UpdateWalkAnimation(deltaTime);
-        if (_jumpFrames == null || _glideFrames == null)
-            return;
-
-        if (State == PlayerState.Dashing)
-        {
-            _airAnimation = AirAnimation.Dash;
-            _airAnimationTime = 0;
-        }
-        else if (_isGrounded)
-        {
-            if (_wasAirborne)
-            {
-                _airAnimation = AirAnimation.Landing;
-                _airAnimationTime = 0;
-            }
-            else if (_airAnimation == AirAnimation.Landing)
-            {
-                _airAnimationTime += deltaTime;
-                if (_airAnimationTime >= 3.0 / AirFramesPerSecond)
-                    _airAnimation = AirAnimation.None;
-            }
-            else
-                _airAnimation = AirAnimation.None;
-        }
-        else
-        {
-            if (_airAnimation != AirAnimation.Jump && _airAnimation != AirAnimation.Glide)
-            {
-                _airAnimation = _velocity.Y < 0 ? AirAnimation.Jump : AirAnimation.Glide;
-                _airAnimationTime = 0;
-            }
-            else
-                _airAnimationTime += deltaTime;
-
-            if (_airAnimation == AirAnimation.Jump &&
-                _airAnimationTime >= _jumpFrames.Length / AirFramesPerSecond)
-            {
-                _airAnimationTime -= _jumpFrames.Length / AirFramesPerSecond;
-                _airAnimation = AirAnimation.Glide;
-            }
-            if (_airAnimation == AirAnimation.Glide)
-                _airAnimationTime %= _glideFrames.Length / AirFramesPerSecond;
-        }
-        _wasAirborne = !_isGrounded;
-    }
-
-    private bool IsWalking => _walkFrames != null && _walkFrames.Length > 0 &&
-        _input.Horizontal != 0;
-
-    public void SetWalkAnimation(Texture2D[] frames)
-    {
-        _walkFrames = frames;
-        _walkAnimationTime = 0;
-    }
-
-    public void UpdateWalkAnimation(double deltaTime)
-    {
-        if (!IsWalking)
-        {
-            _walkAnimationTime = 0;
-            return;
-        }
-
-        _walkAnimationTime += deltaTime;
-        double animationDuration = _walkFrames.Length / WalkFramesPerSecond;
-        if (_walkAnimationTime >= animationDuration)
-        {
-            // walk0001 introduces the movement; subsequent cycles start at walk0002.
-            double loopStart = _walkFrames.Length > 1 ? 1.0 / WalkFramesPerSecond : 0;
-            _walkAnimationTime = loopStart +
-                (_walkAnimationTime - animationDuration) % (animationDuration - loopStart);
-        }
-    }
-    private float _directionalPreviewScale;
-    private Rectangle _previewSource;
-    private int _previewHeight;
-    private int _previewWidth;
-
-    // Stable idle-frame reference, including transparent padding, not the collider
-    // or the changing silhouette of an animation/rotated dash.
-    public int UnscaledReferenceHeight => _previewSprite != null
-        ? _previewHeight
-        : _originalHeight;
+    public int UnscaledReferenceHeight =>
+        _presentation.GetReferenceHeight(_originalHeight);
 
     public float DebugReferenceHeight => UnscaledReferenceHeight * RelativeScale;
+
+    public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames) =>
+        _presentation.SetAirAnimations(jumpFrames, glideFrames);
+
+    public void SetWalkAnimation(Texture2D[] frames) =>
+        _presentation.SetWalkAnimation(frames);
+
+    public void SetPreviewSprite(Texture2D texture, Rectangle source, int width, int height) =>
+        _presentation.SetPreviewSprite(texture, source, width, height);
+
+    public void SetDirectionalPreviewSprites(Texture2D right, Texture2D left, float scale) =>
+        _presentation.SetDirectionalPreviewSprites(right, left, scale);
+
+    public void SetPreviewSprite(Texture2D texture, int height) =>
+        _presentation.SetPreviewSprite(texture, height);
+
+    public void UpdateAnimation(double deltaTime) =>
+        _presentation.UpdateAnimation(
+            deltaTime, State, _isGrounded, _velocity, _input.Horizontal);
 
     public bool TrySetRelativeScale(float scale, IEnumerable<Rectangle> solidColliders)
     {
@@ -224,51 +123,10 @@ public class Player
         // Preserve velocity in player-heights/second, including mid-jump/dash swaps.
         _velocity *= scale / RelativeScale;
         RelativeScale = scale;
-        _dashTrailPositions.Clear();
+        _presentation.ClearDashTrail();
         return true;
     }
 
-    public void SetPreviewSprite(Texture2D texture, Rectangle source, int width, int height)
-    {
-        _leftPreviewSprite = null;
-        _previewSprite = texture;
-        _previewSource = source;
-        _previewWidth = width;
-        _previewHeight = height;
-    }
-
-    public void SetDirectionalPreviewSprites(Texture2D right, Texture2D left, float scale)
-    {
-        SetPreviewSprite(right, right.Bounds,
-            (int)Math.Round(right.Width * scale),
-            (int)Math.Round(right.Height * scale));
-        _leftPreviewSprite = left;
-        _directionalPreviewScale = scale;
-    }
-
-    public void SetPreviewSprite(Texture2D texture, int height)
-    {
-        _leftPreviewSprite = null;
-        var pixels = new Color[texture.Width * texture.Height];
-        texture.GetData(pixels);
-        int left = texture.Width, top = texture.Height, right = -1, bottom = -1;
-        for (int y = 0; y < texture.Height; y++)
-        for (int x = 0; x < texture.Width; x++)
-        {
-            if (pixels[y * texture.Width + x].A == 0) continue;
-            left = Math.Min(left, x);
-            top = Math.Min(top, y);
-            right = Math.Max(right, x);
-            bottom = Math.Max(bottom, y);
-        }
-        if (right < left || bottom < top) return;
-        _previewSprite = texture;
-        _previewSource = new Rectangle(left, top, right - left + 1, bottom - top + 1);
-        _previewHeight = height;
-        _previewWidth = Math.Max(1, (int)Math.Round(
-            height * _previewSource.Width / (double)_previewSource.Height));
-    }
-    private Color[] _color;
 
     public Player(int x, int y, double gravity, int width, int height)
     {
@@ -283,12 +141,8 @@ public class Player
         _originalHeight = height;
     }
 
-    public void LoadContent(GraphicsDevice graphicsDevice, int width, int height)
-    {
-        _texture = new Texture2D(graphicsDevice, width, height);
-        _color = Enumerable.Repeat(Color.White, width * height).ToArray();
-        _texture.SetData(_color);
-    }
+    public void LoadContent(GraphicsDevice graphicsDevice, int width, int height) =>
+        _presentation.LoadContent(graphicsDevice, width, height);
 
     public Vector2 Position
     {
@@ -313,10 +167,7 @@ public class Player
 
 public void Update(double deltaTime)
 {
-        UpdateSurfaceContactFlash(deltaTime);
-        UpdateDashRechargeSymbol(deltaTime);
-        _damageCompressionTimer = Math.Max(0, _damageCompressionTimer - deltaTime);
-    UpdateDashEnergyAbsorption(deltaTime);
+        _presentation.UpdateEffects(deltaTime);
     _input.Update();
         int horizontalInput = _input.Horizontal;
 
@@ -405,8 +256,7 @@ public void Update(double deltaTime)
 
     private void StartJump()
     {
-        _airAnimation = AirAnimation.Jump;
-        _airAnimationTime = 0;
+        _presentation.BeginJumpAnimation();
         _jumpCanBeCut = true;
         _velocity = new Vector2(_velocity.X, -_maxVelocity.Y * RelativeScale);
         _isGrounded = false;
@@ -430,8 +280,8 @@ public void Update(double deltaTime)
 
     _dashDirection = direction;
     _dashTimer = _dashDuration;
-    _dashTrailPositions.Clear();
-    RecordDashTrailPosition();
+        _presentation.ClearDashTrail();
+        _presentation.RecordDashTrailPosition(_player);
     State = PlayerState.Dashing;
         CanDash = false;
         ShowsDashAsAvailable = false;
@@ -439,7 +289,7 @@ public void Update(double deltaTime)
 
 private void UpdateDash(double deltaTime)
 {
-    RecordDashTrailPosition();
+        _presentation.RecordDashTrailPosition(_player);
     _velocity = _dashDirection * (_dashSpeed * RelativeScale);
         _dashTimer -= deltaTime;
 
@@ -457,100 +307,19 @@ private void UpdateDash(double deltaTime)
 public void EndDash()
 {
     _dashTimer = 0f;
-    _dashTrailPositions.Clear();
+        _presentation.ClearDashTrail();
     State = _isGrounded ? PlayerState.Idle : PlayerState.Falling;
 
     _velocity = _velocity * 0.5f;
 }
 
-private void RecordDashTrailPosition()
-{
-    if (_dashTrailPositions.Count > 0)
-    {
-        Vector2 lastPosition =
-            _dashTrailPositions[_dashTrailPositions.Count - 1];
-
-        if (Vector2.DistanceSquared(lastPosition, _player) <
-            MinimumDashTrailSpacingSquared)
-        {
-            return;
-        }
-    }
-
-    _dashTrailPositions.Add(_player);
-
-    if (_dashTrailPositions.Count > MaximumDashTrailPositions)
-    {
-        _dashTrailPositions.RemoveAt(0);
-    }
-}
-
-private void UpdateSurfaceContactFlash(double deltaTime)
-{
-    if (_surfaceContactFlashTimer <= 0.0)
-    {
-        return;
-    }
-
-    _surfaceContactFlashTimer = Math.Max(
-        0.0,
-        _surfaceContactFlashTimer - deltaTime);
-}
-
-public void StartSurfaceContactFlash()
-{
-    _surfaceContactFlashTimer = SurfaceContactFlashDuration;
-}
-
-public void ClearSurfaceContactFlash()
-{
-    _surfaceContactFlashTimer = 0.0;
-}
-
-private void UpdateDashRechargeSymbol(double deltaTime)
-{
-    if (_dashRechargeSymbolTimer <= 0.0)
-    {
-        return;
-    }
-
-    _dashRechargeSymbolTimer = Math.Max(
-        0.0,
-        _dashRechargeSymbolTimer - deltaTime);
-}
-
-public void StartDashRechargeSymbol()
-{
-    _dashRechargeSymbolTimer = DashRechargeSymbolDuration;
-}
-
-public void ClearDashRechargeSymbol()
-{
-    _dashRechargeSymbolTimer = 0.0;
-}
-
-private void UpdateDashEnergyAbsorption(double deltaTime)
-{
-    if (_dashEnergyAbsorptionTimer <= 0.0)
-    {
-        return;
-    }
-
-    _dashEnergyAbsorptionTimer = Math.Max(
-        0.0,
-        _dashEnergyAbsorptionTimer - deltaTime);
-}
-
-public void StartDashEnergyAbsorption(Vector2 source)
-{
-    _dashEnergyAbsorptionSource = source;
-    _dashEnergyAbsorptionTimer = DashEnergyAbsorptionDuration;
-}
-
-public void ClearDashEnergyAbsorption()
-{
-    _dashEnergyAbsorptionTimer = 0.0;
-}
+    public void StartSurfaceContactFlash() => _presentation.StartSurfaceContactFlash();
+    public void ClearSurfaceContactFlash() => _presentation.ClearSurfaceContactFlash();
+    public void StartDashRechargeSymbol() => _presentation.StartDashRechargeSymbol();
+    public void ClearDashRechargeSymbol() => _presentation.ClearDashRechargeSymbol();
+    public void StartDashEnergyAbsorption(Vector2 source) =>
+        _presentation.StartDashEnergyAbsorption(source);
+    public void ClearDashEnergyAbsorption() => _presentation.ClearDashEnergyAbsorption();
 
     private void ApplyNormalMovement(int horizontalInput, double deltaTime)
     {
@@ -635,10 +404,7 @@ public void ClearDashEnergyAbsorption()
 
     public void ResetVelocity()
     {
-        _walkAnimationTime = 0;
-        _airAnimation = AirAnimation.None;
-        _airAnimationTime = 0;
-        _wasAirborne = false;
+        _presentation.ResetAnimation();
         _velocity = Vector2.Zero;
         _dashRequested = false;
         _jumpCanBeCut = false;
@@ -711,319 +477,34 @@ public void ClearDashEnergyAbsorption()
         State = PlayerState.Jumping;
     }
 
-    public void StartDamageCompression()
-    {
-        _damageCompressionTimer = DamageFeedbackSettings.CompressionDurationSeconds;
-    }
+    public void StartDamageCompression() => _presentation.StartDamageCompression();
 
-    public void ClearDamageFeedback()
-    {
-        _damageCompressionTimer = 0;
-    }
+    public void ClearDamageFeedback() => _presentation.ClearDamageFeedback();
 
     public void Draw(
-    SpriteBatch spriteBatch,
-        SolutionVisualModule visualModules,
-        double damageInvulnerabilityRemainingSeconds)
-{
-    if ((visualModules & SolutionVisualModule.PLAYER_DASH_TRAIL) != 0 &&
-        State == PlayerState.Dashing)
-    {
-        DrawDashTrail(spriteBatch);
-    }
-
-    bool usesAlternativeDashRechargeFeedback =
-        (visualModules &
-         (SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL |
-          SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION |
-          SolutionVisualModule.PLAYER_DASH_AVAILABLE_OUTLINE)) != 0;
-    Color color = usesAlternativeDashRechargeFeedback || ShowsDashAsAvailable
-        ? DashAvailableColor
-        : DashSpentColor;
-
-    if ((visualModules &
-         SolutionVisualModule.PLAYER_SURFACE_CONTACT_FLASH) != 0 &&
-        _surfaceContactFlashTimer > 0.0)
-    {
-        color = Color.White;
-    }
-
-    if ((visualModules & SolutionVisualModule.PLAYER_DASH_AVAILABLE_OUTLINE) != 0 &&
-        CanDash)
-    {
-        spriteBatch.Draw(
-            _texture,
-            new Rectangle(
-                HitBox.X - 2,
-                HitBox.Y - 2,
-                HitBox.Width + 4,
-                HitBox.Height + 4),
-            Color.Aquamarine * 0.85f);
-    }
-
-    DrawDamageFeedback(
-        spriteBatch,
-        visualModules,
-        damageInvulnerabilityRemainingSeconds,
-        color);
-
-}
-
-
-    private void DrawDamageFeedback(
         SpriteBatch spriteBatch,
         SolutionVisualModule visualModules,
-        double invulnerabilityRemainingSeconds,
-        Color color)
-    {
-        bool isInvulnerable = invulnerabilityRemainingSeconds > 0;
-        bool alternatePhaseIsVisible =
-            ((int)(invulnerabilityRemainingSeconds / DamageFeedbackSettings.BlinkIntervalSeconds) & 1) == 0;
-
-        Texture2D sprite = _previewSprite;
-        SpriteEffects spriteEffects = SpriteEffects.None;
-        bool facingLeft = _direction == Direction.Left;
-        Rectangle source = _previewSource;
-        int spriteWidth = _previewWidth;
-        int spriteHeight = _previewHeight;
-        if (_direction == Direction.Left && _leftPreviewSprite != null)
-        {
-            sprite = _leftPreviewSprite;
-            source = sprite.Bounds;
-            spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
-            spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
-        }
-
-        if (IsWalking)
-        {
-            int frame = (int)(_walkAnimationTime * WalkFramesPerSecond) % _walkFrames.Length;
-            sprite = _walkFrames[frame];
-            source = sprite.Bounds;
-            spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
-            spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
-            spriteEffects = _direction == Direction.Left
-                ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-        }
-
-        float spriteRotation = 0f;
-        if (_jumpFrames != null && _glideFrames != null && _airAnimation != AirAnimation.None)
-        {
-            int frame = (int)(_airAnimationTime * AirFramesPerSecond);
-            sprite = _airAnimation switch
-            {
-                AirAnimation.Jump => _jumpFrames[3],
-                AirAnimation.Glide => _glideFrames[frame % _glideFrames.Length],
-                AirAnimation.Landing => _jumpFrames[2 - Math.Min(frame, 2)],
-                AirAnimation.Dash => _dashDuration - _dashTimer < 1.0 / AirFramesPerSecond
-                    ? _glideFrames[2] : _jumpFrames[3],
-                _ => _jumpFrames[_jumpFrames.Length - 1]
-            };
-            if (_airAnimation == AirAnimation.Dash)
-            {
-                if (_dashDirection.X != 0)
-                    facingLeft = _dashDirection.X < 0;
-                // The final jump pose points diagonally upward; rotate it toward the dash.
-                float poseAngle = facingLeft ? -3f * MathHelper.PiOver4 : -MathHelper.PiOver4;
-                spriteRotation = (float)Math.Atan2(_dashDirection.Y, _dashDirection.X) - poseAngle;
-            }
-            spriteEffects = facingLeft ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-            source = sprite.Bounds;
-            spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
-            spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
-        }
-
-        Vector2 spriteDrawSize = new Vector2(spriteWidth, spriteHeight) * RelativeScale;
-        float facingSign = facingLeft ? -1f : 1f;
-        float spriteCenterX = HitBox.Center.X - ColliderOffsetFromSpriteX * RelativeScale * facingSign;
-        Rectangle drawBounds = HitBox;
-        if (_previewSprite != null)
-        {
-            int width = Math.Max(1, (int)Math.Round(spriteDrawSize.X));
-            int height = Math.Max(1, (int)Math.Round(spriteDrawSize.Y));
-            drawBounds = new Rectangle((int)Math.Round(spriteCenterX - width / 2f),
-                HitBox.Bottom - height, width, height);
-            color = visualModules.HasFlag(SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) &&
-                !ShowsDashAsAvailable ? Color.SlateGray : Color.White;
-        }
-        if (_damageCompressionTimer > 0 &&
-            visualModules.HasFlag(SolutionVisualModule.DAMAGE_COMPRESSION))
-        {
-            int compressedHeight = (int)(drawBounds.Height * 0.7f);
-            spriteDrawSize.Y *= compressedHeight / (float)drawBounds.Height;
-            drawBounds = new Rectangle(
-                drawBounds.X,
-                drawBounds.Bottom - compressedHeight,
-                drawBounds.Width,
-                compressedHeight);
-        }
-
-        if (isInvulnerable &&
-            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_TRANSPARENCY) &&
-            !alternatePhaseIsVisible)
-        {
-            color *= 0.35f;
-        }
-
-        if (isInvulnerable &&
-            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_OUTLINE))
-        {
-            DrawDamageOutline(spriteBatch, drawBounds, Color.White, 2);
-        }
-
-        if (isInvulnerable &&
-            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_OUTLINE_PULSE))
-        {
-            int thickness = 2 + (int)Math.Round(
-                (Math.Sin(invulnerabilityRemainingSeconds * 12) + 1) * 1.5);
-            DrawDamageOutline(spriteBatch, drawBounds, Color.Cyan, thickness);
-        }
-
-        if (isInvulnerable &&
-            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_SILHOUETTE) &&
-            alternatePhaseIsVisible)
-        {
-            Rectangle silhouetteBounds = new(
-                drawBounds.X - 4,
-                drawBounds.Y,
-                drawBounds.Width,
-                drawBounds.Height);
-            spriteBatch.Draw(_texture, silhouetteBounds, Color.White * 0.35f);
-        }
-
-        bool hideForBlink =
-            isInvulnerable &&
-            visualModules.HasFlag(SolutionVisualModule.INVULNERABILITY_BLINK) &&
-            !alternatePhaseIsVisible;
-
-        if (!hideForBlink)
-        {
-            if (_previewSprite != null)
-            {
-                if (RelativeScale != 1.0f)
-                    spriteBatch.Draw(sprite,
-                        new Vector2(spriteCenterX, HitBox.Bottom - spriteDrawSize.Y / 2f),
-                        source, color, spriteRotation,
-                        new Vector2(source.Width / 2f, source.Height / 2f),
-                        new Vector2(spriteDrawSize.X / source.Width,
-                            spriteDrawSize.Y / source.Height), spriteEffects, 0f);
-                else if (spriteRotation != 0f)
-                    spriteBatch.Draw(sprite,
-                        new Vector2(drawBounds.X + drawBounds.Width / 2f,
-                            drawBounds.Y + drawBounds.Height / 2f),
-                        source, color, spriteRotation,
-                        new Vector2(source.Width / 2f, source.Height / 2f),
-                        new Vector2(drawBounds.Width / (float)source.Width,
-                            drawBounds.Height / (float)source.Height), spriteEffects, 0f);
-                else
-                    spriteBatch.Draw(sprite, drawBounds, source, color,
-                        0f, Vector2.Zero, spriteEffects, 0f);
-            }
-            else
-                spriteBatch.Draw(_texture, drawBounds, color);
-        }
-    }
-
-    private void DrawDamageOutline(
-        SpriteBatch spriteBatch,
-        Rectangle bounds,
-        Color color,
-        int thickness)
-    {
-        spriteBatch.Draw(
-            _texture,
-            new Rectangle(bounds.X - thickness, bounds.Y - thickness, bounds.Width + thickness * 2, thickness),
-            color);
-        spriteBatch.Draw(
-            _texture,
-            new Rectangle(bounds.X - thickness, bounds.Bottom, bounds.Width + thickness * 2, thickness),
-            color);
-        spriteBatch.Draw(
-            _texture,
-            new Rectangle(bounds.X - thickness, bounds.Y, thickness, bounds.Height),
-            color);
-        spriteBatch.Draw(
-            _texture,
-            new Rectangle(bounds.Right, bounds.Y, thickness, bounds.Height),
-            color);
-    }
+        double damageInvulnerabilityRemainingSeconds) =>
+        _presentation.Draw(
+            spriteBatch,
+            this,
+            visualModules,
+            damageInvulnerabilityRemainingSeconds);
 
     public void DrawDashRechargeSymbol(
-    SpriteBatch spriteBatch,
-    SolutionVisualModule visualModules)
-{
-    if ((visualModules & SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL) == 0 ||
-        _dashRechargeSymbolTimer <= 0.0)
-    {
-        return;
-    }
+        SpriteBatch spriteBatch,
+        SolutionVisualModule visualModules) =>
+        _presentation.DrawDashRechargeSymbol(spriteBatch, this, visualModules);
 
-    float progress = (float)(1.0 -
-        _dashRechargeSymbolTimer / DashRechargeSymbolDuration);
-    float opacity = 1.0f - progress * 0.35f;
-    int rise = (int)(progress * 4.0f);
-    int centerX = HitBox.Center.X;
-    int top = HitBox.Top - 12 - rise;
-    Color symbolColor = Color.LimeGreen * opacity;
+    public void DrawDashEnergyAbsorption(
+        SpriteBatch spriteBatch,
+        SolutionVisualModule visualModules) =>
+        _presentation.DrawDashEnergyAbsorption(spriteBatch, this, visualModules);
 
-    spriteBatch.Draw(
-        _texture,
-        new Rectangle(centerX - 4, top + 3, 8, 2),
-        symbolColor);
-    spriteBatch.Draw(
-        _texture,
-        new Rectangle(centerX - 1, top, 2, 8),
-        symbolColor);
-}
+    internal Direction FacingDirection => _direction;
+    internal Vector2 DashDirectionForPresentation => _dashDirection;
+    internal float DashDurationForPresentation => _dashDuration;
+    internal double DashTimerForPresentation => _dashTimer;
+    internal int HorizontalInputForPresentation => _input.Horizontal;
 
-public void DrawDashEnergyAbsorption(
-    SpriteBatch spriteBatch,
-    SolutionVisualModule visualModules)
-{
-    if ((visualModules & SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION) == 0 ||
-        _dashEnergyAbsorptionTimer <= 0.0)
-    {
-        return;
-    }
-
-    float progress = (float)(1.0 -
-        _dashEnergyAbsorptionTimer / DashEnergyAbsorptionDuration);
-    Vector2 target = new Vector2(HitBox.Center.X, HitBox.Center.Y);
-    Color particleColor = Color.Aquamarine * (0.9f - progress * 0.3f);
-
-    for (int index = 0; index < 3; index++)
-    {
-        float laneOffset = (index - 1) * 6.0f;
-        float particleProgress = MathHelper.Clamp(
-            progress * 1.15f - index * 0.06f,
-            0.0f,
-            1.0f);
-        Vector2 source = _dashEnergyAbsorptionSource +
-            new Vector2(0.0f, laneOffset);
-        Vector2 position = Vector2.Lerp(source, target, particleProgress);
-
-        spriteBatch.Draw(
-            _texture,
-            new Rectangle((int)position.X - 2, (int)position.Y - 2, 4, 4),
-            particleColor);
-    }
-}
-
-private void DrawDashTrail(SpriteBatch spriteBatch)
-{
-    for (int index = 0; index < _dashTrailPositions.Count; index++)
-    {
-        float progress =
-            (index + 1.0f) / (_dashTrailPositions.Count + 1.0f);
-        float opacity = 0.15f + 0.35f * progress;
-        Vector2 position = _dashTrailPositions[index];
-
-        var trailBounds = new Rectangle(
-            (int)position.X,
-            (int)position.Y,
-            _widthPlayer,
-            _heightPlayer);
-
-        spriteBatch.Draw(_texture, trailBounds, Color.White * opacity);
-    }
-}
 }
