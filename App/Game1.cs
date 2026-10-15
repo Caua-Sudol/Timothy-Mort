@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -8,85 +7,34 @@ namespace DontLikePoetry;
 
 public class Game1 : Game
 {
-    private const int LogicalWidth = 1920;
-    private const int LogicalHeight = 1080;
-    private const int WindowMargin = 64;
     private const double SecondsPerFrameMenu = 1.0 / 60.0;
-    private const float ScenarioFadeDurationSeconds = 0.75f;
-    private const float RoomSlideDuration = 0.3f;
-    private RenderTarget2D _slideOutgoing;
-    private RenderTarget2D _slideIncoming;
-    private float _roomSlideProgress;
-    private int _roomSlideDirection = 1;
-    private float _roomSlideStartOffset;
-    private AffordanceBackground _affordanceBackground;
 
-    private GraphicsDeviceManager _graphics;
+    private readonly GameViewport _viewport;
     private SpriteBatch _spriteBatch;
-    private RenderTarget2D _gameRenderTarget;
-    private Camera _camera;
     private DebugView _debugView;
-    private Scene _scene;
     private ScaleTestRoom _scaleTestRoom;
+    private PhaseRun _phaseRun;
     private TitleScreen _titleScreen;
-    private StartMenu _startMenu;
     private SessionStartScreen _sessionStartScreen;
     private PhaseSelectMenu _phaseSelectMenu;
     private PhaseIntroductionScreen _phaseIntroductionScreen;
     private PhaseResultScreen _phaseResultScreen;
     private StudyCompletionScreen _studyCompletionScreen;
     private string _introductionScenarioId;
-    private PauseMenu _pauseMenu;
-    private DeathMenu _deathMenu;
-    private DamageHud _damageHud;
-    private InterventionChoiceMenu _interventionChoiceMenu;
     private MortSubtitle _mortSubtitle;
-    private bool _mortCombinationSpoken;
-    private bool _mortPassageSpoken;
-    private readonly EyeBlinkTransition _solutionBlink = new();
-    private PhaseState _phaseState;
     private readonly PhaseProgress _phaseProgress = new PhaseProgress();
-    private SessionStore _sessionStore;
-    private LocalSessionInfo _pendingActiveSession;
-    private string _activeSessionId;
-    private string _activeSessionCode;
-    private SessionCompletionData _completedSessionData;
-    private bool _showStudyCompletionAfterPhaseResult;
-    private string _currentScenarioId = ScenarioCatalog.InitialScenarioId;
-    private readonly Random _choicePresentationRandom = new Random();
+    private readonly StudySessionFlow _studySession;
     private AppScreen _activeScreen = AppScreen.SESSION_START;
-    private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
     private Texture2D _scenarioFadeTexture;
-private float _scenarioFadeAlpha;
-private string _pendingScenarioId;
-private string _pendingScenarioSpawnId;
-private string _mapReloadErrorMessage;
-private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionState.NONE;
-
-    private enum ScenarioTransitionState
-    {
-        NONE,
-        FADING_OUT,
-        FADING_IN,
-        SLIDING
-    }
 
     public Game1()
     {
-        Point initialWindowSize = GetInitialWindowSize();
-
-        _graphics = new GraphicsDeviceManager(this);
-        // The Affordance panoramas are 5760 px wide.
-        _graphics.GraphicsProfile = GraphicsProfile.HiDef;
-        _graphics.PreferredBackBufferWidth = initialWindowSize.X;
-        _graphics.PreferredBackBufferHeight = initialWindowSize.Y;
-        _graphics.ApplyChanges();
+        _viewport = new GameViewport(this);
+        _studySession = new StudySessionFlow(_phaseProgress);
 
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-        Window.AllowUserResizing = true;
-        Window.ClientSizeChanged += OnClientSizeChanged;
     }
 
     protected override void Initialize()
@@ -108,13 +56,12 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         symbols.SetData(symbolPixels);
         _debugView = new DebugView(font);
         _mortSubtitle = new MortSubtitle(bodyFont);
-        Vector2 menuCenter = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
+        Vector2 menuCenter = _viewport.LogicalSize / 2f;
 
         _titleScreen = new TitleScreen(
             Content.Load<SpriteFont>("patrick"),
             Content.Load<Texture2D>("ui/sc_press_any_key"),
             menuCenter, symbols);
-        _startMenu = new StartMenu(font, menuCenter);
         _sessionStartScreen = new SessionStartScreen(
             Content.Load<SpriteFont>("walter"),
             Content.Load<SpriteFont>("patrick"),
@@ -126,20 +73,14 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             menuCenter,
             _phaseProgress);
         _phaseIntroductionScreen = new PhaseIntroductionScreen(
-            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight), symbols);
+            titleFont, bodyFont, _viewport.LogicalSize, symbols);
         _phaseResultScreen = new PhaseResultScreen(
-            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight), symbols);
+            titleFont, bodyFont, _viewport.LogicalSize, symbols);
         _studyCompletionScreen = new StudyCompletionScreen(
-            titleFont, bodyFont, new Vector2(LogicalWidth, LogicalHeight), symbols);
-        _pauseMenu = new PauseMenu(titleFont, bodyFont, selector, menuCenter);
-        _deathMenu = new DeathMenu(titleFont, bodyFont, selector, menuCenter);
-        _damageHud = new DamageHud();
-        _interventionChoiceMenu = new InterventionChoiceMenu(font, titleFont, bodyFont);
-
-        Vector2 cameraPosition = new Vector2(LogicalWidth / 2, LogicalHeight / 2);
-        Vector2 cameraDimensions = new Vector2(LogicalWidth, LogicalHeight);
-
-        _camera = new Camera(cameraPosition, cameraDimensions, 1.0f);
+            titleFont, bodyFont, _viewport.LogicalSize, symbols);
+        _phaseRun = new PhaseRun(
+            GraphicsDevice, Content, _viewport.LogicalSize, _phaseProgress,
+            font, titleFont, bodyFont, selector, _mortSubtitle);
 
         base.Initialize();
     }
@@ -147,11 +88,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _gameRenderTarget = new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
+        _viewport.CreateRenderTarget(GraphicsDevice);
         _scenarioFadeTexture = new Texture2D(GraphicsDevice, 1, 1);
         _scenarioFadeTexture.SetData(new[] { Color.White });
-        _damageHud.LoadContent(Content);
-        _interventionChoiceMenu.LoadContent(GraphicsDevice, Content);
+        _phaseRun.LoadContent(_spriteBatch);
         _phaseSelectMenu.LoadContent(Content);
         _debugView.LoadContent(GraphicsDevice);
 
@@ -177,10 +117,6 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             _titleScreen.UpdateAnimation(deltaTime);
             UpdateTitleScreen(keyboardState);
-        }
-        else if (_activeScreen == AppScreen.START_MENU)
-        {
-            UpdateStartMenu(keyboardState);
         }
         else if (_activeScreen == AppScreen.SESSION_START)
         {
@@ -221,16 +157,11 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.SetRenderTarget(_gameRenderTarget);
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        _viewport.BeginDraw(GraphicsDevice);
 
         if (_activeScreen == AppScreen.TITLE)
         {
-            DrawTitleScreen();
-        }
-        else if (_activeScreen == AppScreen.START_MENU)
-        {
-            DrawStartMenu();
+            _titleScreen.Draw(_spriteBatch);
         }
         else if (_activeScreen == AppScreen.SESSION_START)
         {
@@ -238,7 +169,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         }
         else if (_activeScreen == AppScreen.PHASE_SELECT)
         {
-            DrawPhaseSelect();
+            _phaseSelectMenu.Draw(_spriteBatch);
         }
         else if (_activeScreen == AppScreen.PHASE_INTRODUCTION)
         {
@@ -248,7 +179,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         {
             _phaseResultScreen.Draw(_spriteBatch, _scenarioFadeTexture);
             _mortSubtitle.Draw(_spriteBatch, _scenarioFadeTexture,
-                new Vector2(LogicalWidth, LogicalHeight), onResult: true);
+                _viewport.LogicalSize, onResult: true);
         }
         else if (_activeScreen == AppScreen.STUDY_COMPLETION)
         {
@@ -256,107 +187,38 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         }
         else if (_activeScreen == AppScreen.PLAYING)
         {
-            DrawPlaying();
+            _phaseRun.Draw(_debugView, _scenarioFadeTexture);
         }
         else if (_activeScreen == AppScreen.SCALE_TEST)
         {
             _scaleTestRoom.Draw(_spriteBatch);
         }
 
-        _solutionBlink.Draw(_spriteBatch, _scenarioFadeTexture, LogicalWidth, LogicalHeight);
-        GraphicsDevice.SetRenderTarget(null);
-        GraphicsDevice.Clear(Color.Black);
-
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-        _spriteBatch.Draw(_gameRenderTarget, GetPresentationRectangle(), Color.White);
-        _spriteBatch.End();
+        _phaseRun.DrawChoiceBlink(_spriteBatch, _scenarioFadeTexture);
+        _viewport.Present(GraphicsDevice, _spriteBatch);
 
         base.Draw(gameTime);
     }
 
-    private Point GetInitialWindowSize()
-    {
-        DisplayMode displayMode = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
-        int availableWidth = displayMode.Width - WindowMargin;
-        int availableHeight = displayMode.Height - WindowMargin;
-        float widthScale = availableWidth / (float)LogicalWidth;
-        float heightScale = availableHeight / (float)LogicalHeight;
-        float scale = Math.Min(1.0f, Math.Min(widthScale, heightScale));
-
-        return new Point((int)(LogicalWidth * scale), (int)(LogicalHeight * scale));
-    }
-
-    private Rectangle GetPresentationRectangle()
-    {
-        Viewport viewport = GraphicsDevice.Viewport;
-        float widthScale = viewport.Width / (float)LogicalWidth;
-        float heightScale = viewport.Height / (float)LogicalHeight;
-        float scale = Math.Min(widthScale, heightScale);
-        int width = (int)(LogicalWidth * scale);
-        int height = (int)(LogicalHeight * scale);
-        int x = (viewport.Width - width) / 2;
-        int y = (viewport.Height - height) / 2;
-
-        return new Rectangle(x, y, width, height);
-    }
-
-    private void OnClientSizeChanged(object sender, EventArgs eventArgs)
-    {
-        int width = Window.ClientBounds.Width;
-        int height = Window.ClientBounds.Height;
-
-        if (width <= 0 || height <= 0 ||
-            _graphics.PreferredBackBufferWidth == width && _graphics.PreferredBackBufferHeight == height)
-        {
-            return;
-        }
-
-        _graphics.PreferredBackBufferWidth = width;
-        _graphics.PreferredBackBufferHeight = height;
-        _graphics.ApplyChanges();
-    }
-
-    private void UpdateStartMenu(KeyboardState keyboardState)
-    {
-        StartMenuOption selectedOption =
-            _startMenu.Update(keyboardState, _previousKeyboardState);
-        
-        if(selectedOption == StartMenuOption.START)
-        {
-            _overlayState = OverlayState.NONE;
-            _activeScreen = AppScreen.PHASE_SELECT;
-        }
-        else if(selectedOption == StartMenuOption.EXIT)
-        {
-            Exit();
-        }
-    }
-
     private void OpenSessionStartFlow()
     {
-        try
+        if (!_studySession.TryOpen(out bool activatedSession))
         {
-            _sessionStore ??= new SessionStore();
-            _pendingActiveSession =
-                _sessionStore.FindMostRecentActiveSession();
-
-            if (_pendingActiveSession == null)
-            {
-                ActivateSession(_sessionStore.CreateNewSession(_phaseProgress));
-                return;
-            }
-
-            _sessionStartScreen.Open(_pendingActiveSession.PublicCode);
-            _activeScreen = AppScreen.SESSION_START;
-        }
-        catch (Exception)
-        {
-            _pendingActiveSession = null;
             _sessionStartScreen.Open(null);
             _sessionStartScreen.SetError(
                 "Não foi possível acessar as sessões locais.");
             _activeScreen = AppScreen.SESSION_START;
+            return;
         }
+
+        if (activatedSession)
+        {
+            ActivateSession();
+            return;
+        }
+
+        _sessionStartScreen.Open(_studySession.PendingSession.PublicCode);
+        _activeScreen = AppScreen.SESSION_START;
     }
 
     private void UpdateSessionStart(KeyboardState keyboardState)
@@ -376,37 +238,24 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             return;
         }
 
-        try
-        {
-            if (action == SessionStartAction.CONTINUE)
-            {
-                _sessionStore.ContinueSession(
-                    _pendingActiveSession.SessionId,
-                    _phaseProgress);
-                ActivateSession(_pendingActiveSession);
-            }
-            else if (action == SessionStartAction.NEW_SESSION)
-            {
-                ActivateSession(_sessionStore.CreateNewSession(_phaseProgress));
-            }
-        }
-        catch (Exception)
+        bool activatedSession = action == SessionStartAction.CONTINUE
+            ? _studySession.TryContinuePendingSession()
+            : _studySession.TryStartNewSession();
+        if (!activatedSession)
         {
             _sessionStartScreen.SetError(
                 "Não foi possível preparar a sessão local.");
+            return;
         }
+
+        ActivateSession();
     }
 
-    private void ActivateSession(LocalSessionInfo session)
+    private void ActivateSession()
     {
-        _activeSessionId = session.SessionId;
-        _activeSessionCode = session.PublicCode;
-        _completedSessionData = null;
-        _showStudyCompletionAfterPhaseResult = false;
-        _pendingActiveSession = null;
-        _phaseSelectMenu.SetSessionCode(_activeSessionCode);
+        _phaseSelectMenu.SetSessionCode(_studySession.ActiveSession.PublicCode);
         _activeScreen = AppScreen.TITLE;
-        _overlayState = OverlayState.NONE;
+        _phaseRun.ClearOverlay();
     }
 
     private void UpdateTitleScreen(KeyboardState keyboardState)
@@ -430,8 +279,10 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (selectedOption == PhaseSelectOption.SCALE_TEST)
         {
-            _scaleTestRoom ??= new ScaleTestRoom(GraphicsDevice, Content,
-                new Vector2(LogicalWidth, LogicalHeight));
+            _scaleTestRoom ??= new ScaleTestRoom(
+                GraphicsDevice,
+                Content,
+                _viewport.LogicalSize);
             _activeScreen = AppScreen.SCALE_TEST;
             return;
         }
@@ -465,7 +316,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
             return;
         }
 
-        ChangeScenario(scenarioId, null);
+        _phaseRun.ChangeScenario(scenarioId, null);
         _activeScreen = AppScreen.PLAYING;
     }
 
@@ -482,7 +333,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (KeyWasPressed(keyboardState, Keys.Enter) && _introductionScenarioId != null)
         {
-            ChangeScenario(_introductionScenarioId, null);
+            _phaseRun.ChangeScenario(_introductionScenarioId, null);
             _introductionScenarioId = null;
             _activeScreen = AppScreen.PLAYING;
         }
@@ -492,11 +343,11 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
     {
         if (KeyWasPressed(keyboardState, Keys.Enter) || EscapeWasPressed(keyboardState))
         {
-            if (_showStudyCompletionAfterPhaseResult)
+            if (_studySession.ShowCompletionAfterPhaseResult)
             {
                 ReturnToPhaseSelect();
                 _activeScreen = AppScreen.STUDY_COMPLETION;
-                _showStudyCompletionAfterPhaseResult = false;
+                _studySession.ShowCompletionAfterPhaseResult = false;
                 return;
             }
 
@@ -518,11 +369,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
         if (action == StudyCompletionAction.RETURN_TO_MENU)
         {
-            _phaseProgress.Clear();
+            _studySession.Reset();
             _phaseSelectMenu.SetSessionCode(null);
-            _activeSessionId = null;
-            _activeSessionCode = null;
-            _completedSessionData = null;
             OpenSessionStartFlow();
             return;
         }
@@ -536,7 +384,7 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         if (action == StudyCompletionAction.OPEN_FORM)
         {
             if (ResearchStudyConfiguration.TryOpenMeegaForm(
-                _completedSessionData.SessionId,
+                _studySession.CompletionData.SessionId,
                 out string errorMessage))
             {
                 _studyCompletionScreen.SetFormStatus(
@@ -551,46 +399,34 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private void PrepareStudyCompletion()
     {
-        try
+        if (_studySession.TryPrepareCompletion(out string exportPath))
         {
-            _completedSessionData =
-                _sessionStore.LoadSessionCompletion(_activeSessionId);
-            string exportPath = _sessionStore.ExportSession(_activeSessionId);
             _studyCompletionScreen.Open(
-                _completedSessionData,
+                _studySession.CompletionData,
                 exportPath,
                 null);
         }
-        catch (Exception)
+        else
         {
-            _completedSessionData ??= new SessionCompletionData
-            {
-                SessionId = _activeSessionId,
-                PublicCode = _activeSessionCode,
-                Status = "completed"
-            };
             _studyCompletionScreen.Open(
-                _completedSessionData,
+                _studySession.CompletionData,
                 null,
                 "Não foi possível exportar os dados locais.");
         }
 
-        _showStudyCompletionAfterPhaseResult = true;
+        _studySession.ShowCompletionAfterPhaseResult = true;
     }
 
     private void TryRefreshSessionExport()
     {
-        try
+        if (_studySession.TryRefreshCompletionExport(out string exportPath))
         {
-            _completedSessionData =
-                _sessionStore.LoadSessionCompletion(_activeSessionId);
-            string exportPath = _sessionStore.ExportSession(_activeSessionId);
             _studyCompletionScreen.Open(
-                _completedSessionData,
+                _studySession.CompletionData,
                 exportPath,
                 null);
         }
-        catch (Exception)
+        else
         {
             _studyCompletionScreen.SetExportResult(
                 null,
@@ -600,9 +436,9 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private double GetSecondsPerFrame()
     {
-        if (_activeScreen == AppScreen.PLAYING && _overlayState == OverlayState.NONE)
+        if (_activeScreen == AppScreen.PLAYING && !_phaseRun.HasOverlay)
         {
-            return _scene.SecondsPerFrame;
+            return _phaseRun.SecondsPerFrame;
         }
 
         return SecondsPerFrameMenu;
@@ -622,404 +458,36 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         _scaleTestRoom.Update(keyboardState, _previousKeyboardState, deltaTime);
     }
 
-    private void UpdatePlaying(KeyboardState keyboardState, double deltaTime)
-    {
-        if (_solutionBlink.Active)
-        {
-            if (IsActive) _solutionBlink.Update(deltaTime);
-            return;
-        }
-        if (_scenarioTransitionState != ScenarioTransitionState.NONE)
-        {
-            UpdateScenarioTransition(deltaTime);
-            return;
-        }
-
-        // Wait until the room slide finishes so the blink reveals the live scene,
-        // rather than a captured image of the room before the demonstration.
-        if (_currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId &&
-            !_mortCombinationSpoken && IsActive)
-        {
-            _mortCombinationSpoken = true;
-            _mortSubtitle.Show(false, MortDialogueCatalog.Conclusion(_phaseState.AppliedSolutionId));
-            _solutionBlink.Start(() =>
-            {
-                _phaseState.RegisterAffordanceDemonstration();
-                _scene.EnableAffordanceCombinationDemo();
-            });
-            return;
-        }
-
-    if (keyboardState.IsKeyDown(Keys.LeftControl) &&
-        KeyWasPressed(keyboardState, Keys.R) &&
-        (_overlayState == OverlayState.NONE || _overlayState == OverlayState.PAUSED) &&
-        _scene.SceneMode == SceneMode.PLAYING)
-    {
-        if (_scene.TryReloadMap(_camera, out string errorMessage))
-        {
-            _mapReloadErrorMessage = null;
-        }
-        else
-        {
-            _mapReloadErrorMessage = errorMessage;
-        }
-
-        return;
-    }
-
-        if (_overlayState == OverlayState.DEATH_MENU)
-        {
-            UpdateDeathMenu(keyboardState);
-            return;
-        }
-
-        if (_overlayState == OverlayState.INTERVENTION_CHOICES)
-        {
-            if (IsActive)
-            {
-                _phaseState?.AccumulateActiveTime(deltaTime);
-            }
-
-            _interventionChoiceMenu.Update(keyboardState, _previousKeyboardState);
-
-            if (_interventionChoiceMenu.TryTakeCompletedFirstChoice(
-                out InterventionSolutionDefinition solution,
-                out InterventionJustificationDefinition justification))
-            {
-                ApplyChoiceWithBlink(() => _phaseState.ApplyFirstChoice(solution, justification), solution.Id);
-            }
-            else if (_interventionChoiceMenu.TryTakeCompletedRevision(
-                out InterventionSolutionDefinition revisionSolution))
-            {
-                ApplyChoiceWithBlink(() => _phaseState.ApplyRevision(revisionSolution), revisionSolution.Id);
-            }
-
-            return;
-        }
-
-        if (EscapeWasPressed(keyboardState))
-        {
-            TogglePause();
-        }
-
-        if (_overlayState == OverlayState.PAUSED)
-        {
-            UpdatePauseMenu(keyboardState);
-            return;
-        }
-
-        if (IsActive && _scene.SceneMode == SceneMode.PLAYING)
-        {
-            if (_scene.SupportsCameraScalePreview)
-            {
-                if (KeyWasPressed(keyboardState, Keys.D1) || KeyWasPressed(keyboardState, Keys.NumPad1))
-                    _scene.TrySetPlayerScale(1);
-                else if (KeyWasPressed(keyboardState, Keys.D2) || KeyWasPressed(keyboardState, Keys.NumPad2))
-                    _scene.TrySetPlayerScale(2);
-                else if (KeyWasPressed(keyboardState, Keys.D3) || KeyWasPressed(keyboardState, Keys.NumPad3))
-                    _scene.TrySetPlayerScale(3);
-                else if (KeyWasPressed(keyboardState, Keys.D4) || KeyWasPressed(keyboardState, Keys.NumPad4))
-                    _scene.TrySetPlayerScale(4);
-            }
-
-            _phaseState?.AccumulateActiveTime(deltaTime);
-            _mortSubtitle.Update(deltaTime);
-        }
-
-        _scene.SetInteractionPressed(KeyWasPressed(keyboardState, Keys.E));
-        _scene.Update(_camera, deltaTime);
-
-        if (!_mortPassageSpoken && _scene.HasVisibleAffordancePassage)
-        {
-            _mortPassageSpoken = true;
-            _mortSubtitle.Show(false, MortDialogueCatalog.Passage);
-        }
-
-        if (_scene.TryTakeInterventionButtonActivation())
-        {
-            if (_phaseState == null)
-            {
-                return;
-            }
-
-            if (!_phaseState.HasFirstChoice)
-            {
-                _interventionChoiceMenu.OpenInitial(
-                    GetOrCreateInitialSolutions(),
-                    GetOrCreateInitialJustifications(),
-                    _phaseState.ChoiceCatalog.JustificationQuestion,
-                    _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
-                        ? AffordanceChoiceCatalog.SolutionQuestion : null);
-                _overlayState = OverlayState.INTERVENTION_CHOICES;
-                return;
-            }
-
-            if (_phaseState.NeedsSolutionRevision)
-            {
-            _interventionChoiceMenu.OpenRevision(
-                _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
-                    ? GetOrCreateInitialSolutions()
-                    : _phaseState.ChoiceCatalog.AvailableRevisionSolutions,
-                _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
-                    ? AffordanceChoiceCatalog.SolutionQuestion : null);
-                _overlayState = OverlayState.INTERVENTION_CHOICES;
-                return;
-            }
-        }
-
-        if (_scene.TryTakeScenarioTransition(
-            out string destinationScenarioId,
-            out string destinationSpawnId))
-        {
-            if (destinationScenarioId == ScenarioCatalog.InitialScenarioId)
-            {
-                if (!CompleteCurrentPhase())
-                {
-                    ReturnToPhaseSelect();
-                }
-
-                return;
-            }
-
-            BeginScenarioTransition(destinationScenarioId, destinationSpawnId);
-            return;
-        }
-
-        if (_scene.PlayerIsDead)
-        {
-            _phaseState?.RegisterDeath();
-            OpenDeathMenu();
-        }
-    }
-
-    private void ApplyChoiceWithBlink(Action applyChoice, string solutionId)
-    {
-        _overlayState = OverlayState.NONE;
-        void Apply()
-        {
-            applyChoice();
-            _scene.SyncInterventionState();
-            ShowMortChoiceComment(solutionId);
-        }
-        if (_phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
-            _solutionBlink.Start(Apply);
-        else
-            Apply();
-    }
-
-    private void ShowMortChoiceComment(string solutionId)
-    {
-        if (_phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
-            _mortSubtitle.Show(false, MortDialogueCatalog.AfterChoice(solutionId),
-                "Se quiser comparar, volte aqui e escolha outra alteração.");
-    }
-
-    private IReadOnlyList<InterventionSolutionDefinition> GetOrCreateInitialSolutions()
-    {
-        if (!_phaseState.HasInitialSolutionPresentation)
-        {
-            IReadOnlyList<PresentedSolutionDefinition> presentation =
-                _phaseState.ChoiceCatalog.CreateInitialSolutionPresentation(
-                    _choicePresentationRandom);
-            _phaseState.RegisterInitialSolutionPresentation(presentation);
-        }
-
-        IReadOnlyList<PresentedSolutionDefinition> registeredPresentation =
-            _phaseState.InitialSolutionPresentation;
-        var solutionsByPosition =
-            new InterventionSolutionDefinition[registeredPresentation.Count];
-
-        foreach (PresentedSolutionDefinition entry in registeredPresentation)
-        {
-            solutionsByPosition[entry.Position - 1] =
-                _phaseState.ChoiceCatalog.GetSolution(entry.SolutionId);
-        }
-
-        return Array.AsReadOnly(solutionsByPosition);
-    }
-
-    private IReadOnlyList<InterventionJustificationDefinition> GetOrCreateInitialJustifications()
-    {
-        if (!_phaseState.HasInitialJustificationPresentation)
-        {
-            IReadOnlyList<PresentedJustificationDefinition> presentation =
-                _phaseState.ChoiceCatalog.CreateInitialJustificationPresentation(
-                    _choicePresentationRandom);
-            _phaseState.RegisterInitialJustificationPresentation(presentation);
-        }
-
-        IReadOnlyList<PresentedJustificationDefinition> registeredPresentation =
-            _phaseState.InitialJustificationPresentation;
-        var justificationsByPosition =
-            new InterventionJustificationDefinition[registeredPresentation.Count];
-
-        foreach (PresentedJustificationDefinition entry in registeredPresentation)
-        {
-            justificationsByPosition[entry.Position - 1] =
-                _phaseState.ChoiceCatalog.GetJustification(entry.JustificationId);
-        }
-
-        return Array.AsReadOnly(justificationsByPosition);
-    }
-
-    private void BeginScenarioTransition(
-        string destinationScenarioId,
-        string destinationSpawnId)
-    {
-        if (ScenarioCatalog.IsAffordanceChallenge(_currentScenarioId) &&
-            ScenarioCatalog.IsAffordanceChallenge(destinationScenarioId))
-        {
-            _slideOutgoing ??= new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
-            _slideIncoming ??= new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
-            _roomSlideDirection = destinationScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId ||
-                _currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId &&
-                destinationScenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ? -1 : 1;
-            CaptureRoom(_slideOutgoing);
-            _roomSlideStartOffset = AffordanceBackground.GetRoomOffset(_currentScenarioId);
-            ChangeScenario(destinationScenarioId, destinationSpawnId);
-            CaptureRoom(_slideIncoming);
-            _roomSlideProgress = 0;
-            _scenarioFadeAlpha = 0;
-            _scenarioTransitionState = ScenarioTransitionState.SLIDING;
-            return;
-        }
-        _pendingScenarioId = destinationScenarioId;
-        _pendingScenarioSpawnId = destinationSpawnId;
-        _scenarioFadeAlpha = 0.0f;
-        _scenarioTransitionState = ScenarioTransitionState.FADING_OUT;
-    }
-
-    private void CaptureRoom(RenderTarget2D target)
-    {
-        GraphicsDevice.SetRenderTarget(target);
-        // Capture gameplay only; the continuous panorama is drawn behind both rooms.
-        GraphicsDevice.Clear(Color.Transparent);
-        _scene.Draw(_spriteBatch, _camera);
-        GraphicsDevice.SetRenderTarget(null);
-    }
-
     protected override void UnloadContent()
     {
-        _scene?.ReleaseLdtkTextures();
-        _slideOutgoing?.Dispose();
-        _slideIncoming?.Dispose();
+        _phaseRun?.Dispose();
         base.UnloadContent();
     }
 
-    private void UpdateScenarioTransition(double deltaTime)
+    private void UpdatePlaying(KeyboardState keyboardState, double deltaTime)
     {
-        if (_scenarioTransitionState == ScenarioTransitionState.SLIDING)
+        _phaseRun.Update(keyboardState, _previousKeyboardState, deltaTime, IsActive);
+        if (_phaseRun.ExitRequested)
         {
-            _roomSlideProgress = Math.Min(1, _roomSlideProgress + (float)deltaTime / RoomSlideDuration);
-            if (_roomSlideProgress >= 1)
-                _scenarioTransitionState = ScenarioTransitionState.NONE;
-            return;
-        }
-        float fadeDelta = (float)(deltaTime / ScenarioFadeDurationSeconds);
-
-        if (_scenarioTransitionState == ScenarioTransitionState.FADING_OUT)
-        {
-            _scenarioFadeAlpha = Math.Min(1.0f, _scenarioFadeAlpha + fadeDelta);
-
-            if (_scenarioFadeAlpha >= 1.0f)
-            {
-                ChangeScenario(_pendingScenarioId, _pendingScenarioSpawnId);
-                _pendingScenarioId = null;
-                _pendingScenarioSpawnId = null;
-                _scenarioTransitionState = ScenarioTransitionState.FADING_IN;
-            }
-
+            Exit();
             return;
         }
 
-        _scenarioFadeAlpha = Math.Max(0.0f, _scenarioFadeAlpha - fadeDelta);
-
-        if (_scenarioFadeAlpha <= 0.0f)
-        {
-            _scenarioTransitionState = ScenarioTransitionState.NONE;
-        }
-    }
-
-    private void ChangeScenario(string scenarioId, string spawnId)
-    {
-        PhaseDefinition destinationPhase =
-            PhaseCatalog.GetForScenario(scenarioId);
-
-        if (destinationPhase == null)
-        {
-            _mortSubtitle.Clear();
-            _phaseState = null;
-        }
-        else if (_phaseState == null ||
-                 _phaseState.PhaseId != destinationPhase.Id)
-        {
-            SolutionVisualModule? baseVisualModulesOverride =
-                destinationPhase.Id ==
-                    ScenarioCatalog.ConceptualModelsConstraintsScenarioId
-                    ? _phaseProgress.GetTransferredVisualModules()
-                    : null;
-
-            _phaseState = new PhaseState(
-                destinationPhase,
-                scenarioId,
-                baseVisualModulesOverride);
-            _mortCombinationSpoken = false;
-            _mortPassageSpoken = false;
-            _mortSubtitle.Clear();
-            if (destinationPhase.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
-                _mortSubtitle.Show(false, MortDialogueCatalog.Introduction);
-        }
-        else
-        {
-            _phaseState.EnterScenario(scenarioId);
-        }
-
-        _currentScenarioId = scenarioId;
-
-        if (destinationPhase?.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
-            _affordanceBackground ??= new AffordanceBackground(Content);
-
-        ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
-        _scene?.ReleaseLdtkTextures();
-        _scene = new Scene(scenario, spawnId, _phaseState);
-        _scene.LoadContent(GraphicsDevice, Content);
-        _scene.AlignCamera(_camera);
-        if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && _mortCombinationSpoken)
-            _scene.EnableAffordanceCombinationDemo();
-        _overlayState = OverlayState.NONE;
-        _mapReloadErrorMessage = null;
+        if (_phaseRun.ReturnToSelectionRequested && !CompleteCurrentPhase())
+            ReturnToPhaseSelect();
     }
 
     private bool CompleteCurrentPhase()
     {
-        PhaseDefinition phase = PhaseCatalog.GetForScenario(_currentScenarioId);
-        if (phase != null &&
-            (_currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId ||
-             phase.Id != ScenarioCatalog.AffordanceVisibilityScenarioId && _currentScenarioId == phase.ProblemScenarioId) &&
-            _phaseState?.PhaseId == phase.Id &&
-            _phaseState.ExitDoorIsOpen)
+        if (_phaseRun.CanComplete)
         {
-            SolutionVisualModule finalSolutionVisualModules =
-                string.IsNullOrEmpty(_phaseState.AppliedSolutionId)
-                    ? SolutionVisualModule.NONE
-                    : _phaseState.ChoiceCatalog
-                        .GetSolution(_phaseState.AppliedSolutionId)
-                        .VisualModules;
-
             string persistenceMessage;
-            try
+            bool completesStudy = _phaseRun.State.PhaseId ==
+                ScenarioCatalog.ConceptualModelsConstraintsScenarioId;
+            if (_studySession.TryRecordPhaseCompletion(
+                _phaseRun.State,
+                completesStudy))
             {
-                bool completesStudy = phase.Id ==
-                    ScenarioCatalog.ConceptualModelsConstraintsScenarioId;
-                _sessionStore.SavePhaseCompletion(
-                    _activeSessionId,
-                    _phaseState,
-                    completesStudy);
-                _phaseProgress.TryCompletePhase(
-                    phase.Id,
-                    _phaseState.AppliedSolutionId,
-                    finalSolutionVisualModules);
-
                 if (completesStudy)
                 {
                     PrepareStudyCompletion();
@@ -1031,15 +499,15 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
                     persistenceMessage = "Progresso salvo localmente.";
                 }
             }
-            catch (Exception)
+            else
             {
-                _showStudyCompletionAfterPhaseResult = false;
+                _studySession.ShowCompletionAfterPhaseResult = false;
                 persistenceMessage =
                     "Não foi possível salvar o progresso local.";
             }
 
             _mortSubtitle.Clear();
-            _phaseResultScreen.Open(_phaseState, persistenceMessage);
+            _phaseResultScreen.Open(_phaseRun.State, persistenceMessage);
             _activeScreen = AppScreen.PHASE_RESULT;
             return true;
         }
@@ -1049,48 +517,8 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
 
     private void ReturnToPhaseSelect()
     {
-        _mortSubtitle.Clear();
-        _phaseState = null;
-        _scene?.ReleaseLdtkTextures();
-        _scene = null;
-        _currentScenarioId = ScenarioCatalog.InitialScenarioId;
-        _overlayState = OverlayState.NONE;
-        _scenarioTransitionState = ScenarioTransitionState.NONE;
-        _scenarioFadeAlpha = 0.0f;
-        _pendingScenarioId = null;
-        _pendingScenarioSpawnId = null;
-        _mapReloadErrorMessage = null;
+        _phaseRun.Reset();
         _activeScreen = AppScreen.PHASE_SELECT;
-    }
-
-    private void UpdatePauseMenu(KeyboardState keyboardState)
-    {
-        PauseOption selectedOption = _pauseMenu.Update(keyboardState, _previousKeyboardState);
-
-        if (selectedOption == PauseOption.RESUME)
-            _overlayState = OverlayState.NONE;
-        else if (selectedOption == PauseOption.RESTART)
-        {
-            _phaseState?.BeginAttempt();
-            _scene.Restart(_camera);
-            _overlayState = OverlayState.NONE;
-        }
-        else if (selectedOption == PauseOption.QUIT)
-            Exit();
-    }
-
-    private void UpdateDeathMenu(KeyboardState keyboardState)
-    {
-        DeathOption selectedOption = _deathMenu.Update(keyboardState, _previousKeyboardState);
-
-        if (selectedOption == DeathOption.RETRY)
-        {
-            _phaseState?.BeginAttempt();
-            _scene.Restart(_camera);
-            _overlayState = OverlayState.NONE;
-        }
-        else if (selectedOption == DeathOption.QUIT)
-            Exit();
     }
 
     private bool EscapeWasPressed(KeyboardState keyboardState)
@@ -1103,119 +531,4 @@ private ScenarioTransitionState _scenarioTransitionState = ScenarioTransitionSta
         return keyboardState.IsKeyDown(key) && _previousKeyboardState.IsKeyUp(key);
     }
 
-    private void TogglePause()
-    {
-        if (_overlayState == OverlayState.PAUSED)
-        {
-            _overlayState = OverlayState.NONE;
-        }
-        else
-        {
-            _overlayState = OverlayState.PAUSED;
-            _pauseMenu.Open();
-        }
-    }
-
-    private void OpenDeathMenu()
-    {
-        _overlayState = OverlayState.DEATH_MENU;
-        _deathMenu.Open();
-    }
-
-    private void DrawStartMenu()
-    {
-        _startMenu.Draw(_spriteBatch);
-    }
-
-    private void DrawTitleScreen()
-    {
-        _titleScreen.Draw(_spriteBatch);
-    }
-
-    private void DrawPhaseSelect()
-    {
-        _phaseSelectMenu.Draw(_spriteBatch);
-    }
-
-    private void DrawPlaying()
-    {
-        if (_scenarioTransitionState == ScenarioTransitionState.SLIDING)
-        {
-            float progress = MathHelper.SmoothStep(0, 1, _roomSlideProgress);
-            float backgroundOffset = MathHelper.Lerp(_roomSlideStartOffset,
-                AffordanceBackground.GetRoomOffset(_currentScenarioId), progress);
-            _affordanceBackground.DrawBackground(_spriteBatch, backgroundOffset);
-            int offset = (int)(LogicalWidth * progress) * _roomSlideDirection;
-            _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-            _spriteBatch.Draw(_slideOutgoing, new Rectangle(-offset, 0, LogicalWidth, LogicalHeight), Color.White);
-            _spriteBatch.Draw(_slideIncoming, new Rectangle(LogicalWidth * _roomSlideDirection - offset, 0, LogicalWidth, LogicalHeight), Color.White);
-            _spriteBatch.End();
-            _affordanceBackground.DrawForeground(_spriteBatch, backgroundOffset);
-        }
-        else
-        {
-            bool hasAffordanceBackground = ScenarioCatalog.IsAffordanceChallenge(_currentScenarioId);
-            if (hasAffordanceBackground)
-            {
-                _affordanceBackground.DrawBackground(_spriteBatch,
-                    AffordanceBackground.GetRoomOffset(_currentScenarioId));
-            }
-            _scene.Draw(_spriteBatch, _camera);
-            if (hasAffordanceBackground)
-                _affordanceBackground.DrawForeground(_spriteBatch,
-                    AffordanceBackground.GetRoomOffset(_currentScenarioId));
-            _scene.DrawDebug(_spriteBatch, _camera, _debugView);
-            _debugView.DrawHud(_spriteBatch, _currentScenarioId, _scene.Player);
-        }
-
-        if (_phaseState != null)
-        {
-            int maximumHealth = _phaseState.HasDamageSystem ? _phaseState.MaximumHealth : 1;
-            int currentHealth = _scene.PlayerIsDead ? 0 :
-                _phaseState.HasDamageSystem ? _phaseState.CurrentHealth : 1;
-            _damageHud.Draw(
-                _spriteBatch,
-                currentHealth,
-                maximumHealth,
-                _phaseState.AppliedVisualModules);
-        }
-
-        if (_overlayState == OverlayState.PAUSED)
-        {
-            _pauseMenu.Draw(_spriteBatch);
-        }
-        else if (_overlayState == OverlayState.DEATH_MENU)
-        {
-            _deathMenu.Draw(_spriteBatch);
-        }
-        else if (_overlayState == OverlayState.INTERVENTION_CHOICES)
-        {
-            _interventionChoiceMenu.Draw(_spriteBatch);
-        }
-
-    if (_overlayState == OverlayState.NONE &&
-        _scenarioTransitionState == ScenarioTransitionState.NONE &&
-        _scene.SceneMode == SceneMode.PLAYING && !_scene.PlayerIsDead)
-        _mortSubtitle.Draw(_spriteBatch, _scenarioFadeTexture,
-            new Vector2(LogicalWidth, LogicalHeight));
-
-    DrawScenarioTransition();
-    _debugView.DrawReloadError(_spriteBatch, _mapReloadErrorMessage);
-}
-
-    private void DrawScenarioTransition()
-    {
-        if (_scenarioTransitionState == ScenarioTransitionState.NONE ||
-            _scenarioTransitionState == ScenarioTransitionState.SLIDING)
-        {
-            return;
-        }
-
-        _spriteBatch.Begin();
-        _spriteBatch.Draw(
-            _scenarioFadeTexture,
-            new Rectangle(0, 0, LogicalWidth, LogicalHeight),
-            Color.Black * _scenarioFadeAlpha);
-        _spriteBatch.End();
-    }
 }
