@@ -10,6 +10,7 @@ namespace DontLikePoetry;
 public sealed class PhaseRun : IDisposable
 {
     private readonly GraphicsDevice _graphicsDevice;
+    private readonly LdtkTextureCache _ldtkTextureCache = new();
     private readonly ContentManager _content;
     private readonly Vector2 _logicalSize;
     private readonly PhaseProgress _phaseProgress;
@@ -94,6 +95,7 @@ public sealed class PhaseRun : IDisposable
         _phaseState = null;
         _scene?.ReleaseLdtkTextures();
         _scene = null;
+        _ldtkTextureCache.Dispose();
         _currentScenarioId = ScenarioCatalog.InitialScenarioId;
         _overlayState = OverlayState.NONE;
         _scenarioTransition.Reset();
@@ -103,6 +105,7 @@ public sealed class PhaseRun : IDisposable
     public void Dispose()
     {
         _scene?.ReleaseLdtkTextures();
+        _ldtkTextureCache.Dispose();
         _scenarioTransition.Dispose();
     }
 
@@ -403,6 +406,7 @@ public sealed class PhaseRun : IDisposable
         using var loading = new LoadDiagnostics($"cenario {scenarioId}");
         PhaseDefinition destinationPhase =
             PhaseCatalog.GetForScenario(scenarioId);
+        bool changesPhase = _phaseState?.PhaseId != destinationPhase?.Id;
 
         if (destinationPhase == null)
         {
@@ -439,11 +443,13 @@ public sealed class PhaseRun : IDisposable
         if (destinationPhase?.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
             _affordanceBackground ??= new AffordanceBackground(_content);
 
-        loading.Mark("cenario de fundo (criar ou reutilizar)");
+        loading.Mark("cenario de fundo (criar ou reutilizar)", includeInSummary: true);
         ScenarioDefinition scenario = ScenarioCatalog.Get(scenarioId);
         _scene?.ReleaseLdtkTextures();
+        if (changesPhase) _ldtkTextureCache.Dispose();
         loading.Mark("liberar tilesets anteriores");
         _scene = new Scene(scenario, spawnId, _phaseState);
+        _scene.UseLdtkTextureCache(_ldtkTextureCache);
         _scene.LoadContent(_graphicsDevice, _content);
         loading.Mark("criar e carregar Scene");
         _scene.AlignCamera(_camera);

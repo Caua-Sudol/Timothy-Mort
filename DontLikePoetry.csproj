@@ -25,6 +25,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
+    <None Update="Content\Effects\PlayerInkOutline.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Icon.ico">
@@ -40,4 +43,11 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.19" />
     <PackageReference Include="TiledSharp" Version="1.0.1" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="ContentPipeline/**/*.cs" />
+    <ProjectReference Include="ContentPipeline/TimothyMort.ContentPipeline.csproj"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <Target Name="PreparePlayerTextureProcessor" BeforeTargets="RunContentBuilder"
+          DependsOnTargets="ResolveProjectReferences" />
 </Project>

@@ -184,6 +184,8 @@ private Vector2 _checkpoint;
 
     public void ReleaseLdtkTextures() => _map.ReleaseLdtkTextures();
 
+    internal void UseLdtkTextureCache(LdtkTextureCache cache) => _map.UseLdtkTextureCache(cache);
+
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content)
     {
         using var loading = new LoadDiagnostics("Scene.LoadContent");
@@ -199,8 +201,9 @@ private Vector2 _checkpoint;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         loading.Mark("preparacao");
         _map.LoadContent(graphicsDevice);
-        loading.Mark("mapa completo");
-        if (SupportsCameraScalePreview)
+        loading.Mark("mapa completo", includeInSummary: true);
+        // LDtk draws terrain from its tilesets, not these legacy object textures.
+        if (SupportsCameraScalePreview && !_map.IsLdtk)
         {
             _map.SetWoodPlatformTexture(LoadDiagnostics.LoadTexture(content, "visual/platformer_wood"));
             _map.SetInitialCheckpointTexture(LoadDiagnostics.LoadTexture(content, "visual/ini_ckp"));
@@ -225,7 +228,7 @@ private Vector2 _checkpoint;
             _map.SetObjectTexture("parede_direita", LoadDiagnostics.LoadTexture(content, "visual/parede_direita"));
             _map.SetObjectTexture("espinhos_lateral", LoadDiagnostics.LoadTexture(content, "visual/espinho_lateral"));
         }
-        loading.Mark("texturas de plataformas legadas");
+        loading.Mark("texturas de plataformas legadas", includeInSummary: true);
         if (IsAffordance)
         {
             _interactionFont = content.Load<SpriteFont>("patrick");
@@ -241,10 +244,10 @@ private Vector2 _checkpoint;
         _checkpoint = _playerStart;
 
         loading.Mark("interacao, apresentacoes e spawn");
-        var fadeColor = Enumerable.Repeat(Color.White, ScreenWidth * ScreenHeight).ToArray();
-        _fadeTexture = new Texture2D(graphicsDevice, ScreenWidth, ScreenHeight);
-        _fadeTexture.SetData(fadeColor);
-        loading.Mark("textura branca");
+        // Every use stretches a solid color into a destination rectangle.
+        _fadeTexture = new Texture2D(graphicsDevice, 1, 1);
+        _fadeTexture.SetData(new[] { Color.White });
+        loading.Mark("textura branca", includeInSummary: true);
         loading.Texture(_fadeTexture);
 
         int colliderWidth = SupportsCameraScalePreview
@@ -261,10 +264,11 @@ private Vector2 _checkpoint;
         _player.ColliderOffsetFromSpriteX = SupportsCameraScalePreview ? 8f : 0f;
         if (SupportsCameraScalePreview)
         {
+            Texture2D rightSprite = LoadDiagnostics.LoadTexture(content, "player/timothy_mort_2_right");
             _player.SetDirectionalPreviewSprites(
-                LoadDiagnostics.LoadTexture(content, "player/timothy_mort_2_right"),
+                rightSprite,
                 LoadDiagnostics.LoadTexture(content, "player/timothy_mort_2_left"),
-                0.1f);
+                GameScaleConfig.PlayerSpriteReferenceHeight / rightSprite.Height);
             var walkFrames = new Texture2D[7];
             for (int index = 0; index < walkFrames.Length; index++)
                 walkFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/walk/walk{index + 1:D4}");
@@ -278,7 +282,7 @@ private Vector2 _checkpoint;
             _player.SetAirAnimations(jumpFrames, glideFrames);
         }
 
-        loading.Mark("sprites e animacoes do player");
+        loading.Mark("sprites e animacoes do player", includeInSummary: true);
         if (SupportsCameraScalePreview)
             TrySetPlayerScale(_map.IsLdtk ? 1 : GameScaleConfig.DefaultPlayerScalePreset);
 
@@ -888,9 +892,9 @@ private static bool RectanglesTouchOrIntersect(
         _player.Move((int)_playerStart.X, (int)_playerStart.Y);
     }
 
-    public void Draw(SpriteBatch spriteBatch, Camera camera)
+    public void Draw(SpriteBatch spriteBatch, Camera camera, Effect playerEffect = null)
     {
-        DrawWorld(spriteBatch, camera);
+        DrawWorld(spriteBatch, camera, playerEffect);
         DrawScreenEffects(spriteBatch);
     }
 
@@ -971,7 +975,7 @@ private static bool RectanglesTouchOrIntersect(
         }
     }
 
-    private void DrawWorld(SpriteBatch spriteBatch, Camera camera)
+    private void DrawWorld(SpriteBatch spriteBatch, Camera camera, Effect playerEffect)
     {
         if (_propVisualPresentation != null)
         {
@@ -982,6 +986,7 @@ private static bool RectanglesTouchOrIntersect(
         var cameraTransform = camera.GetTransform();
     spriteBatch.Begin(
         samplerState: SamplerState.PointClamp,
+        effect: playerEffect,
         transformMatrix: cameraTransform);
 
     SolutionVisualModule visualModules = GetAppliedVisualModules();
@@ -990,6 +995,12 @@ private static bool RectanglesTouchOrIntersect(
         spriteBatch,
         visualModules,
         _phaseState?.DamageInvulnerabilityRemainingSeconds ?? 0);
+    if (playerEffect != null)
+    {
+        spriteBatch.End();
+        spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+            transformMatrix: cameraTransform);
+    }
     if (!_useAdditionalCollidersOnly)
     {
         _map.Draw(

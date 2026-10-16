@@ -11,6 +11,8 @@ internal sealed class LoadDiagnostics : IDisposable
 {
     public static bool Enabled { get; set; } = true;
     private static readonly List<string> Lines = new();
+    private static readonly List<string> Summary = new();
+    private static double _bottleneckMs;
     private static int _depth;
     private static int _run;
     private readonly bool _enabled = Enabled;
@@ -25,16 +27,24 @@ internal sealed class LoadDiagnostics : IDisposable
         if (_depth++ == 0)
         {
             Lines.Clear();
+            Summary.Clear();
+            _bottleneckMs = 0;
             Lines.Add($"[LOAD #{++_run}] {name}");
         }
         _clock.Start();
     }
 
-    public void Mark(string stage)
+    public void Mark(string stage, bool includeInSummary = false)
     {
         if (!_enabled) return;
         double now = _clock.Elapsed.TotalMilliseconds;
-        Lines.Add($"[LOAD] {_name} / {stage}: {now - _previousMs:F2} ms");
+        double elapsed = now - _previousMs;
+        Lines.Add($"[LOAD] {_name} / {stage}: {elapsed:F2} ms");
+        if (includeInSummary)
+        {
+            _bottleneckMs += elapsed;
+            Summary.Add($"{stage}={elapsed:F2} ms");
+        }
         _previousMs = now;
     }
 
@@ -60,7 +70,11 @@ internal sealed class LoadDiagnostics : IDisposable
         _clock.Stop();
         Lines.Add($"[LOAD] {_name} / TOTAL: {_clock.Elapsed.TotalMilliseconds:F2} ms");
         if (--_depth != 0) return;
-        // Nested totals overlap; do not add them. Console output is outside the timers.
+        // Only disjoint stage intervals opt in; nested totals are never added.
+        if (Summary.Count > 0)
+            Lines.Add($"[LOAD RESUMO] {_name} | {string.Join(" + ", Summary)}" +
+                $" | SOMA GARGALOS={_bottleneckMs:F2} ms | TOTAL ENTRADA={_clock.Elapsed.TotalMilliseconds:F2} ms");
+        // Console output is outside the timers.
         Console.WriteLine(string.Join(Environment.NewLine, Lines));
         Lines.Clear();
     }

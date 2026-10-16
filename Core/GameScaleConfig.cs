@@ -14,6 +14,8 @@ internal static class GameScaleConfig
     public const float PlayerScaleSmall = 0.75f;
     public const float PlayerScaleSmallest = 0.65f;
     public const int DefaultPlayerScalePreset = 1;
+    // Original 2240px canvas drawn at 0.1 scale; independent of compiled resolution.
+    public const float PlayerSpriteReferenceHeight = 224f;
 
     // Fixed body collider: about 32 x 77 screen pixels at the default 10.5% player size
     // in a 1920 x 1080 viewport (scale 0.75, camera zoom 0.675).

@@ -16,6 +16,7 @@ internal sealed class ScaleTestRoom
     private readonly Texture2D _lights;
     private readonly Texture2D _pixel;
     private readonly LdtkMolduraPreview _ldtkMoldura;
+    private readonly PlayerInkPreview _playerInk;
     private bool _showOriginal;
     private int _afterPreset = GameScaleConfig.DefaultPlayerScalePreset;
     private string _reloadError;
@@ -44,6 +45,7 @@ internal sealed class ScaleTestRoom
             supportsPlayerScalePreview: true));
         loading.Mark("debug, camera e construcao da cena");
         _scene.LoadContent(graphics, content);
+        _playerInk = new PlayerInkPreview(content);
         loading.Mark("Scene.LoadContent");
         _scene.SetAdditionalSolidColliders(_ldtkMoldura.FrameColliders);
         _scene.SetAdditionalGelatinVolumes(_ldtkMoldura.GelatinVolumes);
@@ -55,6 +57,7 @@ internal sealed class ScaleTestRoom
 
     public void Update(KeyboardState keys, KeyboardState previous, double deltaTime)
     {
+        _playerInk.Update(keys, previous);
         bool Pressed(Keys key) => keys.IsKeyDown(key) && previous.IsKeyUp(key);
 
         if (keys.IsKeyDown(Keys.LeftControl) && Pressed(Keys.R))
@@ -106,7 +109,7 @@ internal sealed class ScaleTestRoom
         spriteBatch.Draw(_background, new Rectangle(0, 0, viewport.Width, viewport.Height), Color.White);
         spriteBatch.End();
 
-        _scene.Draw(spriteBatch, _camera);
+        _scene.Draw(spriteBatch, _camera, _playerInk.Prepare());
         spriteBatch.Begin(samplerState: SamplerState.PointClamp,
             transformMatrix: _camera.GetTransform());
         _ldtkMoldura.Draw(spriteBatch);
@@ -125,7 +128,7 @@ internal sealed class ScaleTestRoom
             $"zoom {_camera.Zoom:F3} | player {_scene.Player.RelativeScale:F2}\n" +
             "B: antes/depois | 1/2/3/4: escala | R: spawn | Ctrl+R: TMX\n" +
             "Ctrl+P: grade | Esc: seleção de fases\n" +
-            "LUZ: estática" +
+            _playerInk.Status +
             (_scene.Player.ScaleChangeBlocked ? " | ESCALA BLOQUEADA" : "");
         int margin = GameScaleConfig.ScaleTestHudMargin;
         Vector2 size = _font.MeasureString(label);

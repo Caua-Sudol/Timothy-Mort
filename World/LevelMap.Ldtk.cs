@@ -15,10 +15,14 @@ public partial class LevelMap
     private Dictionary<int, string> _ldtkTilesetPaths = [];
     private Dictionary<int, Texture2D> _ldtkTextures = [];
     private GraphicsDevice _ldtkGraphicsDevice;
+    private LdtkTextureCache _ldtkTextureCache;
+
+    internal void UseLdtkTextureCache(LdtkTextureCache cache) => _ldtkTextureCache = cache;
 
     public void ReleaseLdtkTextures()
     {
-        foreach (Texture2D texture in _ldtkTextures.Values) texture.Dispose();
+        if (_ldtkTextureCache == null)
+            foreach (Texture2D texture in _ldtkTextures.Values) texture.Dispose();
         _ldtkTextures.Clear();
     }
 
@@ -28,22 +32,10 @@ public partial class LevelMap
         foreach (int uid in _ldtkTiles.Select(tile => tile.TilesetUid).Distinct())
         {
             string path = Path.GetFullPath(Path.Combine(directory, _ldtkTilesetPaths[uid]));
-            using var timing = new LoadDiagnostics($"tileset {path}");
-            using var stream = File.OpenRead(path);
-            Texture2D texture = Texture2D.FromStream(graphicsDevice, stream);
-            timing.Mark("abrir PNG e FromStream");
-            timing.Texture(texture);
+            Texture2D texture = _ldtkTextureCache != null
+                ? _ldtkTextureCache.GetOrLoad(graphicsDevice, path)
+                : LdtkTextureCache.LoadTexture(graphicsDevice, path);
             _ldtkTextures.Add(uid, texture);
-            // Raw PNGs use straight alpha; the game's AlphaBlend expects premultiplied alpha.
-            var pixels = new Color[texture.Width * texture.Height];
-            texture.GetData(pixels);
-            timing.Mark("alocar pixels e GetData");
-            for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = Color.FromNonPremultiplied(
-                    pixels[i].R, pixels[i].G, pixels[i].B, pixels[i].A);
-            timing.Mark("converter alpha");
-            texture.SetData(pixels);
-            timing.Mark("SetData");
         }
         foreach (var tile in _ldtkTiles)
         {
@@ -68,6 +60,10 @@ public partial class LevelMap
     {
         using var loading = new LoadDiagnostics($"LDtk {_ldtkLevelId}");
         var candidate = new LevelMap(_mapPath, _ldtkLevelId);
+        // Initial room entry can reuse the cache. Ctrl+R loads independent replacements,
+        // keeping the current room's textures valid if reading or validation fails.
+        if (_ldtkTextures.Count == 0)
+            candidate._ldtkTextureCache = _ldtkTextureCache;
         try
         {
             using var document = JsonDocument.Parse(File.ReadAllText(ResolveLdtkPath()));
@@ -77,8 +73,23 @@ public partial class LevelMap
             if (_ldtkGraphicsDevice != null)
                 candidate.LoadLdtkTextures(_ldtkGraphicsDevice);
             loading.Mark("carregar e validar tilesets");
-            ApplyObjectState(candidate);
-            ReleaseLdtkTextures();
+            if (_ldtkTextureCache != null && candidate._ldtkTextureCache == null)
+            {
+                string directory = Path.GetDirectoryName(ResolveLdtkPath());
+                var replacements = candidate._ldtkTextures.ToDictionary(
+                    entry => Path.GetFullPath(Path.Combine(directory, candidate._ldtkTilesetPaths[entry.Key])),
+                    entry => entry.Value);
+                ApplyObjectState(candidate);
+                ReleaseLdtkTextures();
+                foreach (var entry in replacements)
+                    _ldtkTextureCache.Replace(entry.Key, entry.Value);
+                candidate._ldtkTextureCache = _ldtkTextureCache;
+            }
+            else
+            {
+                ApplyObjectState(candidate);
+                ReleaseLdtkTextures();
+            }
             _ldtkTiles = candidate._ldtkTiles;
             _ldtkTilesetPaths = candidate._ldtkTilesetPaths;
             _ldtkTextures = candidate._ldtkTextures;

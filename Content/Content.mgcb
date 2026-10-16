@@ -10,6 +10,11 @@
 
 #-------------------------------- References --------------------------------#
 
+/reference:../ContentPipeline/bin/TimothyMort.ContentPipeline.dll
+
+# 1 = original resolution; 2 = half width/height. Rebuild content after changing.
+$set PlayerTextureDivisor=2
+
 
 #---------------------------------- Content ---------------------------------#
 
@@ -23,8 +28,6 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../assets/teste_ldtk/root_tileset.png;visual/teste_ldtk_terrain.png
-
-# PulsingLights.fx temporarily excluded from the content build.
 
 #begin ../assets/mg/interactive/sword.png
 /importer:TextureImporter
@@ -538,7 +541,11 @@
 
 #begin ../assets/player/Timothy_Mort_2.0_rigth.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -549,7 +556,11 @@
 
 #begin ../assets/player/Timothy_Mort_2.0_left.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -571,7 +582,11 @@
 
 #begin ../assets/animation/walk/walk0001.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -582,7 +597,11 @@
 
 #begin ../assets/animation/walk/walk0002.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -593,7 +612,11 @@
 
 #begin ../assets/animation/walk/walk0003.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -604,7 +627,11 @@
 
 #begin ../assets/animation/walk/walk0004.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -615,7 +642,11 @@
 
 #begin ../assets/animation/walk/walk0005.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -626,7 +657,11 @@
 
 #begin ../assets/animation/walk/walk0006.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -637,7 +672,11 @@
 
 #begin ../assets/animation/walk/walk0007.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -648,7 +687,11 @@
 
 #begin ../assets/animation/jump/jump0000.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -659,7 +702,11 @@
 
 #begin ../assets/animation/jump/jump0001.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -670,7 +717,11 @@
 
 #begin ../assets/animation/jump/jump0002.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -681,7 +732,11 @@
 
 #begin ../assets/animation/jump/jump0003.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -692,7 +747,11 @@
 
 #begin ../assets/animation/glide/glide0000.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -703,7 +762,11 @@
 
 #begin ../assets/animation/glide/glide0001.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -714,7 +777,11 @@
 
 #begin ../assets/animation/glide/glide0002.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -725,7 +792,11 @@
 
 #begin ../assets/animation/glide/glide0003.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
@@ -736,7 +807,11 @@
 
 #begin ../assets/animation/glide/glide0004.png
 /importer:TextureImporter
-/processor:TextureProcessor
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
 /processorParam:ColorKeyEnabled=False
 /processorParam:GenerateMipmaps=False
 /processorParam:PremultiplyAlpha=True
