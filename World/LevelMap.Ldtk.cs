@@ -91,6 +91,8 @@ public partial class LevelMap
                 ReleaseLdtkTextures();
             }
             _ldtkTiles = candidate._ldtkTiles;
+            _ldtkBackgroundLayers.Clear();
+            _ldtkBackgroundLayers.UnionWith(candidate._ldtkBackgroundLayers);
             _ldtkTilesetPaths = candidate._ldtkTilesetPaths;
             _ldtkTextures = candidate._ldtkTextures;
             error = null;
@@ -192,6 +194,8 @@ public partial class LevelMap
         foreach (var layer in layers.Reverse())
         {
             layerOrder++;
+            if (string.Equals(layer.GetProperty("__identifier").GetString(), "Casa_BG", StringComparison.OrdinalIgnoreCase))
+                _ldtkBackgroundLayers.Add(layerOrder);
             SolutionVisualModule solution = GetLdtkLayerSolution(layer.GetProperty("__identifier").GetString());
             // Solution layers can be hidden in the editor while composing the base terrain.
             if (solution == SolutionVisualModule.NONE && !layer.GetProperty("visible").GetBoolean()) continue;
@@ -256,7 +260,14 @@ public partial class LevelMap
         return SolutionVisualModule.NONE;
     }
 
-    private void DrawLdtk(SpriteBatch batch, SolutionVisualModule modules)
+    public void DrawLdtkBackground(SpriteBatch batch, SolutionVisualModule modules)
+    {
+        if (IsLdtk) DrawLdtk(batch, modules, true);
+    }
+
+    private readonly HashSet<int> _ldtkBackgroundLayers = [];
+
+    private void DrawLdtk(SpriteBatch batch, SolutionVisualModule modules, bool background = false)
     {
         // Replace only covered terrain cells; unpainted cells retain their original art.
         var replacements = new Dictionary<Rectangle, int>();
@@ -267,6 +278,7 @@ public partial class LevelMap
 
         foreach (var tile in _ldtkTiles)
         {
+            if (_ldtkBackgroundLayers.Contains(tile.LayerOrder) != background) continue;
             if (tile.Solution != SolutionVisualModule.NONE && !modules.HasFlag(tile.Solution))
                 continue;
             var gelatin = _gelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center));

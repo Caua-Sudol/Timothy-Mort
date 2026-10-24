@@ -15,10 +15,9 @@ internal sealed class ScaleTestRoom
     private readonly Texture2D _background;
     private readonly Texture2D _lights;
     private readonly Texture2D _pixel;
-    private readonly LdtkMolduraPreview _ldtkMoldura;
     private readonly PlayerInkPreview _playerInk;
     private bool _showOriginal;
-    private int _afterPreset = GameScaleConfig.DefaultPlayerScalePreset;
+    private int _afterPreset = 1;
     private string _reloadError;
 
     public ScaleTestRoom(GraphicsDevice graphics, ContentManager content, Vector2 dimensions)
@@ -28,9 +27,6 @@ internal sealed class ScaleTestRoom
         _background = LoadDiagnostics.LoadTexture(content, "visual/bg_prot");
         _lights = LoadDiagnostics.LoadTexture(content, "visual/affordance_visibility_lgt");
         loading.Mark("fontes e fundo");
-        _ldtkMoldura = new LdtkMolduraPreview(content,
-            "assets/teste_ldtk/teste_moldura.ldtk");
-        loading.Mark("moldura LDtk e tileset compilado");
         _pixel = new Texture2D(graphics, 1, 1);
         _pixel.SetData(new[] { Color.White });
         _debug = new DebugView(_font);
@@ -39,17 +35,16 @@ internal sealed class ScaleTestRoom
         _camera = new Camera(Vector2.Zero, dimensions, GameScaleConfig.OriginalCameraZoom);
         _scene = new Scene(new ScenarioDefinition(
             GameScaleConfig.ScaleTestScenarioId,
-            GameScaleConfig.ScaleTestMapPath,
+            "Content/Maps/EurekaTeste.ldtk",
             Vector2.Zero,
+            ldtkLevelId: "EurekaTeste",
             cameraBehavior: ScenarioCameraBehavior.CENTER_MAP,
+            playerScreenHeightRatio: 0.14f,
             supportsPlayerScalePreview: true));
         loading.Mark("debug, camera e construcao da cena");
         _scene.LoadContent(graphics, content);
         _playerInk = new PlayerInkPreview(content);
         loading.Mark("Scene.LoadContent");
-        _scene.SetAdditionalSolidColliders(_ldtkMoldura.FrameColliders);
-        _scene.SetAdditionalGelatinVolumes(_ldtkMoldura.GelatinVolumes);
-        _scene.UseAdditionalCollidersOnly();
         _scene.AlignCamera(_camera);
     }
 
@@ -110,10 +105,6 @@ internal sealed class ScaleTestRoom
         spriteBatch.End();
 
         _scene.Draw(spriteBatch, _camera, _playerInk.Prepare());
-        spriteBatch.Begin(samplerState: SamplerState.PointClamp,
-            transformMatrix: _camera.GetTransform());
-        _ldtkMoldura.Draw(spriteBatch);
-        spriteBatch.End();
         // Preview the first room's light layer at its original panorama proportions.
         spriteBatch.Begin(blendState: BlendState.AlphaBlend,
             samplerState: SamplerState.LinearClamp);
@@ -124,9 +115,9 @@ internal sealed class ScaleTestRoom
         _debug.DrawHud(spriteBatch, GameScaleConfig.ScaleTestScenarioId, _scene.Player);
 
         string label =
-            $"SALA DE TESTE | {(_showOriginal ? "ANTES" : "DEPOIS")} | " +
+            $"TESTE EUREKA | {(_showOriginal ? "ANTES" : "DEPOIS")} | " +
             $"zoom {_camera.Zoom:F3} | player {_scene.Player.RelativeScale:F2}\n" +
-            "B: antes/depois | 1/2/3/4: escala | R: spawn | Ctrl+R: TMX\n" +
+            "B: antes/depois | 1/2/3/4: escala | R: spawn | Ctrl+R: LDtk\n" +
             "Ctrl+P: grade | Esc: seleção de fases\n" +
             _playerInk.Status +
             (_scene.Player.ScaleChangeBlocked ? " | ESCALA BLOQUEADA" : "");

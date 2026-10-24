@@ -984,6 +984,13 @@ private static bool RectanglesTouchOrIntersect(
         }
 
         var cameraTransform = camera.GetTransform();
+        if (_map.IsLdtk && !_useAdditionalCollidersOnly)
+        {
+            spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+                transformMatrix: cameraTransform);
+            _map.DrawLdtkBackground(spriteBatch, GetAppliedVisualModules());
+            spriteBatch.End();
+        }
     spriteBatch.Begin(
         samplerState: SamplerState.PointClamp,
         effect: playerEffect,
