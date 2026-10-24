@@ -184,4 +184,5 @@ AGENTS.md
 # ---------------------------
 *.af
 *.psd
+*.kra
 *.tiled-session
