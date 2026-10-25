@@ -316,12 +316,13 @@ public partial class LevelMap
 
     private void DrawLdtk(SpriteBatch batch, SolutionVisualModule modules, bool background = false)
     {
-        // Replace only covered terrain cells; unpainted cells retain their original art.
-        var replacements = new Dictionary<Rectangle, int>();
+        // Solution art replaces covered terrain even when its grid size or layer order differs.
+        // Keep uncovered tiles and background art intact.
+        var replacements = new HashSet<Rectangle>();
         foreach (var tile in _ldtkTiles)
-            if (tile.Solution != SolutionVisualModule.NONE && modules.HasFlag(tile.Solution))
-                replacements[tile.Bounds] = Math.Max(
-                    replacements.GetValueOrDefault(tile.Bounds), tile.LayerOrder);
+            if (tile.Solution != SolutionVisualModule.NONE && modules.HasFlag(tile.Solution) &&
+                _ldtkBackgroundLayers.Contains(tile.LayerOrder) == background)
+                replacements.Add(tile.Bounds);
 
         foreach (var tile in _ldtkTiles)
         {
@@ -330,8 +331,7 @@ public partial class LevelMap
                 continue;
             var gelatin = _gelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center));
             if (tile.Solution == SolutionVisualModule.NONE && gelatin.Width > 0 &&
-                replacements.TryGetValue(tile.Bounds, out int replacementLayer) &&
-                tile.LayerOrder < replacementLayer)
+                replacements.Any(area => area.Contains(tile.Bounds)))
                 continue;
             Color tint = Color.White;
             Rectangle destination = tile.Bounds;
