@@ -38,6 +38,8 @@ internal static class GameScaleConfig
     public const float PlayerDashReferenceSpeed = 960f;
     public const float PlayerDashSpeed = PlayerDashReferenceSpeed * 0.80f;
     public const float PlayerDashDuration = 0.18f;
+    // Test: player holds still in the anticipation pose before the dash moves.
+    public const double PlayerDashStartupDuration = 0.06;
     public const double PlayerCoyoteTime = 0.10;
     public const double PlayerJumpBufferTime = 0.10;
     public const float PlayerGelatinMaximumFallSpeed = 96f;

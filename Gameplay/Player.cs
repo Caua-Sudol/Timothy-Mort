@@ -61,6 +61,7 @@ public class Player
     private float _dashSpeed = GameScaleConfig.PlayerDashSpeed;
     private float _dashDuration = GameScaleConfig.PlayerDashDuration;
     private double _dashTimer;
+    private double _dashStartupTimer;
 
     public PlayerState State { get; private set; } = PlayerState.Idle;
 
@@ -75,6 +76,9 @@ public class Player
 
     public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames) =>
         _presentation.SetAirAnimations(jumpFrames, glideFrames);
+
+    public void SetDashAnimations(Texture2D[] upFrames, Texture2D[] sideFrames) =>
+        _presentation.SetDashAnimations(upFrames, sideFrames);
 
     public void SetWalkAnimation(Texture2D[] frames) =>
         _presentation.SetWalkAnimation(frames);
@@ -123,7 +127,6 @@ public class Player
         // Preserve velocity in player-heights/second, including mid-jump/dash swaps.
         _velocity *= scale / RelativeScale;
         RelativeScale = scale;
-        _presentation.ClearDashTrail();
         return true;
     }
 
@@ -269,7 +272,8 @@ public void Update(double deltaTime)
     {
         _jumpCanBeCut = false;
         int dashHorizontalInput = horizontalInput;
-        int dashVerticalInput = _input.Vertical;
+        // No downward dash: S is ignored, so S + A/D becomes a side dash.
+        int dashVerticalInput = Math.Min(_input.Vertical, 0);
 
         Vector2 direction = new Vector2(dashHorizontalInput, dashVerticalInput);
 
@@ -280,8 +284,7 @@ public void Update(double deltaTime)
 
     _dashDirection = direction;
     _dashTimer = _dashDuration;
-        _presentation.ClearDashTrail();
-        _presentation.RecordDashTrailPosition(_player);
+        _dashStartupTimer = GameScaleConfig.PlayerDashStartupDuration;
     State = PlayerState.Dashing;
         CanDash = false;
         ShowsDashAsAvailable = false;
@@ -289,7 +292,14 @@ public void Update(double deltaTime)
 
 private void UpdateDash(double deltaTime)
 {
-        _presentation.RecordDashTrailPosition(_player);
+        if (_dashStartupTimer > 0)
+        {
+            // Hold still (no gravity) so the anticipation pose is readable.
+            _dashStartupTimer -= deltaTime;
+            _velocity = Vector2.Zero;
+            return;
+        }
+
     _velocity = _dashDirection * (_dashSpeed * RelativeScale);
         _dashTimer -= deltaTime;
 
@@ -307,7 +317,7 @@ private void UpdateDash(double deltaTime)
 public void EndDash()
 {
     _dashTimer = 0f;
-        _presentation.ClearDashTrail();
+        _dashStartupTimer = 0;
     State = _isGrounded ? PlayerState.Idle : PlayerState.Falling;
 
     _velocity = _velocity * 0.5f;
@@ -505,6 +515,7 @@ public void EndDash()
     internal Vector2 DashDirectionForPresentation => _dashDirection;
     internal float DashDurationForPresentation => _dashDuration;
     internal double DashTimerForPresentation => _dashTimer;
+    internal bool IsInDashStartupForPresentation => _dashStartupTimer > 0;
     internal int HorizontalInputForPresentation => _input.Horizontal;
 
 }

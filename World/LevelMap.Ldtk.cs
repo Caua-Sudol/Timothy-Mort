@@ -19,11 +19,51 @@ public partial class LevelMap
 
     internal void UseLdtkTextureCache(LdtkTextureCache cache) => _ldtkTextureCache = cache;
 
+    // Sala_intervencao art: full 1920x1080 layers, back to front, drawn to cover the room.
+    // Collision still comes only from the LDtk Colisao layer.
+    private const string InterventionLevelId = "Sala_intervencao";
+    private const string InterventionSceneryDirectory = "../../assets/eureka";
+    private static readonly string[] InterventionSceneryBehindPlayer =
+        { "Intervencao_bg_geral.png", "fumaca_frente.png", "Intervencao_plataformas_fundo.png" };
+    private static readonly string[] InterventionSceneryInFrontOfPlayer =
+        { "Intervencao_plataformas_fg.png", "fg_fumaca_frente.png" };
+    private List<Texture2D> _sceneryBehindPlayer = [];
+    private List<Texture2D> _sceneryInFrontOfPlayer = [];
+
     public void ReleaseLdtkTextures()
     {
         if (_ldtkTextureCache == null)
             foreach (Texture2D texture in _ldtkTextures.Values) texture.Dispose();
         _ldtkTextures.Clear();
+        // Scenery is not released here: the shared cache owns and disposes it.
+    }
+
+    private void LoadInterventionScenery(GraphicsDevice graphicsDevice, string ldtkDirectory)
+    {
+        if (_ldtkLevelId != InterventionLevelId || _ldtkTextureCache == null) return;
+        List<Texture2D> Load(string[] files) => files
+            .Select(file => _ldtkTextureCache.GetOrLoad(graphicsDevice, Path.GetFullPath(
+                Path.Combine(ldtkDirectory, InterventionSceneryDirectory, file))))
+            .ToList();
+        _sceneryBehindPlayer = Load(InterventionSceneryBehindPlayer);
+        _sceneryInFrontOfPlayer = Load(InterventionSceneryInFrontOfPlayer);
+    }
+
+    public bool HasLdtkScenery => _sceneryBehindPlayer.Count + _sceneryInFrontOfPlayer.Count > 0;
+
+    public void DrawLdtkScenery(SpriteBatch batch, bool inFrontOfPlayer)
+    {
+        foreach (Texture2D texture in inFrontOfPlayer ? _sceneryInFrontOfPlayer : _sceneryBehindPlayer)
+        {
+            // Same as LDtk's "Cover" background: fill the room, keep proportions, center the crop.
+            float scale = Math.Max(WidthInPixels / (float)texture.Width,
+                HeightInPixels / (float)texture.Height);
+            var position = new Vector2(
+                (WidthInPixels - texture.Width * scale) / 2f,
+                (HeightInPixels - texture.Height * scale) / 2f);
+            batch.Draw(texture, position, null, Color.White, 0f, Vector2.Zero, scale,
+                SpriteEffects.None, 0f);
+        }
     }
 
     private void LoadLdtkTextures(GraphicsDevice graphicsDevice)
@@ -37,6 +77,7 @@ public partial class LevelMap
                 : LdtkTextureCache.LoadTexture(graphicsDevice, path);
             _ldtkTextures.Add(uid, texture);
         }
+        LoadInterventionScenery(graphicsDevice, directory);
         foreach (var tile in _ldtkTiles)
         {
             Texture2D texture = _ldtkTextures[tile.TilesetUid];
@@ -95,6 +136,12 @@ public partial class LevelMap
             _ldtkBackgroundLayers.UnionWith(candidate._ldtkBackgroundLayers);
             _ldtkTilesetPaths = candidate._ldtkTilesetPaths;
             _ldtkTextures = candidate._ldtkTextures;
+            // Only the first load reads scenery (through the cache); Ctrl+R keeps it.
+            if (candidate.HasLdtkScenery)
+            {
+                _sceneryBehindPlayer = candidate._sceneryBehindPlayer;
+                _sceneryInFrontOfPlayer = candidate._sceneryInFrontOfPlayer;
+            }
             error = null;
             return true;
         }

@@ -170,6 +170,13 @@ public sealed class PhaseSelectMenu
             Vector2 statusPosition = cardRectangle.Center.ToVector2() +
                 new Vector2(0.0f, 105.0f);
 
+            if (ResearchStudyConfiguration.BetaAffordanceOnly && index > 0)
+            {
+                DrawCenteredText(spriteBatch, "Indisponível na beta",
+                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, 50.0f),
+                    textColor, _font, 0.6f);
+            }
+
             Texture2D statusIcon = isCompleted ? _check : isUnlocked ? _openLock : _closedLock;
             const int iconSize = 64;
             spriteBatch.Draw(statusIcon,

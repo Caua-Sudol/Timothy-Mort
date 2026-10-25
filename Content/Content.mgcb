@@ -819,3 +819,63 @@ $endif
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../assets/animation/glide/glide0004.png;player/glide/glide0004.png
+
+#begin ../assets/animation/dash/dash0000.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/dash/dash0000.png;player/dash/dash0000.png
+
+#begin ../assets/animation/dash/dash0001.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/dash/dash0001.png;player/dash/dash0001.png
+
+#begin ../assets/animation/dash/dash_vert0000.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/dash/dash_vert0000.png;player/dash/dash_vert0000.png
+
+#begin ../assets/animation/dash/dash_vert0001.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/dash/dash_vert0001.png;player/dash/dash_vert0001.png

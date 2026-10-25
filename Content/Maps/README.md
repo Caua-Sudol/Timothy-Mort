@@ -34,6 +34,21 @@ Entrada e saida da intervencao usam simbolos do atlas da tela inicial flutuando 
 - Pinte as variantes completas em tiles de 96x96 alinhados aos tiles originais, acima do terreno. Nas celulas de gelatina cobertas pela solucao ativa, os tiles inferiores coincidentes sao ocultados para preservar a transparencia do novo asset. Celulas sem variante conservam a terra original.
 - A fisica continua definida por `Colisao`; trocar a solucao altera apenas o visual. A cor azul e a marca por codigo nao sao mais usadas nos mapas LDtk.
 
+## Cenario da Sala_intervencao
+
+A arte da intervencao nao usa tiles: o jogo desenha cinco imagens 1920x1080 de `assets/eureka` cobrindo a sala inteira (escala 1,5, recorte centralizado, igual ao modo "Cover" do LDtk). Ordem, de tras para frente:
+
+1. `Intervencao_bg_geral.png`
+2. `fumaca_frente.png`
+3. `Intervencao_plataformas_fundo.png`
+4. jogador, espada, portas e tiles do LDtk
+5. `Intervencao_plataformas_fg.png`
+6. `fg_fumaca_frente.png`
+
+A colisao continua vindo so da camada `Colisao`. Para alinhar: nas propriedades do nivel `Sala_intervencao`, use `Intervencao_plataformas_fundo.png` como imagem de fundo do nivel com o modo "Cover"; o jogo ignora esse fundo, ele serve so de guia no editor. Tiles antigos de terreno nessa sala continuam sendo desenhados por cima da arte; apague-os ou oculte a camada no editor. As camadas de solucao (`Solucao_gelatina`, `Solucao_mark`) continuam ativas mesmo ocultas.
+
+Trocar o PNG exige reiniciar a fase: o Ctrl+R recarrega mapa e tilesets, mas mantem essas cinco imagens.
+
 ## Entidades
 
 | Entidade             | Uso                                                                                      |

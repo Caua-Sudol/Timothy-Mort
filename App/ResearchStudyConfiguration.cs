@@ -5,6 +5,9 @@ namespace DontLikePoetry;
 
 public static class ResearchStudyConfiguration
 {
+    // Beta: only Affordance is playable, and finishing it completes the study.
+    public const bool BetaAffordanceOnly = true;
+
     // Configure these values after creating the final Google Form.
     // Example field: entry.123456789
     private const string MeegaFormUrl = "";

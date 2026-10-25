@@ -11,9 +11,6 @@ internal sealed class PlayerPresentation
     private static readonly Color DashAvailableColor = Color.Purple;
     private static readonly Color DashSpentColor = Color.SlateGray;
 
-    private const int MaximumDashTrailPositions = 12;
-    private const float MinimumDashTrailSpacingSquared = 16.0f;
-    private readonly List<Vector2> _dashTrailPositions = new List<Vector2>();
     private const double SurfaceContactFlashDuration = 0.12;
     private double _surfaceContactFlashTimer;
     private const double DashRechargeSymbolDuration = 0.45;
@@ -31,8 +28,14 @@ internal sealed class PlayerPresentation
     private double _walkAnimationTime;
     private Texture2D[] _jumpFrames;
     private Texture2D[] _glideFrames;
+    private Texture2D[] _upDashFrames;
+    private Texture2D[] _sideDashFrames;
+    // dash_vert PNGs are drawn with the head pointing left; flip them for right dashes.
+    private const bool SideDashSpriteFacesLeft = true;
+    // Share of the dash shown with frame 0000 before switching to 0001.
+    private const double DashFirstFrameFraction = 0.75;
     private const double AirFramesPerSecond = 10.0;
-    private enum AirAnimation { None, Jump, Glide, Landing, Dash }
+    private enum AirAnimation { None, Jump, Glide, Landing, Dash, DashHold }
     private AirAnimation _airAnimation;
     private double _airAnimationTime;
     private bool _wasAirborne;
@@ -57,7 +60,7 @@ internal sealed class PlayerPresentation
         if (_jumpFrames == null || _glideFrames == null)
             return;
 
-        if (state == PlayerState.Dashing)
+        if (state == PlayerState.Dashing && HasDashFrames)
         {
             _airAnimation = AirAnimation.Dash;
             _airAnimationTime = 0;
@@ -80,7 +83,13 @@ internal sealed class PlayerPresentation
         }
         else
         {
-            if (_airAnimation != AirAnimation.Jump && _airAnimation != AirAnimation.Glide)
+            if (_airAnimation == AirAnimation.Dash || _airAnimation == AirAnimation.DashHold)
+            {
+                // Keep the last dash pose (its hat shows the spent dash) until the fall starts.
+                _airAnimation = velocity.Y < 0 ? AirAnimation.DashHold : AirAnimation.Glide;
+                _airAnimationTime = 0;
+            }
+            else if (_airAnimation != AirAnimation.Jump && _airAnimation != AirAnimation.Glide)
             {
                 _airAnimation = velocity.Y < 0 ? AirAnimation.Jump : AirAnimation.Glide;
                 _airAnimationTime = 0;
@@ -99,6 +108,14 @@ internal sealed class PlayerPresentation
         }
         _wasAirborne = !isGrounded;
     }
+
+    public void SetDashAnimations(Texture2D[] upFrames, Texture2D[] sideFrames)
+    {
+        _upDashFrames = upFrames;
+        _sideDashFrames = sideFrames;
+    }
+
+    private bool HasDashFrames => _upDashFrames != null && _sideDashFrames != null;
 
     private bool IsWalking(int horizontalInput) =>
         _walkFrames != null && _walkFrames.Length > 0 && horizontalInput != 0;
@@ -206,19 +223,6 @@ internal sealed class PlayerPresentation
         _wasAirborne = false;
     }
 
-    public void RecordDashTrailPosition(Vector2 position)
-    {
-        if (_dashTrailPositions.Count > 0 &&
-            Vector2.DistanceSquared(_dashTrailPositions[^1], position) <
-                MinimumDashTrailSpacingSquared)
-            return;
-
-        _dashTrailPositions.Add(position);
-        if (_dashTrailPositions.Count > MaximumDashTrailPositions)
-            _dashTrailPositions.RemoveAt(0);
-    }
-
-    public void ClearDashTrail() => _dashTrailPositions.Clear();
     public void StartSurfaceContactFlash() => _surfaceContactFlashTimer = SurfaceContactFlashDuration;
     public void ClearSurfaceContactFlash() => _surfaceContactFlashTimer = 0.0;
     public void StartDashRechargeSymbol() => _dashRechargeSymbolTimer = DashRechargeSymbolDuration;
@@ -241,12 +245,6 @@ internal sealed class PlayerPresentation
         SolutionVisualModule visualModules,
         double damageInvulnerabilityRemainingSeconds)
     {
-    if ((visualModules & SolutionVisualModule.PLAYER_DASH_TRAIL) != 0 &&
-        player.State == PlayerState.Dashing)
-    {
-        DrawDashTrail(spriteBatch, player.HitBox.Size);
-    }
-
     bool usesAlternativeDashRechargeFeedback =
         (visualModules &
          (SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL |
@@ -331,19 +329,41 @@ internal sealed class PlayerPresentation
                 AirAnimation.Jump => _jumpFrames[3],
                 AirAnimation.Glide => _glideFrames[frame % _glideFrames.Length],
                 AirAnimation.Landing => _jumpFrames[2 - Math.Min(frame, 2)],
-                AirAnimation.Dash => player.DashDurationForPresentation - player.DashTimerForPresentation < 1.0 / AirFramesPerSecond
-                    ? _glideFrames[2] : _jumpFrames[3],
+                // Dash poses are chosen below.
                 _ => _jumpFrames[_jumpFrames.Length - 1]
             };
-            if (_airAnimation == AirAnimation.Dash)
-            {
-                if (player.DashDirectionForPresentation.X != 0)
-                    facingLeft = player.DashDirectionForPresentation.X < 0;
-                // The final jump pose points diagonally upward; rotate it toward the dash.
-                float poseAngle = facingLeft ? -3f * MathHelper.PiOver4 : -MathHelper.PiOver4;
-                spriteRotation = (float)Math.Atan2(player.DashDirectionForPresentation.Y, player.DashDirectionForPresentation.X) - poseAngle;
-            }
             spriteEffects = facingLeft ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            if (_airAnimation == AirAnimation.Dash || _airAnimation == AirAnimation.DashHold)
+            {
+                Vector2 dashDirection = player.DashDirectionForPresentation;
+                if (dashDirection.X != 0)
+                    facingLeft = dashDirection.X < 0;
+                spriteEffects = facingLeft ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+                bool holding = _airAnimation == AirAnimation.DashHold;
+                double dashElapsed = player.DashDurationForPresentation -
+                    player.DashTimerForPresentation;
+                int dashFrame = holding ||
+                    dashElapsed >= player.DashDurationForPresentation * DashFirstFrameFraction
+                    ? 1 : 0;
+                if (dashDirection.Y < 0)
+                {
+                    // Upward pose faces right; tilt it 45 degrees for diagonal dashes.
+                    sprite = _upDashFrames[Math.Min(dashFrame, _upDashFrames.Length - 1)];
+                    spriteRotation = (float)Math.Atan2(dashDirection.Y, dashDirection.X) + MathHelper.PiOver2;
+                }
+                else if (!holding && player.IsInDashStartupForPresentation)
+                {
+                    // Placeholder anticipation until the drawn pose exists: up pose tilted 45 degrees.
+                    sprite = _upDashFrames[0];
+                    spriteRotation = facingLeft ? -MathHelper.PiOver4 : MathHelper.PiOver4;
+                }
+                else
+                {
+                    sprite = _sideDashFrames[Math.Min(dashFrame, _sideDashFrames.Length - 1)];
+                    spriteEffects = facingLeft == SideDashSpriteFacesLeft
+                        ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+                }
+            }
             source = sprite.Bounds;
             spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
             spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
@@ -524,25 +544,6 @@ public void DrawDashEnergyAbsorption(
             _texture,
             new Rectangle((int)position.X - 2, (int)position.Y - 2, 4, 4),
             particleColor);
-    }
-}
-
-private void DrawDashTrail(SpriteBatch spriteBatch, Point playerSize)
-{
-    for (int index = 0; index < _dashTrailPositions.Count; index++)
-    {
-        float progress =
-            (index + 1.0f) / (_dashTrailPositions.Count + 1.0f);
-        float opacity = 0.15f + 0.35f * progress;
-        Vector2 position = _dashTrailPositions[index];
-
-        var trailBounds = new Rectangle(
-            (int)position.X,
-            (int)position.Y,
-            playerSize.X,
-            playerSize.Y);
-
-        spriteBatch.Draw(_texture, trailBounds, Color.White * opacity);
     }
 }
 }

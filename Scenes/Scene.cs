@@ -280,6 +280,14 @@ private Vector2 _checkpoint;
             for (int index = 0; index < glideFrames.Length; index++)
                 glideFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/glide/glide{index:D4}");
             _player.SetAirAnimations(jumpFrames, glideFrames);
+            var upDashFrames = new Texture2D[2];
+            var sideDashFrames = new Texture2D[2];
+            for (int index = 0; index < upDashFrames.Length; index++)
+            {
+                upDashFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/dash/dash{index:D4}");
+                sideDashFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/dash/dash_vert{index:D4}");
+            }
+            _player.SetDashAnimations(upDashFrames, sideDashFrames);
         }
 
         loading.Mark("sprites e animacoes do player", includeInSummary: true);
@@ -984,6 +992,15 @@ private static bool RectanglesTouchOrIntersect(
         }
 
         var cameraTransform = camera.GetTransform();
+        bool drawsScenery = _map.HasLdtkScenery && !_useAdditionalCollidersOnly;
+        if (drawsScenery)
+        {
+            // Painted 1080p layers are upscaled; linear filtering avoids blocky edges.
+            spriteBatch.Begin(samplerState: SamplerState.LinearClamp,
+                transformMatrix: cameraTransform);
+            _map.DrawLdtkScenery(spriteBatch, inFrontOfPlayer: false);
+            spriteBatch.End();
+        }
         if (_map.IsLdtk && !_useAdditionalCollidersOnly)
         {
             spriteBatch.Begin(samplerState: SamplerState.PointClamp,
@@ -1033,6 +1050,14 @@ private static bool RectanglesTouchOrIntersect(
     _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
 
         spriteBatch.End();
+
+        if (drawsScenery)
+        {
+            spriteBatch.Begin(samplerState: SamplerState.LinearClamp,
+                transformMatrix: cameraTransform);
+            _map.DrawLdtkScenery(spriteBatch, inFrontOfPlayer: true);
+            spriteBatch.End();
+        }
     }
 
     private void DrawPropVisualWorld(SpriteBatch spriteBatch, Camera camera)

@@ -483,7 +483,9 @@ public class Game1 : Game
         {
             string persistenceMessage;
             bool completesStudy = _phaseRun.State.PhaseId ==
-                ScenarioCatalog.ConceptualModelsConstraintsScenarioId;
+                (ResearchStudyConfiguration.BetaAffordanceOnly
+                    ? ScenarioCatalog.AffordanceVisibilityScenarioId
+                    : ScenarioCatalog.ConceptualModelsConstraintsScenarioId);
             if (_studySession.TryRecordPhaseCompletion(
                 _phaseRun.State,
                 completesStudy))

@@ -27,9 +27,9 @@ A implementação e as ressalvas aceitas para o protótipo estão registradas em
 | Controle            | Ação                                                     |
 |---------------------|----------------------------------------------------------|
 | `A` / `D`           | Mover e navegar horizontalmente nos menus.               |
-| `W` / `S`           | Direção vertical do dash e navegação vertical nos menus. |
+| `W` / `S`           | `W` mira o dash para cima e navegação vertical nos menus. |
 | `Space`             | Pular.                                                   |
-| `LeftShift`         | Impulso (Dash) em oito direções.                         |
+| `LeftShift`         | Impulso (Dash) para os lados, para cima e diagonais cima. |
 | `Enter`             | Confirmar uma escolha.                                   |
 | `Escape`            | Abrir ou fechar pause.                                   |
 | `Ctrl esquerdo + P` | Ativar ou desativar o debug visual.                      |

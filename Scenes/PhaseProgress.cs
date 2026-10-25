@@ -43,8 +43,10 @@ public sealed class PhaseProgress
         {
             ScenarioCatalog.AffordanceVisibilityScenarioId => true,
             ScenarioCatalog.DamageFeedbackScenarioId =>
+                !ResearchStudyConfiguration.BetaAffordanceOnly &&
                 IsCompleted(ScenarioCatalog.AffordanceVisibilityScenarioId),
             ScenarioCatalog.ConceptualModelsConstraintsScenarioId =>
+                !ResearchStudyConfiguration.BetaAffordanceOnly &&
                 IsCompleted(ScenarioCatalog.DamageFeedbackScenarioId),
             _ => false
         };
