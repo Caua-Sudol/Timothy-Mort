@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace DontLikePoetry;
 
@@ -19,6 +20,29 @@ public static class ResearchStudyConfiguration
         {
             return Uri.TryCreate(MeegaFormUrl, UriKind.Absolute, out _) &&
                 !string.IsNullOrWhiteSpace(SessionFieldName);
+        }
+    }
+
+    // Opens the folder in Explorer (Windows) or the default file manager (Linux, via xdg-open).
+    public static bool TryOpenExportFolder(string exportPath, out string errorMessage)
+    {
+        try
+        {
+            string folder = Path.GetDirectoryName(exportPath);
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+            {
+                errorMessage = "A pasta dos dados não foi encontrada.";
+                return false;
+            }
+
+            Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+            errorMessage = null;
+            return true;
+        }
+        catch (Exception)
+        {
+            errorMessage = "Não foi possível abrir a pasta. Use o caminho mostrado acima.";
+            return false;
         }
     }
 

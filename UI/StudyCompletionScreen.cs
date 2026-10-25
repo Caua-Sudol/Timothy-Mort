@@ -11,7 +11,8 @@ public enum StudyCompletionAction
     NONE = 0,
     OPEN_FORM = 1,
     RETRY_EXPORT = 2,
-    RETURN_TO_MENU = 3
+    RETURN_TO_MENU = 3,
+    OPEN_EXPORT_FOLDER = 4
 }
 
 public sealed class StudyCompletionScreen
@@ -21,6 +22,8 @@ public sealed class StudyCompletionScreen
     private string _exportPath;
     private string _exportError;
     private string _formStatus;
+
+    public string ExportPath => _exportPath;
 
     public StudyCompletionScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions, Texture2D symbols)
     {
@@ -35,9 +38,10 @@ public sealed class StudyCompletionScreen
         _session = session;
         _exportPath = exportPath;
         _exportError = exportError;
+        // While the MEEGA+ form is not configured (expert beta), the screen does not mention it.
         _formStatus = ResearchStudyConfiguration.IsMeegaFormConfigured
             ? "Questionário MEEGA+ pronto para abrir."
-            : "Questionário MEEGA+ ainda não configurado.";
+            : null;
         RefreshPresentation();
     }
 
@@ -70,6 +74,12 @@ public sealed class StudyCompletionScreen
         if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.R))
         {
             return StudyCompletionAction.RETRY_EXPORT;
+        }
+
+        if (!string.IsNullOrEmpty(_exportPath) &&
+            KeyWasPressed(keyboardState, previousKeyboardState, Keys.O))
+        {
+            return StudyCompletionAction.OPEN_EXPORT_FOLDER;
         }
 
         if (ResearchStudyConfiguration.IsMeegaFormConfigured &&
@@ -107,7 +117,7 @@ public sealed class StudyCompletionScreen
         text.AppendLine();
         if (!string.IsNullOrEmpty(_exportPath))
         {
-            text.AppendLine("Dados exportados localmente:");
+            text.AppendLine("Envie este arquivo ao pesquisador (O abre a pasta):");
             text.AppendLine(_exportPath);
         }
         else
@@ -115,12 +125,16 @@ public sealed class StudyCompletionScreen
             text.AppendLine(_exportError ?? "A exportação local não foi concluída.");
         }
 
-        text.AppendLine();
-        text.Append(_formStatus);
+        if (!string.IsNullOrEmpty(_formStatus))
+        {
+            text.AppendLine();
+            text.Append(_formStatus);
+        }
 
-        string navigation = ResearchStudyConfiguration.IsMeegaFormConfigured
-            ? "F: abrir MEEGA+    R: exportar novamente    Enter: voltar ao menu"
-            : "R: exportar novamente    Enter: voltar ao menu";
+        string navigation =
+            (ResearchStudyConfiguration.IsMeegaFormConfigured ? "F: abrir MEEGA+    " : "") +
+            (!string.IsNullOrEmpty(_exportPath) ? "O: abrir pasta    " : "") +
+            "R: exportar novamente    Enter: voltar ao menu";
         _presentation.Open("PESQUISA CONCLUÍDA", text.ToString(), navigation);
     }
 

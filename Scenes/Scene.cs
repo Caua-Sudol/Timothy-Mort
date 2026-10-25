@@ -46,6 +46,7 @@ public class Scene
     public bool HasVisibleAffordancePassage => IsAffordance &&
         _map.InterventionEntrances.Any(e => e.Placement == GetActiveInterventionEntrancePlacement());
     private bool _interactPressed;
+    private bool _room3BarrierTouched;
     private float _respawnEffectTime;
     private bool IsAffordance => _phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId;
 
@@ -194,6 +195,7 @@ private Vector2 _checkpoint;
         _requestedScenarioId = null;
         _requestedSpawnId = null;
         _interventionTrigger.Reset();
+        _room3BarrierTouched = false;
         SyncInterventionState();
         _usedGelatins.Clear();
         _playerWasTouchingSolidSurface = false;
@@ -341,6 +343,7 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
         _requestedScenarioId = null;
         _requestedSpawnId = null;
         _interventionTrigger.Reset();
+        _room3BarrierTouched = false;
         SyncInterventionState();
         ConfigureExitDoor();
 
@@ -365,6 +368,45 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
 
     public bool TryTakeInterventionButtonActivation() => _interventionTrigger.TryTakeActivation();
 
+    public bool TryTakeRoom3BarrierTouch()
+    {
+        if (!_room3BarrierTouched) return false;
+        _room3BarrierTouched = false;
+        return true;
+    }
+
+    // Room 2's way to room 3 stays sealed until a first solution is chosen in the intervention.
+    private IEnumerable<SceneExit> GetRoom3Barriers()
+    {
+        if (!IsAffordance || _phaseState.HasFirstChoice ||
+            _phaseState.CurrentScenarioId != ScenarioCatalog.AffordanceRoom2ScenarioId)
+            return Enumerable.Empty<SceneExit>();
+        return _map.SceneExits.Where(exit =>
+            exit.DestinationScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId);
+    }
+
+    // Open ways forward in the challenge rooms, marked with a light.
+    // RoomBack exits lead to "retorno_tela" and stay unmarked.
+    private IEnumerable<SceneExit> GetLitExits()
+    {
+        if (!IsAffordance || IsAffordanceIntervention) return Enumerable.Empty<SceneExit>();
+        var barriers = GetRoom3Barriers().ToList();
+        return _map.SceneExits.Where(exit =>
+            exit.DestinationSpawnId != "retorno_tela" && !barriers.Contains(exit) &&
+            (!exit.RequiresAppliedSolution || _phaseState.ExitDoorIsOpen));
+    }
+
+    // Visible part of an exit, at least one passage tall, so the smoke shows even
+    // when the exit is a pit that extends below the room.
+    private Rectangle GetBarrierSmokeBounds(Rectangle barrier)
+    {
+        const int minimumHeight = 192;
+        Rectangle visible = Rectangle.Intersect(barrier,
+            new Rectangle(0, 0, _map.WidthInPixels, _map.HeightInPixels));
+        if (visible.Height >= minimumHeight) return visible;
+        return new Rectangle(visible.X, visible.Bottom - minimumHeight, visible.Width, minimumHeight);
+    }
+
 private void UpdatePlaying(Camera camera, double deltaTime)
 {
     _map.UpdateVisualEffects(deltaTime);
@@ -379,7 +421,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         ApplyGelatinFallSpeed();
         _damageParticlesTimer = Math.Max(0, _damageParticlesTimer - deltaTime);
         _damageImpactMarkTimer = Math.Max(0, _damageImpactMarkTimer - deltaTime);
-        UpdateDamage();
+        UpdateDamage(camera);
 
         if (_playerIsDead)
         {
@@ -466,6 +508,11 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             _player,
             GetSolidColliders(),
             deltaTime);
+
+        Rectangle touchArea = _player.HitBox;
+        touchArea.Inflate(4, 4);
+        if (GetRoom3Barriers().Any(exit => touchArea.Intersects(exit.Bounds)))
+            _room3BarrierTouched = true;
     }
 
     private IEnumerable<Rectangle> GetSolidColliders()
@@ -479,10 +526,11 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             .Concat(_exitDoor.Collider.HasValue
                 ? new[] { _exitDoor.Collider.Value }
                 : Enumerable.Empty<Rectangle>())
-            .Concat(_additionalSolidColliders);
+            .Concat(_additionalSolidColliders)
+            .Concat(GetRoom3Barriers().Select(exit => exit.Bounds));
     }
 
-    private bool UpdateDamage()
+    private bool UpdateDamage(Camera camera)
     {
         if (_phaseState?.HasDamageSystem != true)
         {
@@ -503,6 +551,13 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         {
             damageVolume = _map.GetHarmlessSpikeVolume(_player.HitBox);
             hitHarmlessSpike = damageVolume != null;
+        }
+
+        // Affordance spikes work like falling: lose a heart and respawn, even while invulnerable.
+        if (damageVolume != null && IsAffordance)
+        {
+            RecoverAffordance(camera, true);
+            return true;
         }
 
         int damageAmount = hitHarmlessSpike &&
@@ -1051,6 +1106,16 @@ private static bool RectanglesTouchOrIntersect(
 
         spriteBatch.End();
 
+        var litExits = GetLitExits().ToList();
+        if (litExits.Count > 0)
+        {
+            spriteBatch.Begin(blendState: BlendState.Additive, samplerState: SamplerState.LinearClamp,
+                transformMatrix: cameraTransform);
+            foreach (SceneExit exit in litExits)
+                ExitLight.Draw(spriteBatch, exit.Bounds, _map.WidthInPixels, _map.HeightInPixels, _passageTime);
+            spriteBatch.End();
+        }
+
         if (drawsScenery)
         {
             spriteBatch.Begin(samplerState: SamplerState.LinearClamp,
@@ -1159,6 +1224,9 @@ private static bool RectanglesTouchOrIntersect(
                 FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols, entrance.Bounds, _passageTime);
                 DrawInteractionPrompt(spriteBatch, entrance.Bounds);
             }
+        foreach (SceneExit barrier in GetRoom3Barriers())
+            FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols,
+                GetBarrierSmokeBounds(barrier.Bounds), _passageTime);
         if (IsAffordanceIntervention)
             foreach (SceneExit exit in _map.SceneExits)
             {

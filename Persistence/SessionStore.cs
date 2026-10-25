@@ -227,7 +227,23 @@ public sealed class SessionStore
                 WriteIndented = true
             });
         File.WriteAllText(exportPath, json);
-        return exportPath;
+
+        // Also save a copy in a folder testers can find (Documents on Windows, home on Linux).
+        try
+        {
+            string visibleDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "TimothyMort");
+            Directory.CreateDirectory(visibleDirectory);
+            string visiblePath = Path.Combine(visibleDirectory,
+                $"sessao_{session.PublicCode}_{session.SessionId}.json");
+            File.WriteAllText(visiblePath, json);
+            return visiblePath;
+        }
+        catch (Exception)
+        {
+            return exportPath;
+        }
     }
 
     private static void UpsertPhaseProgress(

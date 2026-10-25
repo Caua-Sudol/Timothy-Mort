@@ -8,6 +8,10 @@ public static class MortDialogueCatalog
         "Está vendo os símbolos flutuando? Aproxime-se e pressione E. " +
         "Vou te levar a um lugar onde podemos facilitar a travessia.";
 
+    public const string Room3Barrier =
+        "Os símbolos fecharam esta passagem. Antes de seguir, procure a fumaça " +
+        "de símbolos e pressione E para irmos à sala da intervenção.";
+
     public static readonly string[] Introduction =
     {
         "Cuidado, garoto! Não dá para entender o que cada coisa faz só pela aparência.",

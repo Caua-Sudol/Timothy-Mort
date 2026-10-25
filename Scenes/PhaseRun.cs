@@ -32,6 +32,7 @@ public sealed class PhaseRun : IDisposable
     private KeyboardState _previousKeyboardState;
     private bool _mortCombinationSpoken;
     private bool _mortPassageSpoken;
+    private bool _mortBarrierSpoken;
     private string _mapReloadErrorMessage;
 
     public PhaseState State => _phaseState;
@@ -235,6 +236,12 @@ public sealed class PhaseRun : IDisposable
             _mortSubtitle.Show(false, MortDialogueCatalog.Passage);
         }
 
+        if (_scene.TryTakeRoom3BarrierTouch() && !_mortBarrierSpoken)
+        {
+            _mortBarrierSpoken = true;
+            _mortSubtitle.Show(false, MortDialogueCatalog.Room3Barrier);
+        }
+
         if (_scene.TryTakeInterventionButtonActivation())
         {
             if (_phaseState == null)
@@ -428,6 +435,7 @@ public sealed class PhaseRun : IDisposable
                 baseVisualModulesOverride);
             _mortCombinationSpoken = false;
             _mortPassageSpoken = false;
+            _mortBarrierSpoken = false;
             _mortSubtitle.Clear();
             if (destinationPhase.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
                 _mortSubtitle.Show(false, MortDialogueCatalog.Introduction);

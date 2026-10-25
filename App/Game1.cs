@@ -381,6 +381,17 @@ public class Game1 : Game
             return;
         }
 
+        if (action == StudyCompletionAction.OPEN_EXPORT_FOLDER)
+        {
+            _studyCompletionScreen.SetFormStatus(
+                ResearchStudyConfiguration.TryOpenExportFolder(
+                    _studyCompletionScreen.ExportPath,
+                    out string folderError)
+                    ? "Pasta dos dados aberta."
+                    : folderError);
+            return;
+        }
+
         if (action == StudyCompletionAction.OPEN_FORM)
         {
             if (ResearchStudyConfiguration.TryOpenMeegaForm(

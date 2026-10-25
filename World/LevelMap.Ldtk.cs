@@ -30,6 +30,15 @@ public partial class LevelMap
     private List<Texture2D> _sceneryBehindPlayer = [];
     private List<Texture2D> _sceneryInFrontOfPlayer = [];
 
+    // "Decoracao" entities: loose PNGs from assets/eureka that float gently in place.
+    private const float DecorationFloatPixels = 6f;
+    private const float DecorationTiltDegrees = 1.2f;
+    private const double DecorationMinPeriodSeconds = 3.5;
+    private const double DecorationMaxPeriodSeconds = 5.5;
+    // File is relative to the .ldtk folder.
+    private List<(Rectangle Bounds, string File, bool InFront)> _decorations = [];
+    private List<Texture2D> _decorationTextures = [];
+
     public void ReleaseLdtkTextures()
     {
         if (_ldtkTextureCache == null)
@@ -49,10 +58,52 @@ public partial class LevelMap
         _sceneryInFrontOfPlayer = Load(InterventionSceneryInFrontOfPlayer);
     }
 
-    public bool HasLdtkScenery => _sceneryBehindPlayer.Count + _sceneryInFrontOfPlayer.Count > 0;
+    private bool HasSceneryLayers => _sceneryBehindPlayer.Count + _sceneryInFrontOfPlayer.Count > 0;
+    public bool HasLdtkScenery => HasSceneryLayers || _decorations.Count > 0;
+
+    // Missing PNGs leave a null entry so the decoration is skipped instead of crashing the room.
+    private void LoadDecorationTextures(GraphicsDevice graphicsDevice, string ldtkDirectory)
+    {
+        _decorationTextures = [];
+        if (_ldtkTextureCache == null) return;
+        foreach (var decoration in _decorations)
+        {
+            string path = Path.GetFullPath(Path.Combine(ldtkDirectory, decoration.File));
+            if (File.Exists(path))
+                _decorationTextures.Add(_ldtkTextureCache.GetOrLoad(graphicsDevice, path));
+            else
+            {
+                Console.Error.WriteLine($"Decoracao: PNG nao encontrado: {path}");
+                _decorationTextures.Add(null);
+            }
+        }
+    }
+
+    private void DrawDecorations(SpriteBatch batch, bool inFrontOfPlayer)
+    {
+        for (int index = 0; index < _decorations.Count && index < _decorationTextures.Count; index++)
+        {
+            var decoration = _decorations[index];
+            Texture2D texture = _decorationTextures[index];
+            if (texture == null || decoration.InFront != inFrontOfPlayer) continue;
+            // Each piece gets its own rhythm so they never move in sync.
+            double period = DecorationMinPeriodSeconds +
+                (DecorationMaxPeriodSeconds - DecorationMinPeriodSeconds) * ((index * 0.618) % 1.0);
+            double phase = _visualEffectTime / period * Math.PI * 2.0 + index * 2.4;
+            float offsetY = (float)Math.Sin(phase) * DecorationFloatPixels;
+            float tilt = (float)Math.Sin(phase * 0.7 + 1.3) * MathHelper.ToRadians(DecorationTiltDegrees);
+            Vector2 center = decoration.Bounds.Center.ToVector2() + new Vector2(0f, offsetY);
+            var scale = new Vector2(decoration.Bounds.Width / (float)texture.Width,
+                decoration.Bounds.Height / (float)texture.Height);
+            batch.Draw(texture, center, null, Color.White, tilt,
+                new Vector2(texture.Width / 2f, texture.Height / 2f), scale, SpriteEffects.None, 0f);
+        }
+    }
 
     public void DrawLdtkScenery(SpriteBatch batch, bool inFrontOfPlayer)
     {
+        // Decorations sit between the player and the full-screen layers on each side.
+        if (inFrontOfPlayer) DrawDecorations(batch, true);
         foreach (Texture2D texture in inFrontOfPlayer ? _sceneryInFrontOfPlayer : _sceneryBehindPlayer)
         {
             // Same as LDtk's "Cover" background: fill the room, keep proportions, center the crop.
@@ -64,6 +115,7 @@ public partial class LevelMap
             batch.Draw(texture, position, null, Color.White, 0f, Vector2.Zero, scale,
                 SpriteEffects.None, 0f);
         }
+        if (!inFrontOfPlayer) DrawDecorations(batch, false);
     }
 
     private void LoadLdtkTextures(GraphicsDevice graphicsDevice)
@@ -78,6 +130,7 @@ public partial class LevelMap
             _ldtkTextures.Add(uid, texture);
         }
         LoadInterventionScenery(graphicsDevice, directory);
+        LoadDecorationTextures(graphicsDevice, directory);
         foreach (var tile in _ldtkTiles)
         {
             Texture2D texture = _ldtkTextures[tile.TilesetUid];
@@ -137,11 +190,15 @@ public partial class LevelMap
             _ldtkTilesetPaths = candidate._ldtkTilesetPaths;
             _ldtkTextures = candidate._ldtkTextures;
             // Only the first load reads scenery (through the cache); Ctrl+R keeps it.
-            if (candidate.HasLdtkScenery)
+            if (candidate.HasSceneryLayers)
             {
                 _sceneryBehindPlayer = candidate._sceneryBehindPlayer;
                 _sceneryInFrontOfPlayer = candidate._sceneryInFrontOfPlayer;
             }
+            // Decorations follow the edited LDtk on Ctrl+R; their PNGs come from the shared cache.
+            _decorations = candidate._decorations;
+            if (_ldtkGraphicsDevice != null)
+                LoadDecorationTextures(_ldtkGraphicsDevice, Path.GetDirectoryName(ResolveLdtkPath()));
             error = null;
             return true;
         }
@@ -211,7 +268,19 @@ public partial class LevelMap
                     y - (int)(pivot[1].GetSingle() * height), width, height);
                 // Spawn entity pivot is the player's feet; Scene uses a legacy 16px spawn marker.
                 Vector2 spawn = new(x - 8, y - 16);
-                switch (entity.GetProperty("__identifier").GetString())
+                string entityId = entity.GetProperty("__identifier").GetString();
+                // "Decor_*" entities: the PNG is the tileset of the entity's editor preview tile.
+                if (entityId.StartsWith("Decor_", StringComparison.Ordinal))
+                {
+                    if (entity.GetProperty("__tile") is { ValueKind: JsonValueKind.Object } tile &&
+                        tilesets.TryGetValue(tile.GetProperty("tilesetUid").GetInt32(), out JsonElement tileset))
+                    {
+                        bool front = GetLdtkField(entity, "Frente") is { ValueKind: JsonValueKind.True };
+                        _decorations.Add((bounds, tileset.GetProperty("relPath").GetString(), front));
+                    }
+                    continue;
+                }
+                switch (entityId)
                 {
                     case "PlayerSpawn":
                         PlayerSpawn = spawn; _playerSpawns["spawn_inicial"] = spawn; break;
@@ -231,6 +300,16 @@ public partial class LevelMap
                         _sceneExits.Add(new SceneExit(bounds, previousRoom, "retorno_tela", false)); break;
                     case "InterventionSword":
                         _interventionButtons.Add(bounds); break;
+                    case "Decoracao":
+                    {
+                        // Imagem: PNG name in assets/eureka (".png" optional). Frente: draw in front of the player.
+                        string file = GetLdtkField(entity, "Imagem")?.GetString();
+                        if (string.IsNullOrWhiteSpace(file)) break;
+                        if (!file.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) file += ".png";
+                        bool inFront = GetLdtkField(entity, "Frente") is { ValueKind: JsonValueKind.True };
+                        _decorations.Add((bounds, Path.Combine(InterventionSceneryDirectory, file), inFront));
+                        break;
+                    }
                 }
             }
         }
@@ -271,6 +350,17 @@ public partial class LevelMap
                     effects, alpha * tile.GetProperty("a").GetSingle(), tilesetUid, solution, layerOrder));
             }
         }
+    }
+
+    private static JsonElement? GetLdtkField(JsonElement entity, string identifier)
+    {
+        foreach (var field in entity.GetProperty("fieldInstances").EnumerateArray())
+            if (field.GetProperty("__identifier").GetString() == identifier)
+            {
+                JsonElement value = field.GetProperty("__value");
+                return value.ValueKind == JsonValueKind.Null ? null : value;
+            }
+        return null;
     }
 
     private static IEnumerable<Rectangle> MergeLdtkCells(int[] cells, int columns, int size, int value, int ox, int oy)

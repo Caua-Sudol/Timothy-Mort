@@ -49,6 +49,16 @@ A colisao continua vindo so da camada `Colisao`. Para alinhar: nas propriedades 
 
 Trocar o PNG exige reiniciar a fase: o Ctrl+R recarrega mapa e tilesets, mas mantem essas cinco imagens.
 
+### Decoracoes flutuantes (entidade `Decoracao`)
+
+Pecas soltas de `assets/eureka` (ex.: `plat_fundo_1.png`) que flutuam devagar no lugar: sobem e descem alguns pixels e inclinam de leve, cada uma num ritmo diferente. Funcionam em qualquer sala LDtk.
+
+Ja cadastradas: entidades `Decor_plat_fundo_1` a `Decor_plat_fundo_6`, cada uma com o PNG como previa no editor e campo `Frente` (marcado desenha na frente do jogador; desmarcado, atras). O jogo usa o PNG do tileset da previa.
+
+Para uma peca nova: adicione o PNG como tileset, crie uma entidade com nome comecando por `Decor_`, modo de exibicao "Tile" com esse tileset (render "Stretch", retangulo do PNG inteiro), pivo 0,0, redimensionavel com "manter proporcao", e um campo Bool `Frente`. Alternativa sem previa: entidade `Decoracao` com campo String `Imagem` (nome do PNG em `assets/eureka`, `.png` opcional) e o mesmo campo `Frente`.
+
+O PNG e esticado para o retangulo da entidade. Para manter a escala da arte de 1920x1080, use o tamanho do PNG multiplicado por 1,5 (ex.: 213x277 vira 320x416). Ordem: as decoracoes de tras ficam por cima das camadas 1 a 3 e atras do jogador; as da frente ficam na frente do jogador e atras das camadas 5 e 6. Nao tem colisao. Mover ou criar decoracoes aparece no Ctrl+R; trocar o PNG exige reiniciar a fase. Nome de PNG errado nao trava o jogo: a peca so nao aparece e o console mostra o caminho procurado.
+
 ## Entidades
 
 | Entidade             | Uso                                                                                      |
@@ -60,6 +70,7 @@ Trocar o PNG exige reiniciar a fase: o Ctrl+R recarrega mapa e tilesets, mas man
 | InterventionEntrance | Acesso com E: aparece apos duas mortes na tela 1 e fica disponivel na entrada da tela 2. |
 | InterventionReturn   | Posicao dos pes ao voltar da intervencao.                                                |
 | InterventionSword    | Retangulo interativo com E que abre a escolha da solucao.                                |
+| Decor_* / Decoracao  | PNG que flutua de leve, so visual; ver "Decoracoes flutuantes".                          |
 
 Spawns e retornos devem ficar com os pes no topo de um solido, fora dos espinhos e das areas de passagem automatica. As areas podem ser redimensionadas no editor. O retorno da intervencao e direcionado automaticamente para a sala de origem.
 

@@ -30,8 +30,8 @@ internal sealed class PlayerPresentation
     private Texture2D[] _glideFrames;
     private Texture2D[] _upDashFrames;
     private Texture2D[] _sideDashFrames;
-    // dash_vert PNGs are drawn with the head pointing left; flip them for right dashes.
-    private const bool SideDashSpriteFacesLeft = true;
+    // Body lean for a fully sideways dash; diagonals lean proportionally less.
+    private const float DashMaxLeanDegrees = 25f;
     // Share of the dash shown with frame 0000 before switching to 0001.
     private const double DashFirstFrameFraction = 0.75;
     private const double AirFramesPerSecond = 10.0;
@@ -345,24 +345,9 @@ internal sealed class PlayerPresentation
                 int dashFrame = holding ||
                     dashElapsed >= player.DashDurationForPresentation * DashFirstFrameFraction
                     ? 1 : 0;
-                if (dashDirection.Y < 0)
-                {
-                    // Upward pose faces right; tilt it 45 degrees for diagonal dashes.
-                    sprite = _upDashFrames[Math.Min(dashFrame, _upDashFrames.Length - 1)];
-                    spriteRotation = (float)Math.Atan2(dashDirection.Y, dashDirection.X) + MathHelper.PiOver2;
-                }
-                else if (!holding && player.IsInDashStartupForPresentation)
-                {
-                    // Placeholder anticipation until the drawn pose exists: up pose tilted 45 degrees.
-                    sprite = _upDashFrames[0];
-                    spriteRotation = facingLeft ? -MathHelper.PiOver4 : MathHelper.PiOver4;
-                }
-                else
-                {
-                    sprite = _sideDashFrames[Math.Min(dashFrame, _sideDashFrames.Length - 1)];
-                    spriteEffects = facingLeft == SideDashSpriteFacesLeft
-                        ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
-                }
+                // Always use the upright pose and lean it slightly toward the dash direction.
+                sprite = _upDashFrames[Math.Min(dashFrame, _upDashFrames.Length - 1)];
+                spriteRotation = dashDirection.X * MathHelper.ToRadians(DashMaxLeanDegrees);
             }
             source = sprite.Bounds;
             spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
