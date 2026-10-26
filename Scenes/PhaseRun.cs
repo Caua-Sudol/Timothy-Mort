@@ -33,11 +33,14 @@ public sealed class PhaseRun : IDisposable
     private bool _mortCombinationSpoken;
     private bool _mortPassageSpoken;
     private bool _mortBarrierSpoken;
+    private bool _sceneUpdatedLastFrame;
     private string _mapReloadErrorMessage;
 
     public PhaseState State => _phaseState;
     public bool ExitRequested { get; private set; }
     public bool ReturnToSelectionRequested { get; private set; }
+    // Leave the phase from the pause or death menu without trying to complete it.
+    public bool ReturnToMenuRequested { get; private set; }
     public bool HasOverlay => _overlayState != OverlayState.NONE;
     public double SecondsPerFrame => _scene.SecondsPerFrame;
 
@@ -125,6 +128,9 @@ public sealed class PhaseRun : IDisposable
         _previousKeyboardState = previousKeyboardState;
         ExitRequested = false;
         ReturnToSelectionRequested = false;
+        ReturnToMenuRequested = false;
+        bool sceneWasUpdatedLastFrame = _sceneUpdatedLastFrame;
+        _sceneUpdatedLastFrame = false;
         if (_solutionBlink.Active)
         {
             if (isActive) _solutionBlink.Update(deltaTime);
@@ -138,8 +144,10 @@ public sealed class PhaseRun : IDisposable
 
         // Wait until the room slide finishes so the blink reveals the live scene,
         // rather than a captured image of the room before the demonstration.
+        // The combined demo only builds on the appearance (gelatin) choice;
+        // with any other choice it would replace the player's own solution.
         if (_currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId &&
-            !_mortCombinationSpoken && isActive)
+            !_mortCombinationSpoken && isActive && AppliedAppearanceSolution)
         {
             _mortCombinationSpoken = true;
             _mortSubtitle.Show(false, MortDialogueCatalog.Conclusion(_phaseState.AppliedSolutionId));
@@ -151,7 +159,8 @@ public sealed class PhaseRun : IDisposable
             return;
         }
 
-        if (keyboardState.IsKeyDown(Keys.LeftControl) &&
+        if (ResearchStudyConfiguration.DevToolsEnabled &&
+            keyboardState.IsKeyDown(Keys.LeftControl) &&
             KeyWasPressed(keyboardState, Keys.R) &&
             (_overlayState == OverlayState.NONE || _overlayState == OverlayState.PAUSED) &&
             _scene.SceneMode == SceneMode.PLAYING)
@@ -211,7 +220,7 @@ public sealed class PhaseRun : IDisposable
 
         if (isActive && _scene.SceneMode == SceneMode.PLAYING)
         {
-            if (_scene.SupportsCameraScalePreview)
+            if (ResearchStudyConfiguration.DevToolsEnabled && _scene.SupportsCameraScalePreview)
             {
                 if (KeyWasPressed(keyboardState, Keys.D1) || KeyWasPressed(keyboardState, Keys.NumPad1))
                     _scene.TrySetPlayerScale(1);
@@ -228,6 +237,11 @@ public sealed class PhaseRun : IDisposable
         }
 
         _scene.SetInteractionPressed(KeyWasPressed(keyboardState, Keys.E));
+        // After a menu, transition or new room, keys still held (e.g. Space used to confirm)
+        // must not count as a fresh jump or dash.
+        if (!sceneWasUpdatedLastFrame)
+            _scene.ResyncPlayerInput();
+        _sceneUpdatedLastFrame = true;
         _scene.Update(_camera, deltaTime);
 
         if (!_mortPassageSpoken && _scene.HasVisibleAffordancePassage)
@@ -261,7 +275,9 @@ public sealed class PhaseRun : IDisposable
                 return;
             }
 
-            if (_phaseState.NeedsSolutionRevision)
+            // Affordance: the first choice is final, so no revision round is offered.
+            if (_phaseState.NeedsSolutionRevision &&
+                _phaseState.PhaseId != ScenarioCatalog.AffordanceVisibilityScenarioId)
             {
                 _interventionChoiceMenu.OpenRevision(
                     _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
@@ -296,6 +312,9 @@ public sealed class PhaseRun : IDisposable
         }
     }
 
+    private bool AppliedAppearanceSolution =>
+        _phaseState?.AppliedSolutionId == AffordanceChoiceCatalog.AppearanceSolutionId;
+
     private void ApplyChoiceWithBlink(Action applyChoice, string solutionId)
     {
         _overlayState = OverlayState.NONE;
@@ -314,8 +333,7 @@ public sealed class PhaseRun : IDisposable
     private void ShowMortChoiceComment(string solutionId)
     {
         if (_phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
-            _mortSubtitle.Show(false, MortDialogueCatalog.AfterChoice(solutionId),
-                "Se quiser comparar, volte aqui e escolha outra alteração.");
+            _mortSubtitle.Show(false, MortDialogueCatalog.AfterChoice(solutionId));
     }
 
     private IReadOnlyList<InterventionSolutionDefinition> GetOrCreateInitialSolutions()
@@ -461,7 +479,8 @@ public sealed class PhaseRun : IDisposable
         _scene.LoadContent(_graphicsDevice, _content);
         loading.Mark("criar e carregar Scene");
         _scene.AlignCamera(_camera);
-        if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && _mortCombinationSpoken)
+        if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && _mortCombinationSpoken &&
+            AppliedAppearanceSolution)
             _scene.EnableAffordanceCombinationDemo();
         _overlayState = OverlayState.NONE;
         _mapReloadErrorMessage = null;
@@ -477,6 +496,8 @@ public sealed class PhaseRun : IDisposable
         {
             RestartAttempt();
         }
+        else if (selectedOption == PauseOption.MAIN_MENU)
+            ReturnToMenuRequested = true;
         else if (selectedOption == PauseOption.QUIT)
             ExitRequested = true;
     }
@@ -489,6 +510,8 @@ public sealed class PhaseRun : IDisposable
         {
             RestartAttempt();
         }
+        else if (selectedOption == DeathOption.MAIN_MENU)
+            ReturnToMenuRequested = true;
         else if (selectedOption == DeathOption.QUIT)
             ExitRequested = true;
     }

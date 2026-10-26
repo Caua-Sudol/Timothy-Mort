@@ -15,7 +15,7 @@ public static class MortDialogueCatalog
     public static readonly string[] Introduction =
     {
         "Cuidado, garoto! Não dá para entender o que cada coisa faz só pela aparência.",
-        "Vou te ajudar: use LEFT SHIFT mais uma vez ao encostar nos terrenos estranhos."
+        "Vou te ajudar: use o dash (Shift, X ou J) mais uma vez ao encostar nos terrenos estranhos."
     };
 
     public static string AfterChoice(string solutionId) => solutionId switch
@@ -26,7 +26,7 @@ public static class MortDialogueCatalog
             "Agora eles têm uma marca. Ela mostra quais são diferentes... mas conta o que fazem?",
         AffordanceChoiceCatalog.MotionSolutionId =>
             "Agora eles se mexem, mesmo sem você tocar. Que comportamento esse movimento sugere?",
-        _ => "Experimente. Se quiser comparar, volte aqui e escolha outra alteração."
+        _ => "Experimente e veja se ajuda a entender o terreno."
     };
 
     public static string Conclusion(string solutionId) => solutionId switch

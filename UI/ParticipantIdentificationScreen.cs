@@ -21,6 +21,10 @@ public sealed class SessionStartScreen
         "Uma nova sessão encerra a retomada da sessão atual";
     private const string NavigationText =
         "W/S ou setas para navegar    Enter para selecionar    Esc para sair";
+    private const float ContinueOptionY = -5.0f;
+    private const float NewSessionOptionY = 125.0f;
+    private const int OptionHitWidth = 480;
+    private const int OptionHitHeight = 115;
 
     private readonly SpriteFont _font;
     private readonly SpriteFont _titleFont;
@@ -71,15 +75,17 @@ public sealed class SessionStartScreen
             return SessionStartAction.NONE;
         }
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.W) ||
-            KeyWasPressed(keyboardState, previousKeyboardState, Keys.Up) ||
-            KeyWasPressed(keyboardState, previousKeyboardState, Keys.S) ||
-            KeyWasPressed(keyboardState, previousKeyboardState, Keys.Down))
+        bool clicked =
+            UiPointer.UpdateOption(GetOptionBounds(ContinueOptionY), 0, ref _selectedOptionIndex) ||
+            UiPointer.UpdateOption(GetOptionBounds(NewSessionOptionY), 1, ref _selectedOptionIndex);
+
+        if (MenuInput.Up(keyboardState, previousKeyboardState) ||
+            MenuInput.Down(keyboardState, previousKeyboardState))
         {
             _selectedOptionIndex = 1 - _selectedOptionIndex;
         }
 
-        if (!KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter))
+        if (!clicked && !MenuInput.Confirm(keyboardState, previousKeyboardState))
         {
             return SessionStartAction.NONE;
         }
@@ -103,8 +109,8 @@ public sealed class SessionStartScreen
                 _center.Y - 115.0f,
                 SecondaryColor,
                 spriteBatch);
-            DrawOption("Continuar", 0, _center.Y - 5.0f, spriteBatch);
-            DrawOption("Nova sessão", 1, _center.Y + 125.0f, spriteBatch);
+            DrawOption("Continuar", 0, _center.Y + ContinueOptionY, spriteBatch);
+            DrawOption("Nova sessão", 1, _center.Y + NewSessionOptionY, spriteBatch);
             DrawCenteredText(
                 ReplacementWarningText,
                 _center.Y + 235.0f,
@@ -120,6 +126,10 @@ public sealed class SessionStartScreen
         DrawCenteredText(NavigationText, _center.Y + 360.0f, SecondaryColor, spriteBatch, scale: 0.75f);
         spriteBatch.End();
     }
+
+    private Rectangle GetOptionBounds(float offsetY) =>
+        new Rectangle((int)_center.X - OptionHitWidth / 2,
+            (int)(_center.Y + offsetY) - OptionHitHeight / 2, OptionHitWidth, OptionHitHeight);
 
     private void DrawOption(
         string text,

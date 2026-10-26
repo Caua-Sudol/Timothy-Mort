@@ -136,6 +136,8 @@ public sealed class StudyCompletionScreen
             (!string.IsNullOrEmpty(_exportPath) ? "O: abrir pasta    " : "") +
             "R: exportar novamente    Enter: voltar ao menu";
         _presentation.Open("PESQUISA CONCLUÍDA", text.ToString(), navigation);
+        // Session data and export status are shown at once, without typing.
+        _presentation.CompleteTyping();
     }
 
     private static string GetQualityText(string quality)

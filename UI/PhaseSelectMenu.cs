@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -22,9 +23,18 @@ public sealed class PhaseSelectMenu
     private const int CardSpacing = 48;
     private const int MainPhaseCount = 3;
     private const string TitleText = "Selecionar fase";
-    private const string NavigationText = "A/D: fases    S/baixo: teste    W/cima: fases    Enter: selecionar    Esc: voltar";
+    private const string NavigationText = "A/D ou setas: fases    S/baixo: teste    W/cima: fases    Enter: selecionar    Esc: voltar";
+    private const string NavigationTextWithoutTestRoom = "A/D ou setas: fases    Enter: selecionar    Esc: voltar";
     private const int TestButtonHeight = 112;
     private const int TestButtonGap = 48;
+    private const double ShakeSeconds = 0.3;
+    private const double ShakeFrequency = 70.0;
+    private const float ShakeAmplitude = 14.0f;
+    // Card layout, measured from the card center.
+    private const float CardTitleOffsetY = -50.0f;
+    private const float BetaNoticeOffsetY = 30.0f;
+    private const float StatusIconOffsetY = 110.0f;
+    private const int StatusIconSize = 96;
 
     private static readonly string[] PhaseTitles =
     {
@@ -46,6 +56,8 @@ public sealed class PhaseSelectMenu
     private static readonly Color PrimaryColor = new Color(216, 208, 187);
     private static readonly Color SecondaryColor = new Color(181, 173, 161);
     private static readonly Color CardTextColor = new Color(37, 40, 43);
+    private static readonly Color LockedCardTint = new Color(120, 120, 120);
+    private static readonly Color LockedTextColor = new Color(70, 72, 75);
     private readonly Vector2 _center;
     private readonly PhaseProgress _progress;
     private Texture2D _selectedCard;
@@ -54,6 +66,8 @@ public sealed class PhaseSelectMenu
     private SymbolRain _symbols;
     private int _selectedPhaseIndex;
     private bool _testRoomSelected;
+    private int _shakeIndex = -1;
+    private double _shakeTimer;
     private string _sessionCode;
 
     public PhaseSelectMenu(SpriteFont titleFont, SpriteFont font, Vector2 center, PhaseProgress progress)
@@ -74,7 +88,11 @@ public sealed class PhaseSelectMenu
         _symbols = new SymbolRain(content.Load<Texture2D>("ui/icons/icons"), _center * 2, 90, 0.5f);
     }
 
-    public void UpdateAnimation(double deltaTime) => _symbols.Update(deltaTime);
+    public void UpdateAnimation(double deltaTime)
+    {
+        _symbols.Update(deltaTime);
+        _shakeTimer = Math.Max(0.0, _shakeTimer - deltaTime);
+    }
 
     public void SetSessionCode(string sessionCode)
     {
@@ -85,32 +103,56 @@ public sealed class PhaseSelectMenu
         KeyboardState keyboardState,
         KeyboardState previousKeyboardState)
     {
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.A) ||
-            KeyWasPressed(keyboardState, previousKeyboardState, Keys.Left))
+        if (MenuInput.Left(keyboardState, previousKeyboardState))
         {
             _testRoomSelected = false;
             _selectedPhaseIndex =
                 (_selectedPhaseIndex + PhaseTitles.Length - 1) % PhaseTitles.Length;
         }
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.D) ||
-            KeyWasPressed(keyboardState, previousKeyboardState, Keys.Right))
+        if (MenuInput.Right(keyboardState, previousKeyboardState))
         {
             _testRoomSelected = false;
             _selectedPhaseIndex = (_selectedPhaseIndex + 1) % PhaseTitles.Length;
         }
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.S) ||
-            KeyWasPressed(keyboardState, previousKeyboardState, Keys.Down))
+        if (!ResearchStudyConfiguration.DevToolsEnabled)
+            _testRoomSelected = false;
+        else if (MenuInput.Down(keyboardState, previousKeyboardState))
             _testRoomSelected = true;
-        else if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.W) ||
-                 KeyWasPressed(keyboardState, previousKeyboardState, Keys.Up))
+        else if (MenuInput.Up(keyboardState, previousKeyboardState))
             _testRoomSelected = false;
 
-        if (_testRoomSelected && KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter))
+        bool cardClicked = false;
+        for (int index = 0; index < PhaseTitles.Length && !cardClicked; index++)
+        {
+            int previousIndex = _selectedPhaseIndex;
+            cardClicked = UiPointer.UpdateOption(GetCardBounds(index), index, ref _selectedPhaseIndex);
+            if (cardClicked || _selectedPhaseIndex != previousIndex)
+                _testRoomSelected = false;
+        }
+
+        bool testRoomClicked = false;
+        if (ResearchStudyConfiguration.DevToolsEnabled &&
+            GetTestButtonBounds().Contains(UiPointer.Position) &&
+            (UiPointer.Moved || UiPointer.LeftClicked))
+        {
+            _testRoomSelected = true;
+            testRoomClicked = UiPointer.LeftClicked;
+        }
+
+        bool confirmed = MenuInput.Confirm(keyboardState, previousKeyboardState);
+        if (testRoomClicked || _testRoomSelected && confirmed)
             return PhaseSelectOption.SCALE_TEST;
 
-        if (!_testRoomSelected && KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter) &&
+        if (!_testRoomSelected && (confirmed || cardClicked) && IsLocked(_selectedPhaseIndex))
+        {
+            // Shake the grey card so the player sees it cannot be opened yet.
+            _shakeIndex = _selectedPhaseIndex;
+            _shakeTimer = ShakeSeconds;
+        }
+
+        if (!_testRoomSelected && (confirmed || cardClicked) &&
             IsUnlocked(_selectedPhaseIndex))
         {
             return _selectedPhaseIndex switch
@@ -142,58 +184,58 @@ public sealed class PhaseSelectMenu
 
         DrawCenteredText(spriteBatch, TitleText, new Vector2(_center.X, 190.0f), PrimaryColor, _titleFont);
 
-        int totalWidth = MainPhaseCount * CardWidth +
-                         (MainPhaseCount - 1) * CardSpacing;
-        int startX = (int)_center.X - totalWidth / 2;
-        int cardY = (int)_center.Y - CardHeight / 2;
-
         for (int index = 0; index < PhaseTitles.Length; index++)
         {
-            var cardRectangle = new Rectangle(
-                startX + index * (CardWidth + CardSpacing),
-                cardY,
-                CardWidth,
-                CardHeight);
+            Rectangle cardRectangle = GetCardBounds(index);
+            if (index == _shakeIndex && _shakeTimer > 0)
+            {
+                cardRectangle.X += (int)(Math.Sin(_shakeTimer * ShakeFrequency) *
+                    ShakeAmplitude * (_shakeTimer / ShakeSeconds));
+            }
+
             bool isCompleted = _progress.IsCompleted(PhaseIds[index]);
             bool isUnlocked = IsUnlocked(index);
             bool isSelected = !_testRoomSelected && index == _selectedPhaseIndex;
-            Color textColor = CardTextColor;
-            spriteBatch.Draw(isSelected ? _selectedCard : _unselectedCard, cardRectangle, Color.White);
+            // Locked phases are greyed out so they read as unavailable at a glance.
+            bool isLocked = IsLocked(index);
+            Color cardTint = isLocked ? LockedCardTint : Color.White;
+            Color textColor = isLocked ? LockedTextColor : CardTextColor;
+            spriteBatch.Draw(isSelected ? _selectedCard : _unselectedCard, cardRectangle, cardTint);
             DrawCenteredText(
                 spriteBatch,
                 PhaseTitles[index],
-                cardRectangle.Center.ToVector2() - new Vector2(0.0f, 24.0f),
+                cardRectangle.Center.ToVector2() + new Vector2(0.0f, CardTitleOffsetY),
                 textColor,
                 _titleFont,
                 0.45f);
 
             Vector2 statusPosition = cardRectangle.Center.ToVector2() +
-                new Vector2(0.0f, 105.0f);
+                new Vector2(0.0f, StatusIconOffsetY);
 
             if (ResearchStudyConfiguration.BetaAffordanceOnly && index > 0)
             {
                 DrawCenteredText(spriteBatch, "Indisponível na beta",
-                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, 50.0f),
+                    cardRectangle.Center.ToVector2() + new Vector2(0.0f, BetaNoticeOffsetY),
                     textColor, _font, 0.6f);
             }
 
             Texture2D statusIcon = isCompleted ? _check : isUnlocked ? _openLock : _closedLock;
-            const int iconSize = 64;
-            spriteBatch.Draw(statusIcon,
-                new Rectangle((int)statusPosition.X - iconSize / 2,
-                    (int)statusPosition.Y - iconSize / 2, iconSize, iconSize), Color.White);
+            var iconRectangle = new Rectangle((int)statusPosition.X - StatusIconSize / 2,
+                (int)statusPosition.Y - StatusIconSize / 2, StatusIconSize, StatusIconSize);
+            spriteBatch.Draw(statusIcon, iconRectangle, cardTint);
         }
 
-        var testButton = new Rectangle(
-            (int)_center.X - CardWidth / 2,
-            cardY + CardHeight + TestButtonGap,
-            CardWidth,
-            TestButtonHeight);
-        spriteBatch.Draw(_testRoomSelected ? _selectedCard : _unselectedCard, testButton, Color.White);
-        DrawCenteredText(spriteBatch, "Sala de teste / composição",
-            testButton.Center.ToVector2(), CardTextColor, _font, 0.75f);
+        if (ResearchStudyConfiguration.DevToolsEnabled)
+        {
+            Rectangle testButton = GetTestButtonBounds();
+            spriteBatch.Draw(_testRoomSelected ? _selectedCard : _unselectedCard, testButton, Color.White);
+            DrawCenteredText(spriteBatch, "Sala de teste / composição",
+                testButton.Center.ToVector2(), CardTextColor, _font, 0.75f);
+        }
 
-        DrawCenteredText(spriteBatch, NavigationText, new Vector2(_center.X, 960.0f), SecondaryColor, scale: 0.75f);
+        DrawCenteredText(spriteBatch,
+            ResearchStudyConfiguration.DevToolsEnabled ? NavigationText : NavigationTextWithoutTestRoom,
+            new Vector2(_center.X, 960.0f), SecondaryColor, scale: 0.75f);
         spriteBatch.End();
     }
 
@@ -202,6 +244,24 @@ public sealed class PhaseSelectMenu
         return !_progress.IsCompleted(PhaseIds[index]) &&
             _progress.IsUnlocked(PhaseIds[index]);
     }
+
+    private bool IsLocked(int index) =>
+        !_progress.IsCompleted(PhaseIds[index]) && !IsUnlocked(index);
+
+    private Rectangle GetCardBounds(int index)
+    {
+        int totalWidth = MainPhaseCount * CardWidth +
+                         (MainPhaseCount - 1) * CardSpacing;
+        int startX = (int)_center.X - totalWidth / 2;
+        int cardY = (int)_center.Y - CardHeight / 2;
+        return new Rectangle(startX + index * (CardWidth + CardSpacing), cardY, CardWidth, CardHeight);
+    }
+
+    private Rectangle GetTestButtonBounds() => new Rectangle(
+        (int)_center.X - CardWidth / 2,
+        (int)_center.Y - CardHeight / 2 + CardHeight + TestButtonGap,
+        CardWidth,
+        TestButtonHeight);
 
     private void DrawCenteredText(
         SpriteBatch spriteBatch,
@@ -222,13 +282,5 @@ public sealed class PhaseSelectMenu
                 color, 0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
             y += lineHeight;
         }
-    }
-
-    private static bool KeyWasPressed(
-        KeyboardState keyboardState,
-        KeyboardState previousKeyboardState,
-        Keys key)
-    {
-        return keyboardState.IsKeyDown(key) && previousKeyboardState.IsKeyUp(key);
     }
 }

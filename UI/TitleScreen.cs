@@ -26,7 +26,8 @@ public sealed class TitleScreen
 
     public bool Update(KeyboardState keyboardState, KeyboardState previousKeyboardState)
     {
-        return keyboardState.GetPressedKeyCount() > 0 &&
+        return UiPointer.LeftClicked ||
+               keyboardState.GetPressedKeyCount() > 0 &&
                previousKeyboardState.GetPressedKeyCount() == 0;
     }
 

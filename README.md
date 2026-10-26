@@ -26,14 +26,17 @@ A implementação e as ressalvas aceitas para o protótipo estão registradas em
 
 | Controle            | Ação                                                     |
 |---------------------|----------------------------------------------------------|
-| `A` / `D`           | Mover e navegar horizontalmente nos menus.               |
-| `W` / `S`           | `W` mira o dash para cima e navegação vertical nos menus. |
-| `Space`             | Pular.                                                   |
-| `LeftShift`         | Impulso (Dash) para os lados, para cima e diagonais cima. |
-| `Enter`             | Confirmar uma escolha.                                   |
-| `Escape`            | Abrir ou fechar pause.                                   |
-| `Ctrl esquerdo + P` | Ativar ou desativar o debug visual.                      |
-| `Ctrl esquerdo + R` | Recarregar o TMX atual durante jogo ou pause.            |
+| `A` / `D` ou `←` / `→` | Mover e navegar horizontalmente nos menus.             |
+| `W` / `S` ou `↑` / `↓` | Cima mira o dash para cima; navegação vertical nos menus. |
+| `Space`, `C` ou `K`    | Pular.                                                 |
+| `Shift`, `X` ou `J`    | Impulso (Dash) para os lados, para cima e diagonais cima. A direção pode ser apertada logo depois do dash (0,06 s). |
+| `E`                    | Interagir (entrada da intervenção, espada, saídas).    |
+| `Enter` ou `Space`     | Confirmar uma escolha nos menus.                       |
+| `Escape`               | Abrir ou fechar pause.                                 |
+| `Ctrl esquerdo + P`    | Ativar ou desativar o debug visual (só em Debug).      |
+| `Ctrl esquerdo + R`    | Recarregar o mapa atual durante jogo ou pause (só em Debug). |
+
+Combinações sugeridas: setas + `C`/`X` (estilo Celeste), `WASD` + `K`/`J` (ações na mão direita) ou `WASD` + `Space`/`Shift`.
 
 ## Mapas e edição no Tiled
 

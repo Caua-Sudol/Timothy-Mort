@@ -290,6 +290,13 @@ private Vector2 _checkpoint;
                 sideDashFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/dash/dash_vert{index:D4}");
             }
             _player.SetDashAnimations(upDashFrames, sideDashFrames);
+            _player.SetLookAnimations(
+                new[]
+                {
+                    LoadDiagnostics.LoadTexture(content, "player/look/look_top0000"),
+                    LoadDiagnostics.LoadTexture(content, "player/look/look_top0001")
+                },
+                LoadDiagnostics.LoadTexture(content, "player/look/loop_bottom0000"));
         }
 
         loading.Mark("sprites e animacoes do player", includeInSummary: true);
@@ -367,6 +374,8 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
     }
 
     public bool TryTakeInterventionButtonActivation() => _interventionTrigger.TryTakeActivation();
+
+    public void ResyncPlayerInput() => _player.ResyncInput();
 
     public bool TryTakeRoom3BarrierTouch()
     {
@@ -1202,10 +1211,11 @@ private static bool RectanglesTouchOrIntersect(
             if (returningFromIntervention)
                 return _phaseState.HasFirstChoice ? InterventionEntrancePlacement.LATE : null;
 
-            bool entranceIsAvailable =
-                _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ||
-                _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId &&
-                _phaseState.DeathCount >= 2;
+            // Once a solution is applied the entrance closes: the choice is final.
+            bool entranceIsAvailable = !_phaseState.HasFirstChoice &&
+                (_phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ||
+                 _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId &&
+                 _phaseState.DeathCount >= 2);
             return entranceIsAvailable ? InterventionEntrancePlacement.LATE : null;
         }
         if (_phaseState == null || !_phaseState.InterventionEntranceIsActive)

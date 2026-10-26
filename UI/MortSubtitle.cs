@@ -11,11 +11,13 @@ public sealed class MortSubtitle
     private const int PanelWidth = 1440;
     private const int Padding = 20;
     private const int MaximumPanelHeight = 150;
+    private const double CharactersPerSecond = 45.0;
     private static readonly Color SpeakerColor = new Color(100, 185, 255);
     private readonly SpriteFont _font;
     private readonly Queue<string> _pages = new Queue<string>();
     private string _text;
     private double _remainingSeconds;
+    private double _visibleCharacters;
     private bool _holdLastPage;
     private float _scale;
     private int _panelHeight;
@@ -45,7 +47,15 @@ public sealed class MortSubtitle
 
     public void Update(double deltaTime)
     {
-        if (_text == null || _holdLastPage && _pages.Count == 0)
+        if (_text == null)
+            return;
+        // Type the page first; its reading time only starts once the whole text is visible.
+        if (_visibleCharacters < _text.Length)
+        {
+            _visibleCharacters += deltaTime * CharactersPerSecond;
+            return;
+        }
+        if (_holdLastPage && _pages.Count == 0)
             return;
         _remainingSeconds -= deltaTime;
         if (_remainingSeconds <= 0)
@@ -73,6 +83,7 @@ public sealed class MortSubtitle
             _scale *= 0.95f;
         }
         _remainingSeconds = MortDialogueCatalog.PageDurationSeconds;
+        _visibleCharacters = 0;
     }
 
     private string Wrap(string text, float width)
@@ -107,7 +118,9 @@ public sealed class MortSubtitle
         batch.DrawString(_font, "Mort", position, SpeakerColor,
             0f, Vector2.Zero, _scale, SpriteEffects.None, 0f);
         position.Y += _font.LineSpacing * _scale;
-        batch.DrawString(_font, _text, position, new Color(236, 230, 217),
+        // The page is wrapped before typing, so revealed words never jump to another line.
+        string visibleText = _text.Substring(0, Math.Min(_text.Length, (int)_visibleCharacters));
+        batch.DrawString(_font, visibleText, position, new Color(236, 230, 217),
             0f, Vector2.Zero, _scale, SpriteEffects.None, 0f);
         batch.End();
     }

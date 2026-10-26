@@ -15,6 +15,8 @@ public sealed class PhaseResultScreen
     private string _explanation = string.Empty;
     private string _persistenceMessage;
     private float _columnScale = 1.0f;
+    private const double CharactersPerSecond = 60.0;
+    private double _visibleCharacters;
     private string _explanationHeading = "Sobre sua escolha";
     // Affinity layout, measured from the top-left of a 1920 x 1080 document.
     private float SummaryX => _dimensions.X * (321.3f / 1920.0f);
@@ -101,13 +103,24 @@ public sealed class PhaseResultScreen
             _columnScale *= 0.95f;
         }
         _persistenceMessage = persistenceMessage;
+        _visibleCharacters = 0;
         _presentation.Open(string.Empty, string.Empty);
     }
+
+    // The summary types first, then the explanation.
+    public bool IsTyping => _visibleCharacters < _summary.Length + _explanation.Length;
+
+    public void CompleteTyping() => _visibleCharacters = _summary.Length + _explanation.Length;
 
     public void Update(double deltaTime)
     {
         _presentation.Update(deltaTime);
+        if (IsTyping)
+            _visibleCharacters += deltaTime * CharactersPerSecond;
     }
+
+    private static string TypedPart(string text, int visibleCharacters) =>
+        text.Substring(0, Math.Clamp(visibleCharacters, 0, text.Length));
 
     public void Draw(SpriteBatch spriteBatch, Texture2D pixel)
     {
@@ -124,10 +137,11 @@ public sealed class PhaseResultScreen
             0.0f, Vector2.Zero, _columnScale, SpriteEffects.None, 0.0f);
         spriteBatch.DrawString(_font, _explanationHeading, new Vector2(ExplanationX, HeadingY), primary,
             0.0f, Vector2.Zero, _columnScale, SpriteEffects.None, 0.0f);
-        spriteBatch.DrawString(_font, _summary,
+        int visibleCharacters = (int)_visibleCharacters;
+        spriteBatch.DrawString(_font, TypedPart(_summary, visibleCharacters),
             new Vector2(SummaryX, BodyY), primary,
             0.0f, Vector2.Zero, _columnScale, SpriteEffects.None, 0.0f);
-        spriteBatch.DrawString(_font, _explanation,
+        spriteBatch.DrawString(_font, TypedPart(_explanation, visibleCharacters - _summary.Length),
             new Vector2(ExplanationX, BodyY), primary,
             0.0f, Vector2.Zero, _columnScale, SpriteEffects.None, 0.0f);
         if (!string.IsNullOrEmpty(_persistenceMessage))

@@ -32,6 +32,7 @@ public class Game1 : Game
     {
         _viewport = new GameViewport(this);
         _studySession = new StudySessionFlow(_phaseProgress);
+        Window.Title = "Timothy & Mort";
 
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
@@ -44,8 +45,6 @@ public class Game1 : Game
         SpriteFont bodyFont = Content.Load<SpriteFont>("patrick");
         Texture2D selector = Content.Load<Texture2D>("ui/selector");
         Texture2D symbols = Content.Load<Texture2D>("ui/icons/icons");
-        // Recolor only the in-memory rain atlas, preserving its alpha and the source PNG.
-        // White premultiplied RGB lets SymbolRain apply a light tint even to dark artwork.
         var symbolPixels = new Color[symbols.Width * symbols.Height];
         symbols.GetData(symbolPixels);
         for (int index = 0; index < symbolPixels.Length; index++)
@@ -103,8 +102,14 @@ public class Game1 : Game
     {
         double deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
         var keyboardState = Keyboard.GetState();
+        UiPointer.Update(
+            Mouse.GetState(),
+            GameViewport.GetPresentationRectangle(
+                new Viewport(GraphicsDevice.PresentationParameters.Bounds)),
+            IsActive);
 
-        if (keyboardState.IsKeyDown(Keys.LeftControl) && KeyWasPressed(keyboardState, Keys.P))
+        if (ResearchStudyConfiguration.DevToolsEnabled &&
+            keyboardState.IsKeyDown(Keys.LeftControl) && KeyWasPressed(keyboardState, Keys.P))
         {
             if (_activeScreen == AppScreen.SCALE_TEST) _scaleTestRoom.ToggleDebug();
             else _debugView.Toggle();
@@ -331,7 +336,15 @@ public class Game1 : Game
 
         _phaseIntroductionScreen.Update(deltaTime);
 
-        if (KeyWasPressed(keyboardState, Keys.Enter) && _introductionScenarioId != null)
+        bool confirmed = MenuInput.Confirm(keyboardState, _previousKeyboardState) || UiPointer.LeftClicked;
+        // The first confirm only finishes the typing text; the next one starts the phase.
+        if (confirmed && _phaseIntroductionScreen.IsTyping)
+        {
+            _phaseIntroductionScreen.CompleteTyping();
+            return;
+        }
+
+        if (confirmed && _introductionScenarioId != null)
         {
             _phaseRun.ChangeScenario(_introductionScenarioId, null);
             _introductionScenarioId = null;
@@ -341,7 +354,15 @@ public class Game1 : Game
 
     private void UpdatePhaseResult(KeyboardState keyboardState, double deltaTime)
     {
-        if (KeyWasPressed(keyboardState, Keys.Enter) || EscapeWasPressed(keyboardState))
+        bool confirmed = MenuInput.Confirm(keyboardState, _previousKeyboardState) || UiPointer.LeftClicked;
+        // The first confirm only finishes the typing text; Esc still leaves at once.
+        if (confirmed && _phaseResultScreen.IsTyping)
+        {
+            _phaseResultScreen.CompleteTyping();
+            return;
+        }
+
+        if (confirmed || EscapeWasPressed(keyboardState))
         {
             if (_studySession.ShowCompletionAfterPhaseResult)
             {
@@ -481,6 +502,12 @@ public class Game1 : Game
         if (_phaseRun.ExitRequested)
         {
             Exit();
+            return;
+        }
+
+        if (_phaseRun.ReturnToMenuRequested)
+        {
+            ReturnToPhaseSelect();
             return;
         }
 

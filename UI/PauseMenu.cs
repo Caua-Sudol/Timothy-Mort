@@ -9,22 +9,29 @@ public enum PauseOption
     NONE = 0,
     RESUME = 1,
     RESTART = 2,
-    QUIT = 3
+    QUIT = 3,
+    MAIN_MENU = 4
 }
 
 public class PauseMenu
 {
-    private const float OptionSpacing = 130.0f;
+    private const float OptionSpacing = 115.0f;
+    private const float OptionHitWidth = 480.0f;
+
+    private static readonly (PauseOption Option, string Text)[] Options =
+    {
+        (PauseOption.RESUME, "Continuar"),
+        (PauseOption.RESTART, "Recomeçar sala"),
+        (PauseOption.MAIN_MENU, "Menu principal"),
+        (PauseOption.QUIT, "Sair do jogo")
+    };
 
     private readonly SpriteFont _font;
     private readonly SpriteFont _titleFont;
     private readonly Texture2D _selector;
     private readonly Vector2 _center;
-    private readonly Vector2 _resumePosition;
-    private readonly Vector2 _restartPosition;
-    private readonly Vector2 _quitPosition;
 
-    private PauseOption _currentOption = PauseOption.RESUME;
+    private int _selectedIndex;
 
     public PauseMenu(SpriteFont titleFont, SpriteFont font, Texture2D selector, Vector2 menuCenter)
     {
@@ -32,31 +39,28 @@ public class PauseMenu
         _selector = selector;
         _center = menuCenter;
         _font = font;
-        _resumePosition = menuCenter - new Vector2(0, OptionSpacing);
-        _restartPosition = menuCenter;
-        _quitPosition = menuCenter + new Vector2(0, OptionSpacing);
     }
 
     public void Open()
     {
-        _currentOption = PauseOption.RESUME;
+        _selectedIndex = 0;
     }
 
     public PauseOption Update(KeyboardState keyboardState, KeyboardState previousKeyboardState)
     {
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.W))
+        for (int index = 0; index < Options.Length; index++)
         {
-            MoveOptionUp();
-        }
-        else if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.S))
-        {
-            MoveOptionDown();
+            if (UiPointer.UpdateOption(GetOptionBounds(index), index, ref _selectedIndex))
+                return Options[index].Option;
         }
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter))
-        {
-            return _currentOption;
-        }
+        if (MenuInput.Up(keyboardState, previousKeyboardState))
+            _selectedIndex = (_selectedIndex - 1 + Options.Length) % Options.Length;
+        else if (MenuInput.Down(keyboardState, previousKeyboardState))
+            _selectedIndex = (_selectedIndex + 1) % Options.Length;
+
+        if (MenuInput.Confirm(keyboardState, previousKeyboardState))
+            return Options[_selectedIndex].Option;
 
         return PauseOption.NONE;
     }
@@ -68,47 +72,19 @@ public class PauseMenu
         spriteBatch.DrawString(_titleFont, "Pausa",
             titlePosition - _titleFont.MeasureString("Pausa") / 2,
             new Color(216, 208, 187));
-        DrawOption(spriteBatch, "Resume", _resumePosition, _currentOption == PauseOption.RESUME);
-        DrawOption(spriteBatch, "Restart", _restartPosition, _currentOption == PauseOption.RESTART);
-        DrawOption(spriteBatch, "Quit", _quitPosition, _currentOption == PauseOption.QUIT);
+        for (int index = 0; index < Options.Length; index++)
+            DrawOption(spriteBatch, Options[index].Text, GetOptionPosition(index), index == _selectedIndex);
         spriteBatch.End();
     }
 
-    private bool KeyWasPressed(KeyboardState keyboardState, KeyboardState previousKeyboardState, Keys key)
-    {
-        return keyboardState.IsKeyDown(key) && previousKeyboardState.IsKeyUp(key);
-    }
+    private Vector2 GetOptionPosition(int index) =>
+        _center + new Vector2(0, (index - (Options.Length - 1) / 2.0f) * OptionSpacing);
 
-    private void MoveOptionUp()
+    private Rectangle GetOptionBounds(int index)
     {
-        if (_currentOption == PauseOption.RESUME)
-        {
-            _currentOption = PauseOption.QUIT;
-        }
-        else if (_currentOption == PauseOption.RESTART)
-        {
-            _currentOption = PauseOption.RESUME;
-        }
-        else if (_currentOption == PauseOption.QUIT)
-        {
-            _currentOption = PauseOption.RESTART;
-        }
-    }
-
-    private void MoveOptionDown()
-    {
-        if (_currentOption == PauseOption.RESUME)
-        {
-            _currentOption = PauseOption.RESTART;
-        }
-        else if (_currentOption == PauseOption.RESTART)
-        {
-            _currentOption = PauseOption.QUIT;
-        }
-        else if (_currentOption == PauseOption.QUIT)
-        {
-            _currentOption = PauseOption.RESUME;
-        }
+        Vector2 position = GetOptionPosition(index);
+        return new Rectangle((int)(position.X - OptionHitWidth / 2.0f),
+            (int)(position.Y - OptionSpacing / 2.0f), (int)OptionHitWidth, (int)OptionSpacing);
     }
 
     private void DrawOption(SpriteBatch spriteBatch, string text, Vector2 position, bool selected)

@@ -404,25 +404,75 @@ public partial class LevelMap
 
     private readonly HashSet<int> _ldtkBackgroundLayers = [];
 
-    private void DrawLdtk(SpriteBatch batch, SolutionVisualModule modules, bool background = false)
+    // Hidden base tiles per (active modules, background pass); rebuilt when the tile list changes.
+    private readonly Dictionary<(SolutionVisualModule, bool), HashSet<int>> _hiddenLdtkTiles = [];
+    private object _hiddenLdtkTilesSource;
+
+    // Solution art replaces covered terrain even when its grid size or layer order differs.
+    // A base tile inside gelatin and under a solution tile is hidden, and so is every tile
+    // touching it in the same layer that solution art also covers, so a whole rock
+    // (including parts without collision) swaps at once. Uncovered pieces stay intact.
+    private HashSet<int> GetHiddenLdtkTiles(SolutionVisualModule modules, bool background)
     {
-        // Solution art replaces covered terrain even when its grid size or layer order differs.
-        // Keep uncovered tiles and background art intact.
-        var replacements = new HashSet<Rectangle>();
+        if (!ReferenceEquals(_hiddenLdtkTilesSource, _ldtkTiles))
+        {
+            _hiddenLdtkTiles.Clear();
+            _hiddenLdtkTilesSource = _ldtkTiles;
+        }
+        if (_hiddenLdtkTiles.TryGetValue((modules, background), out HashSet<int> hidden))
+            return hidden;
+
+        var replacements = new List<Rectangle>();
         foreach (var tile in _ldtkTiles)
             if (tile.Solution != SolutionVisualModule.NONE && modules.HasFlag(tile.Solution) &&
                 _ldtkBackgroundLayers.Contains(tile.LayerOrder) == background)
                 replacements.Add(tile.Bounds);
 
-        foreach (var tile in _ldtkTiles)
+        bool IsBase(int index) => _ldtkTiles[index].Solution == SolutionVisualModule.NONE &&
+            _ldtkBackgroundLayers.Contains(_ldtkTiles[index].LayerOrder) == background;
+
+        hidden = [];
+        var pending = new Queue<int>();
+        for (int index = 0; index < _ldtkTiles.Count; index++)
         {
+            Rectangle bounds = _ldtkTiles[index].Bounds;
+            if (IsBase(index) && _gelatins.Any(g => g.Contains(bounds.Center)) &&
+                replacements.Any(area => area.Contains(bounds)) && hidden.Add(index))
+                pending.Enqueue(index);
+        }
+
+        while (pending.Count > 0)
+        {
+            var current = _ldtkTiles[pending.Dequeue()];
+            Rectangle touchArea = current.Bounds;
+            touchArea.Inflate(1, 1);
+            for (int index = 0; index < _ldtkTiles.Count; index++)
+                if (!hidden.Contains(index) && IsBase(index) &&
+                    _ldtkTiles[index].LayerOrder == current.LayerOrder &&
+                    touchArea.Intersects(_ldtkTiles[index].Bounds) &&
+                    // Only pieces under solution art: a solid neighbour must stay visible.
+                    replacements.Any(area => area.Intersects(_ldtkTiles[index].Bounds)))
+                {
+                    hidden.Add(index);
+                    pending.Enqueue(index);
+                }
+        }
+
+        _hiddenLdtkTiles[(modules, background)] = hidden;
+        return hidden;
+    }
+
+    private void DrawLdtk(SpriteBatch batch, SolutionVisualModule modules, bool background = false)
+    {
+        HashSet<int> hidden = GetHiddenLdtkTiles(modules, background);
+        for (int index = 0; index < _ldtkTiles.Count; index++)
+        {
+            var tile = _ldtkTiles[index];
             if (_ldtkBackgroundLayers.Contains(tile.LayerOrder) != background) continue;
             if (tile.Solution != SolutionVisualModule.NONE && !modules.HasFlag(tile.Solution))
                 continue;
+            if (hidden.Contains(index)) continue;
             var gelatin = _gelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center));
-            if (tile.Solution == SolutionVisualModule.NONE && gelatin.Width > 0 &&
-                replacements.Any(area => area.Contains(tile.Bounds)))
-                continue;
             Color tint = Color.White;
             Rectangle destination = tile.Bounds;
             if (gelatin.Width > 0 && modules.HasFlag(SolutionVisualModule.GELATIN_JELLY_MOTION))

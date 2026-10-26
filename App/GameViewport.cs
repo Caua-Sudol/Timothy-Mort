@@ -69,7 +69,7 @@ public sealed class GameViewport
         return new Point((int)(LogicalWidth * scale), (int)(LogicalHeight * scale));
     }
 
-    private static Rectangle GetPresentationRectangle(Viewport viewport)
+    public static Rectangle GetPresentationRectangle(Viewport viewport)
     {
         float widthScale = viewport.Width / (float)LogicalWidth;
         float heightScale = viewport.Height / (float)LogicalHeight;

@@ -39,6 +39,13 @@ internal sealed class PlayerPresentation
     private AirAnimation _airAnimation;
     private double _airAnimationTime;
     private bool _wasAirborne;
+    // Standing still and holding up/down: look in that direction.
+    // Up shows the intermediate pose first, then the full look up.
+    private Texture2D[] _lookUpFrames;
+    private Texture2D _lookDownFrame;
+    private const double LookUpIntermediateSeconds = 0.08;
+    private int _lookDirection;
+    private double _lookTime;
 
     public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames)
     {
@@ -54,9 +61,11 @@ internal sealed class PlayerPresentation
         PlayerState state,
         bool isGrounded,
         Vector2 velocity,
-        int horizontalInput)
+        int horizontalInput,
+        int verticalInput)
     {
         UpdateWalkAnimation(deltaTime, horizontalInput);
+        UpdateLook(deltaTime, state, isGrounded, horizontalInput, verticalInput);
         if (_jumpFrames == null || _glideFrames == null)
             return;
 
@@ -116,6 +125,35 @@ internal sealed class PlayerPresentation
     }
 
     private bool HasDashFrames => _upDashFrames != null && _sideDashFrames != null;
+
+    public void SetLookAnimations(Texture2D[] upFrames, Texture2D downFrame)
+    {
+        _lookUpFrames = upFrames;
+        _lookDownFrame = downFrame;
+    }
+
+    private void UpdateLook(double deltaTime, PlayerState state, bool isGrounded,
+        int horizontalInput, int verticalInput)
+    {
+        int direction = isGrounded && horizontalInput == 0 && state != PlayerState.Dashing
+            ? verticalInput : 0;
+        if (direction != _lookDirection)
+        {
+            _lookDirection = direction;
+            _lookTime = 0;
+        }
+        else
+            _lookTime += deltaTime;
+    }
+
+    // Null while not looking or when the look sprites are missing.
+    private Texture2D GetLookSprite()
+    {
+        if (_lookDirection > 0) return _lookDownFrame;
+        if (_lookDirection < 0 && _lookUpFrames is { Length: > 0 })
+            return _lookUpFrames[_lookTime < LookUpIntermediateSeconds ? 0 : _lookUpFrames.Length - 1];
+        return null;
+    }
 
     private bool IsWalking(int horizontalInput) =>
         _walkFrames != null && _walkFrames.Length > 0 && horizontalInput != 0;
@@ -318,6 +356,17 @@ internal sealed class PlayerPresentation
             spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
             spriteEffects = player.FacingDirection == Direction.Left
                 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+        }
+
+        Texture2D lookSprite = _airAnimation == AirAnimation.None ? GetLookSprite() : null;
+        if (lookSprite != null)
+        {
+            sprite = lookSprite;
+            source = sprite.Bounds;
+            spriteWidth = (int)Math.Round(sprite.Width * _directionalPreviewScale);
+            spriteHeight = (int)Math.Round(sprite.Height * _directionalPreviewScale);
+            // Look poses face right, like the walk frames.
+            spriteEffects = facingLeft ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
         }
 
         float spriteRotation = 0f;

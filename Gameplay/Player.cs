@@ -80,6 +80,9 @@ public class Player
     public void SetDashAnimations(Texture2D[] upFrames, Texture2D[] sideFrames) =>
         _presentation.SetDashAnimations(upFrames, sideFrames);
 
+    public void SetLookAnimations(Texture2D[] upFrames, Texture2D downFrame) =>
+        _presentation.SetLookAnimations(upFrames, downFrame);
+
     public void SetWalkAnimation(Texture2D[] frames) =>
         _presentation.SetWalkAnimation(frames);
 
@@ -94,7 +97,7 @@ public class Player
 
     public void UpdateAnimation(double deltaTime) =>
         _presentation.UpdateAnimation(
-            deltaTime, State, _isGrounded, _velocity, _input.Horizontal);
+            deltaTime, State, _isGrounded, _velocity, _input.Horizontal, _input.Vertical);
 
     public bool TrySetRelativeScale(float scale, IEnumerable<Rectangle> solidColliders)
     {
@@ -268,19 +271,22 @@ public void Update(double deltaTime)
         State = PlayerState.Jumping;
     }
 
+    // Dash direction from the current input, or null when no direction is held.
+    // No downward dash: down is ignored, so down + left/right becomes a side dash.
+    private Vector2? GetDashAimDirection(int horizontalInput)
+    {
+        var direction = new Vector2(horizontalInput, Math.Min(_input.Vertical, 0));
+        if (direction == Vector2.Zero)
+            return null;
+        direction.Normalize();
+        return direction;
+    }
+
     private void StartDash(int horizontalInput)
     {
         _jumpCanBeCut = false;
-        int dashHorizontalInput = horizontalInput;
-        // No downward dash: S is ignored, so S + A/D becomes a side dash.
-        int dashVerticalInput = Math.Min(_input.Vertical, 0);
-
-        Vector2 direction = new Vector2(dashHorizontalInput, dashVerticalInput);
-
-        if (direction == Vector2.Zero)
-            direction = new Vector2(_direction == Direction.Right ? 1 : -1, 0);
-
-        direction.Normalize();
+        Vector2 direction = GetDashAimDirection(horizontalInput) ??
+            new Vector2(_direction == Direction.Right ? 1 : -1, 0);
 
     _dashDirection = direction;
     _dashTimer = _dashDuration;
@@ -297,6 +303,10 @@ private void UpdateDash(double deltaTime)
             // Hold still (no gravity) so the anticipation pose is readable.
             _dashStartupTimer -= deltaTime;
             _velocity = Vector2.Zero;
+            // Aim is read again when the pause ends, so a direction pressed just after
+            // the dash key still counts (like Celeste's dash freeze).
+            if (_dashStartupTimer <= 0 && GetDashAimDirection(_input.Horizontal) is Vector2 aim)
+                _dashDirection = aim;
             return;
         }
 
@@ -306,6 +316,8 @@ private void UpdateDash(double deltaTime)
         if (_dashTimer <= 0f)
             EndDash();
     }
+    public void ResyncInput() => _input.Resync();
+
     public void CancelDash()
     {
         if (State != PlayerState.Dashing)

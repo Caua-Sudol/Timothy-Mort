@@ -879,3 +879,48 @@ $endif
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../assets/animation/dash/dash_vert0001.png;player/dash/dash_vert0001.png
+
+#begin ../assets/animation/look/look_top0000.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/look/look_top0000.png;player/look/look_top0000.png
+
+#begin ../assets/animation/look/look_top0001.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/look/look_top0001.png;player/look/look_top0001.png
+
+#begin ../assets/animation/look/loop_bottom0000.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/look/loop_bottom0000.png;player/look/loop_bottom0000.png

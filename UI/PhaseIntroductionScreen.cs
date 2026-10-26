@@ -9,6 +9,7 @@ public sealed class PhaseIntroductionScreen
 {
     private const float TitleScale = 1.0f;
     private const float BodyScale = 1.0f;
+    private const double CharactersPerSecond = 60.0;
     private const string DefaultNavigationText = "Enter para iniciar a fase    Esc para voltar";
 
     private readonly SpriteFont _font;
@@ -19,6 +20,7 @@ public sealed class PhaseIntroductionScreen
     private string _body = string.Empty;
     private string _navigationText = DefaultNavigationText;
     private float _bodyScale = BodyScale;
+    private double _visibleCharacters;
 
     public PhaseIntroductionScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions, Texture2D symbols)
     {
@@ -38,12 +40,19 @@ public sealed class PhaseIntroductionScreen
             _dimensions.Y * 0.43f / Math.Max(1.0f, bodySize.Y),
             _dimensions.X * 0.64f / Math.Max(1.0f, bodySize.X)));
 
+        _visibleCharacters = 0;
         _symbols.Reset();
     }
+
+    public bool IsTyping => _visibleCharacters < _body.Length;
+
+    public void CompleteTyping() => _visibleCharacters = _body.Length;
 
     public void Update(double deltaTime)
     {
         _symbols.Update(deltaTime);
+        if (IsTyping)
+            _visibleCharacters += deltaTime * CharactersPerSecond;
     }
 
     // The shared pixel belongs to Game1; this screen does not allocate a texture.
@@ -56,7 +65,7 @@ public sealed class PhaseIntroductionScreen
 
         Vector2 bodyPosition = new Vector2(_dimensions.X * 0.18f, _dimensions.Y * 0.37f);
         spriteBatch.DrawString(
-            _font, _body, bodyPosition, new Color(216, 208, 187),
+            _font, _body.Substring(0, Math.Min(_body.Length, (int)_visibleCharacters)), bodyPosition, new Color(216, 208, 187),
             0.0f, Vector2.Zero, _bodyScale, SpriteEffects.None, 0.0f);
 
         DrawCenteredText(spriteBatch, _navigationText, _dimensions.Y * 0.86f, new Color(181, 173, 161), 0.75f, _font);

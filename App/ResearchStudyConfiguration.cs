@@ -9,6 +9,14 @@ public static class ResearchStudyConfiguration
     // Beta: only Affordance is playable, and finishing it completes the study.
     public const bool BetaAffordanceOnly = true;
 
+    // Developer tools (test room, Ctrl+P, Ctrl+R, 1-4 player scale) exist only in Debug builds
+    // (Rider / dotnet run). Release builds (dotnet publish -c Release) hide them automatically.
+#if DEBUG
+    public static bool DevToolsEnabled => true;
+#else
+    public static bool DevToolsEnabled => false;
+#endif
+
     // Configure these values after creating the final Google Form.
     // Example field: entry.123456789
     private const string MeegaFormUrl = "";

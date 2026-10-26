@@ -153,18 +153,27 @@ public sealed class InterventionChoiceMenu
         KeyboardState keyboardState,
         KeyboardState previousKeyboardState)
     {
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.A) ||
-            KeyWasPressed(keyboardState, previousKeyboardState, Keys.W))
+        if (MenuInput.Left(keyboardState, previousKeyboardState) ||
+            MenuInput.Up(keyboardState, previousKeyboardState))
         {
             _selectedIndex = (_selectedIndex - 1 + _solutions.Count) % _solutions.Count;
         }
-        else if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.D) ||
-            KeyWasPressed(keyboardState, previousKeyboardState, Keys.S))
+        else if (MenuInput.Right(keyboardState, previousKeyboardState) ||
+            MenuInput.Down(keyboardState, previousKeyboardState))
         {
             _selectedIndex = (_selectedIndex + 1) % _solutions.Count;
         }
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter))
+        bool clicked = false;
+        for (int index = 0; index < _solutions.Count && !clicked; index++)
+        {
+            Vector2 position = GetSolutionCardPosition(index);
+            clicked = UiPointer.UpdateOption(
+                new Rectangle((int)position.X, (int)position.Y, CardWidth, CardHeight),
+                index, ref _selectedIndex);
+        }
+
+        if (clicked || MenuInput.Confirm(keyboardState, previousKeyboardState))
         {
             _pendingSolution = _solutions[_selectedIndex];
 
@@ -189,19 +198,19 @@ public sealed class InterventionChoiceMenu
         int column = _selectedIndex % columns;
         int rowCount = (_justifications.Count + columns - 1) / columns;
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.A))
+        if (MenuInput.Left(keyboardState, previousKeyboardState))
         {
             column = (column - 1 + columns) % columns;
         }
-        else if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.D))
+        else if (MenuInput.Right(keyboardState, previousKeyboardState))
         {
             column = (column + 1) % columns;
         }
-        else if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.W))
+        else if (MenuInput.Up(keyboardState, previousKeyboardState))
         {
             row = (row - 1 + rowCount) % rowCount;
         }
-        else if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.S))
+        else if (MenuInput.Down(keyboardState, previousKeyboardState))
         {
             row = (row + 1) % rowCount;
         }
@@ -212,7 +221,17 @@ public sealed class InterventionChoiceMenu
             _selectedIndex = candidateIndex;
         }
 
-        if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter))
+        bool clicked = false;
+        for (int index = 0; index < _justifications.Count && !clicked; index++)
+        {
+            Vector2 position = GetJustificationCardPosition(index);
+            clicked = UiPointer.UpdateOption(
+                new Rectangle((int)position.X, (int)position.Y,
+                    JustificationCardWidth, JustificationCardHeight),
+                index, ref _selectedIndex);
+        }
+
+        if (clicked || MenuInput.Confirm(keyboardState, previousKeyboardState))
         {
             _completedSolution = _pendingSolution;
             _completedJustification = _justifications[_selectedIndex];
@@ -245,8 +264,8 @@ public sealed class InterventionChoiceMenu
         }
 
         string footer = _choiceStep == ChoiceStep.SOLUTION
-            ? "A / D para navegar    Enter para escolher"
-            : "W / A / S / D para navegar    Enter para confirmar";
+            ? "A / D ou setas para navegar    Enter para escolher"
+            : "WASD ou setas para navegar    Enter para confirmar";
         if (_choiceStep == ChoiceStep.SOLUTION)
         {
             DrawFittedSolutionText(spriteBatch, _solutionBodyFont, footer,
@@ -272,17 +291,26 @@ public sealed class InterventionChoiceMenu
             new Vector2(248.7f, 185.3f), new Vector2(1456.0f, 82.7f),
             PaperTextColor, 0.55f, true);
 
+        for (int index = 0; index < _solutions.Count; index++)
+            DrawSolutionCard(spriteBatch, GetSolutionCardPosition(index), _solutions[index], index);
+    }
+
+    private Vector2 GetSolutionCardPosition(int index)
+    {
+        // The three-card layout follows the exact Affinity positions.
+        // Revision rounds with fewer options remain centered.
         float cardsWidth = _solutions.Count * CardWidth + (_solutions.Count - 1) * CardSpacing;
         float cardsLeft = (LogicalWidth - cardsWidth) / 2.0f;
-        for (int index = 0; index < _solutions.Count; index++)
-        {
-            // The three-card layout follows the exact Affinity positions.
-            // Revision rounds with fewer options remain centered.
-            float x = _solutions.Count == 3
-                ? SolutionCardPositions[index]
-                : cardsLeft + index * (CardWidth + CardSpacing);
-            DrawSolutionCard(spriteBatch, new Vector2(x, CardTop), _solutions[index], index);
-        }
+        float x = _solutions.Count == 3
+            ? SolutionCardPositions[index]
+            : cardsLeft + index * (CardWidth + CardSpacing);
+        return new Vector2(x, CardTop);
+    }
+
+    private static Vector2 GetJustificationCardPosition(int index)
+    {
+        const int columns = 2;
+        return new Vector2(JustificationColumns[index % columns], JustificationRows[index / columns]);
     }
 
     private void DrawJustificationStep(SpriteBatch spriteBatch)
@@ -291,14 +319,8 @@ public sealed class InterventionChoiceMenu
             new Vector2(249.3f, 172.0f), new Vector2(1456.0f, 72.0f),
             PaperTextColor, 0.55f, true);
 
-        const int columns = 2;
         for (int index = 0; index < _justifications.Count; index++)
-        {
-            int row = index / columns;
-            int column = index % columns;
-            var position = new Vector2(JustificationColumns[column], JustificationRows[row]);
-            DrawJustificationCard(spriteBatch, position, _justifications[index], index);
-        }
+            DrawJustificationCard(spriteBatch, GetJustificationCardPosition(index), _justifications[index], index);
     }
 
     private void DrawSolutionCard(
@@ -389,13 +411,5 @@ public sealed class InterventionChoiceMenu
             new Vector2(JustificationCardWidth - TextPadding * 2,
                 JustificationCardHeight - TextPadding * 2),
             SolutionTextColor, 0.9f, true);
-    }
-
-    private bool KeyWasPressed(
-        KeyboardState keyboardState,
-        KeyboardState previousKeyboardState,
-        Keys key)
-    {
-        return keyboardState.IsKeyDown(key) && previousKeyboardState.IsKeyUp(key);
     }
 }
