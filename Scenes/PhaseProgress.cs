@@ -42,6 +42,8 @@ public sealed class PhaseProgress
         return phaseId switch
         {
             ScenarioCatalog.AffordanceVisibilityScenarioId => true,
+            // Debug builds open every phase so the new rooms can be tested out of order.
+            _ when ResearchStudyConfiguration.DevToolsEnabled => true,
             ScenarioCatalog.DamageFeedbackScenarioId =>
                 !ResearchStudyConfiguration.BetaAffordanceOnly &&
                 IsCompleted(ScenarioCatalog.AffordanceVisibilityScenarioId),

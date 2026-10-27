@@ -188,10 +188,11 @@ public partial class LevelMap
         get { return _propVisualForegrounds; }
     }
 
-    public LevelMap(string mapPath, string ldtkLevelId = null)
+    public LevelMap(string mapPath, string ldtkLevelId = null, LdtkRoomLinks roomLinks = null)
     {
         _mapPath = mapPath;
         _ldtkLevelId = ldtkLevelId;
+        _roomLinks = roomLinks;
     }
 
 public void LoadContent(GraphicsDevice graphicsDevice)
@@ -745,6 +746,7 @@ private void ApplyObjectState(LevelMap candidate)
     _verticalRouteGelatins = candidate._verticalRouteGelatins;
     _damageVolumes = candidate._damageVolumes;
     _harmlessSpikeVolumes = candidate._harmlessSpikeVolumes;
+    _hotSurfaces = candidate._hotSurfaces;
     _verticalRouteDamageVolumes = candidate._verticalRouteDamageVolumes;
     _propVisualForegrounds = candidate._propVisualForegrounds;
     _playerSpawns = candidate._playerSpawns;

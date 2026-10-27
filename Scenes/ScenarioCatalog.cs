@@ -12,9 +12,15 @@ public static class ScenarioCatalog
     public const string AffordanceRoom3ScenarioId = "affordance_tela_3";
     public const string AffordanceInterventionScenarioId = "affordance_intervencao";
     public const string DamageFeedbackScenarioId = "feedback_dano";
+    public const string DamageFeedbackRoom2ScenarioId = "feedback_tela_2";
+    public const string DamageFeedbackRoom3ScenarioId = "feedback_tela_3";
     public const string DamageFeedbackInterventionScenarioId = "feedback_intervencao";
     public const string ConceptualModelsConstraintsScenarioId =
         "modelos_conceituais_restricoes";
+    public const string ConceptualModelsConstraintsRoom2ScenarioId =
+        "modelos_conceituais_restricoes_tela_2";
+    public const string ConceptualModelsConstraintsRoom3ScenarioId =
+        "modelos_conceituais_restricoes_tela_3";
     public const string ConceptualModelsConstraintsInterventionScenarioId =
         "modelos_conceituais_restricoes_intervencao";
     public const string PropVisualScenarioId = "prop_visual";
@@ -60,26 +66,21 @@ public static class ScenarioCatalog
                 0.14f,
                 true
             ),
-            [DamageFeedbackScenarioId] = new ScenarioDefinition(
-                DamageFeedbackScenarioId,
-                "Content/FeedbackDano.tmx",
-                new Vector2(160, 816)
-            ),
-            [DamageFeedbackInterventionScenarioId] = new ScenarioDefinition(
-                DamageFeedbackInterventionScenarioId,
-                "Content/FeedbackIntervencao.tmx",
-                new Vector2(160, 816)
-            ),
-            [ConceptualModelsConstraintsScenarioId] = new ScenarioDefinition(
-                ConceptualModelsConstraintsScenarioId,
-                "Content/ModelosConceituaisRestricoes.tmx",
-                new Vector2(160, 816)
-            ),
-            [ConceptualModelsConstraintsInterventionScenarioId] = new ScenarioDefinition(
-                ConceptualModelsConstraintsInterventionScenarioId,
-                "Content/ModelosConceituaisRestricoesIntervencao.tmx",
-                new Vector2(160, 816)
-            ),
+            // Phases 2 and 3 use the Affordance room format: three rooms in the same .ldtk
+            // and the shared intervention room (Sala_intervencao).
+            [DamageFeedbackScenarioId] = Room(DamageFeedbackScenarioId, "FeedbackTela1", 160),
+            [DamageFeedbackRoom2ScenarioId] = Room(DamageFeedbackRoom2ScenarioId, "FeedbackTela2", 96),
+            [DamageFeedbackRoom3ScenarioId] = Room(DamageFeedbackRoom3ScenarioId, "FeedbackTela3", 96),
+            [DamageFeedbackInterventionScenarioId] =
+                Room(DamageFeedbackInterventionScenarioId, "Sala_intervencao", 160),
+            [ConceptualModelsConstraintsScenarioId] =
+                Room(ConceptualModelsConstraintsScenarioId, "ModelosTela1", 160),
+            [ConceptualModelsConstraintsRoom2ScenarioId] =
+                Room(ConceptualModelsConstraintsRoom2ScenarioId, "ModelosTela2", 96),
+            [ConceptualModelsConstraintsRoom3ScenarioId] =
+                Room(ConceptualModelsConstraintsRoom3ScenarioId, "ModelosTela3", 96),
+            [ConceptualModelsConstraintsInterventionScenarioId] =
+                Room(ConceptualModelsConstraintsInterventionScenarioId, "Sala_intervencao", 160),
             [PropVisualScenarioId] = new ScenarioDefinition(
                 PropVisualScenarioId,
                 "Content/PropVisual.tmx",
@@ -87,9 +88,16 @@ public static class ScenarioCatalog
             )
         };
 
-    public static bool IsAffordanceChallenge(string id) =>
-        id == AffordanceVisibilityScenarioId || id == AffordanceRoom2ScenarioId ||
-        id == AffordanceRoom3ScenarioId;
+    // A room of the shared .ldtk, with the same camera and scale as the Affordance rooms.
+    private static ScenarioDefinition Room(string id, string ldtkLevelId, int fallbackX) =>
+        new ScenarioDefinition(
+            id,
+            "Content/Maps/Affordance.ldtk",
+            new Vector2(fallbackX, 816),
+            ldtkLevelId,
+            ScenarioCameraBehavior.CENTER_MAP,
+            0.14f,
+            true);
 
     public static ScenarioDefinition Initial
     {

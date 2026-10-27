@@ -16,6 +16,16 @@ public sealed class PhaseDefinition
     public SolutionVisualModule BaseVisualModules { get; }
     public int? ExitHealthThreshold { get; }
 
+    // Room format (as in Affordance): challenge rooms in order plus one intervention room.
+    public IReadOnlyList<string> RoomScenarioIds { get; }
+    public string InterventionScenarioId { get; }
+    // The combined demonstration in the last room only runs when this solution was applied.
+    public string BestSolutionId { get; }
+    public SolutionVisualModule DemonstrationModules { get; }
+
+    public bool UsesRoomFormat => RoomScenarioIds.Count > 0;
+    public string LastRoomScenarioId => UsesRoomFormat ? RoomScenarioIds[^1] : null;
+
     public bool HasDamageSystem
     {
         get { return MaximumHealth > 0; }
@@ -30,7 +40,11 @@ public sealed class PhaseDefinition
         int maximumHealth = 0,
         double damageInvulnerabilitySeconds = 0.0,
         SolutionVisualModule baseVisualModules = SolutionVisualModule.NONE,
-        int? exitHealthThreshold = null)
+        int? exitHealthThreshold = null,
+        IReadOnlyList<string> roomScenarioIds = null,
+        string interventionScenarioId = null,
+        string bestSolutionId = null,
+        SolutionVisualModule demonstrationModules = SolutionVisualModule.NONE)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -77,6 +91,25 @@ public sealed class PhaseDefinition
         BaseVisualModules = baseVisualModules;
         ExitHealthThreshold = exitHealthThreshold;
         _scenarioIds = new HashSet<string>(scenarioIds, StringComparer.Ordinal);
+        RoomScenarioIds = roomScenarioIds ?? Array.Empty<string>();
+        InterventionScenarioId = interventionScenarioId;
+        BestSolutionId = bestSolutionId;
+        DemonstrationModules = demonstrationModules;
+
+        foreach (string roomId in RoomScenarioIds)
+        {
+            if (!_scenarioIds.Contains(roomId))
+            {
+                throw new ArgumentException(
+                    $"A sala {roomId} precisa pertencer a fase.", nameof(roomScenarioIds));
+            }
+        }
+
+        if (interventionScenarioId != null && !_scenarioIds.Contains(interventionScenarioId))
+        {
+            throw new ArgumentException(
+                "A sala de intervencao precisa pertencer a fase.", nameof(interventionScenarioId));
+        }
 
         if (!_scenarioIds.Contains(problemScenarioId))
         {
@@ -84,6 +117,15 @@ public sealed class PhaseDefinition
                 "O cenario de problema precisa pertencer a fase.",
                 nameof(scenarioIds));
         }
+    }
+
+    // Index of a challenge room in this phase, or -1 (intervention room or other scenarios).
+    public int GetRoomIndex(string scenarioId)
+    {
+        for (int index = 0; index < RoomScenarioIds.Count; index++)
+            if (RoomScenarioIds[index] == scenarioId)
+                return index;
+        return -1;
     }
 
     public bool ContainsScenario(string scenarioId)

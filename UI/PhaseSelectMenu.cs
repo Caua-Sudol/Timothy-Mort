@@ -212,7 +212,7 @@ public sealed class PhaseSelectMenu
             Vector2 statusPosition = cardRectangle.Center.ToVector2() +
                 new Vector2(0.0f, StatusIconOffsetY);
 
-            if (ResearchStudyConfiguration.BetaAffordanceOnly && index > 0)
+            if (ResearchStudyConfiguration.BetaAffordanceOnly && isLocked && index > 0)
             {
                 DrawCenteredText(spriteBatch, "Indisponível na beta",
                     cardRectangle.Center.ToVector2() + new Vector2(0.0f, BetaNoticeOffsetY),

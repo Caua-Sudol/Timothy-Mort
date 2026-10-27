@@ -23,8 +23,9 @@ public sealed class AffordanceBackground
 
     public static float GetRoomOffset(string scenarioId)
     {
-        return scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId ? ViewWidth * 2 :
-            scenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ? ViewWidth : 0;
+        // Each challenge room shows its own third of the panorama, in room order.
+        int roomIndex = PhaseCatalog.GetForScenario(scenarioId)?.GetRoomIndex(scenarioId) ?? -1;
+        return roomIndex > 0 ? ViewWidth * roomIndex : 0;
     }
 
     public void DrawBackground(SpriteBatch spriteBatch, float roomOffset)

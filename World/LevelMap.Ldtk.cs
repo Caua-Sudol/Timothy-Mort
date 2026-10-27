@@ -8,9 +8,50 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace DontLikePoetry;
 
+// Where an LDtk room's exits lead, taken from the phase that owns the scenario.
+public sealed record LdtkRoomLinks(
+    string NextScenarioId,
+    string PreviousScenarioId,
+    string InterventionScenarioId,
+    bool IsInterventionRoom,
+    bool IsLastRoom)
+{
+    public static LdtkRoomLinks For(string scenarioId)
+    {
+        PhaseDefinition phase = PhaseCatalog.GetForScenario(scenarioId);
+        if (phase == null || !phase.UsesRoomFormat)
+        {
+            return new LdtkRoomLinks(ScenarioCatalog.InitialScenarioId,
+                ScenarioCatalog.InitialScenarioId, ScenarioCatalog.AffordanceInterventionScenarioId,
+                false, false);
+        }
+
+        IReadOnlyList<string> rooms = phase.RoomScenarioIds;
+        int index = phase.GetRoomIndex(scenarioId);
+        if (index < 0)
+        {
+            // Intervention room: its exit goes back to the room the player came from
+            // (resolved by Scene from PhaseState.InterventionReturnScenarioId).
+            return new LdtkRoomLinks(rooms[0], rooms[0], phase.InterventionScenarioId, true, false);
+        }
+
+        bool isLast = index == rooms.Count - 1;
+        return new LdtkRoomLinks(
+            isLast ? ScenarioCatalog.InitialScenarioId : rooms[index + 1],
+            index > 0 ? rooms[index - 1] : rooms[0],
+            phase.InterventionScenarioId,
+            false,
+            isLast);
+    }
+}
+
 public partial class LevelMap
 {
     public bool IsLdtk => _mapPath.EndsWith(".ldtk", StringComparison.OrdinalIgnoreCase);
+    private LdtkRoomLinks _roomLinks;
+    // Phase 2 hot rock: also listed in _platforms (it is solid); damage comes in Scene.
+    private List<Rectangle> _hotSurfaces = [];
+    public IReadOnlyList<Rectangle> HotSurfaces => _hotSurfaces;
     private List<(Rectangle Bounds, Rectangle Source, SpriteEffects Flip, float Alpha, int TilesetUid, SolutionVisualModule Solution, int LayerOrder)> _ldtkTiles = [];
     private Dictionary<int, string> _ldtkTilesetPaths = [];
     private Dictionary<int, Texture2D> _ldtkTextures = [];
@@ -153,7 +194,7 @@ public partial class LevelMap
     private bool TryReloadLdtk(out string error)
     {
         using var loading = new LoadDiagnostics($"LDtk {_ldtkLevelId}");
-        var candidate = new LevelMap(_mapPath, _ldtkLevelId);
+        var candidate = new LevelMap(_mapPath, _ldtkLevelId, _roomLinks);
         // Initial room entry can reuse the cache. Ctrl+R loads independent replacements,
         // keeping the current room's textures valid if reading or validation fails.
         if (_ldtkTextures.Count == 0)
@@ -215,13 +256,7 @@ public partial class LevelMap
         JsonElement level = _ldtkLevelId == null ? root.GetProperty("levels")[0] :
             root.GetProperty("levels").EnumerateArray().First(l =>
                 l.GetProperty("identifier").GetString() == _ldtkLevelId);
-        string levelId = level.GetProperty("identifier").GetString();
-        string nextRoom = levelId == "AffordanceTela1" ? ScenarioCatalog.AffordanceRoom2ScenarioId :
-            levelId == "AffordanceTela2" ? ScenarioCatalog.AffordanceRoom3ScenarioId :
-            levelId == "Sala_intervencao" ? ScenarioCatalog.AffordanceVisibilityScenarioId :
-            ScenarioCatalog.InitialScenarioId;
-        string previousRoom = levelId == "AffordanceTela3" ? ScenarioCatalog.AffordanceRoom2ScenarioId :
-            ScenarioCatalog.AffordanceVisibilityScenarioId;
+        LdtkRoomLinks links = _roomLinks ?? LdtkRoomLinks.For(null);
         WidthInPixels = level.GetProperty("pxWid").GetInt32();
         HeightInPixels = level.GetProperty("pxHei").GetInt32();
         var definitions = root.GetProperty("defs").GetProperty("layers").EnumerateArray()
@@ -251,6 +286,27 @@ public partial class LevelMap
                     {
                         _damageVolumes.AddRange(MergeLdtkCells(cells, columns, size, kind.Key, ox, oy)
                             .Select(bounds => new DamageVolume(bounds)));
+                        continue;
+                    }
+                    // Phase 3: looks like a spike already seen, but does no harm.
+                    if (kind.Value.Equals("espinhoInofensivo", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _harmlessSpikeVolumes.AddRange(MergeLdtkCells(cells, columns, size, kind.Key, ox, oy)
+                            .Select(bounds => new DamageVolume(bounds)));
+                        continue;
+                    }
+                    // Phase 3: looks like the gelatin already seen, but bounces the player up.
+                    if (kind.Value.Equals("gelatinaTrampolim", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _trampolineGelatins.AddRange(MergeLdtkCells(cells, columns, size, kind.Key, ox, oy));
+                        continue;
+                    }
+                    // Phase 2: solid ground that hurts while the player touches it.
+                    if (kind.Value.Equals("rochaQuente", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var hotRocks = MergeLdtkCells(cells, columns, size, kind.Key, ox, oy).ToList();
+                        _platforms.AddRange(hotRocks);
+                        _hotSurfaces.AddRange(hotRocks);
                         continue;
                     }
                     if (!gelatin && !kind.Value.Equals("solido", StringComparison.OrdinalIgnoreCase)) continue;
@@ -290,14 +346,14 @@ public partial class LevelMap
                         _playerSpawns["retorno_tela"] = spawn; break;
                     case "InterventionEntrance":
                         _interventionEntrances.Add(new InterventionEntrance(bounds,
-                            ScenarioCatalog.AffordanceInterventionScenarioId, "spawn_inicial",
+                            links.InterventionScenarioId, "spawn_inicial",
                             InterventionEntrancePlacement.LATE)); break;
                     case "RoomExit":
-                        _sceneExits.Add(new SceneExit(bounds, nextRoom,
-                            levelId == "Sala_intervencao" ? "retorno_intervencao" : "spawn_inicial",
-                            levelId == "AffordanceTela3")); break;
+                        _sceneExits.Add(new SceneExit(bounds, links.NextScenarioId,
+                            links.IsInterventionRoom ? "retorno_intervencao" : "spawn_inicial",
+                            links.IsLastRoom)); break;
                     case "RoomBack":
-                        _sceneExits.Add(new SceneExit(bounds, previousRoom, "retorno_tela", false)); break;
+                        _sceneExits.Add(new SceneExit(bounds, links.PreviousScenarioId, "retorno_tela", false)); break;
                     case "InterventionSword":
                         _interventionButtons.Add(bounds); break;
                     case "Decoracao":

@@ -25,8 +25,9 @@ public sealed class PhaseState
 
     public string PhaseId { get; }
     public string CurrentScenarioId { get; private set; }
-    public string AffordanceInterventionReturnScenarioId { get; private set; } =
-        ScenarioCatalog.AffordanceVisibilityScenarioId;
+    public PhaseDefinition Definition => _definition;
+    // Room the player came from before entering the intervention room (room-format phases).
+    public string InterventionReturnScenarioId { get; private set; }
     public int DeathCount { get; private set; }
     public int TotalDeathCount { get; private set; }
     public double ElapsedSeconds { get; private set; }
@@ -37,17 +38,16 @@ public sealed class PhaseState
     public string AppliedSolutionId { get; private set; }
     public PedagogicalDemonstrationData Demonstration { get; private set; }
 
-    public void RegisterAffordanceDemonstration()
+    public void RegisterDemonstration()
     {
-        if (CurrentScenarioId != ScenarioCatalog.AffordanceRoom3ScenarioId || Demonstration != null)
+        if (CurrentScenarioId != _definition.LastRoomScenarioId || Demonstration != null)
             return;
         Demonstration = new PedagogicalDemonstrationData
         {
             ScenarioId = CurrentScenarioId,
             StartedUtc = DateTimeOffset.UtcNow.ToString("O"),
             PlayerSolutionIdAtStart = AppliedSolutionId,
-            DemonstratedVisualModules = (long)(SolutionVisualModule.GELATIN_COLOR |
-                SolutionVisualModule.GELATIN_JELLY_MOTION),
+            DemonstratedVisualModules = (long)_definition.DemonstrationModules,
             ActiveSecondsAtStart = ElapsedSeconds,
             TotalDeathsAtStart = TotalDeathCount
         };
@@ -171,6 +171,7 @@ public sealed class PhaseState
 
         PhaseId = definition.Id;
         CurrentScenarioId = initialScenarioId;
+        InterventionReturnScenarioId = definition.ProblemScenarioId;
         _deathCountingScenarioId = definition.ProblemScenarioId;
         _baseVisualModulesOverride = baseVisualModulesOverride;
         RestoreDamageState();
@@ -178,13 +179,13 @@ public sealed class PhaseState
 
     public void EnterScenario(string scenarioId)
     {
-        if (scenarioId == ScenarioCatalog.AffordanceInterventionScenarioId &&
-            ScenarioCatalog.IsAffordanceChallenge(CurrentScenarioId))
+        if (scenarioId == _definition.InterventionScenarioId &&
+            _definition.GetRoomIndex(CurrentScenarioId) >= 0)
         {
-            AffordanceInterventionReturnScenarioId = CurrentScenarioId;
+            InterventionReturnScenarioId = CurrentScenarioId;
         }
         CurrentScenarioId = scenarioId;
-        if (PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        if (_definition.UsesRoomFormat)
         {
             // A new room sets a checkpoint, but does not refill the five hearts.
             _deathRegisteredInCurrentAttempt = false;
@@ -196,9 +197,9 @@ public sealed class PhaseState
         }
     }
 
-    public void RegisterAffordanceRespawn(bool lostHeartFromFall)
+    public void RegisterRoomRespawn(bool lostHeartFromFall)
     {
-        if (PhaseId != ScenarioCatalog.AffordanceVisibilityScenarioId) return;
+        if (!_definition.UsesRoomFormat) return;
         if (lostHeartFromFall)
             CurrentHealth = Math.Max(0, CurrentHealth - 1);
         RegisterDeath();
@@ -215,7 +216,7 @@ public sealed class PhaseState
 
     public void Reset(string initialScenarioId)
     {
-        AffordanceInterventionReturnScenarioId = ScenarioCatalog.AffordanceVisibilityScenarioId;
+        InterventionReturnScenarioId = _definition.ProblemScenarioId;
         CurrentScenarioId = initialScenarioId;
         DeathCount = 0;
         TotalDeathCount = 0;

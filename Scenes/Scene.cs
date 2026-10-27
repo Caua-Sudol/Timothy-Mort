@@ -30,8 +30,8 @@ public class Scene
     private SpriteFont _interactionFont;
     private Texture2D _passageSymbols;
     private double _passageTime;
-    private bool IsAffordanceIntervention =>
-        _phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceInterventionScenarioId;
+    private bool IsInterventionRoom => UsesRoomFormat &&
+        _phaseState.CurrentScenarioId == _phaseState.Definition.InterventionScenarioId;
 
     private Rectangle PassageInteractionBounds
     {
@@ -43,12 +43,17 @@ public class Scene
         }
     }
 
-    public bool HasVisibleAffordancePassage => IsAffordance &&
+    public bool HasVisibleInterventionPassage => UsesRoomFormat &&
         _map.InterventionEntrances.Any(e => e.Placement == GetActiveInterventionEntrancePlacement());
     private bool _interactPressed;
     private bool _room3BarrierTouched;
     private float _respawnEffectTime;
+    // Room format (shared by every phase built like Affordance): rooms, intervention room,
+    // barrier, lights, fixed camera and respawn. Content rules stay under IsAffordance.
+    private bool UsesRoomFormat => _phaseState?.Definition.UsesRoomFormat == true;
     private bool IsAffordance => _phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId;
+    private int CurrentRoomIndex =>
+        _phaseState?.Definition.GetRoomIndex(_phaseState.CurrentScenarioId) ?? -1;
 
     public void SetInteractionPressed(bool pressed) => _interactPressed = pressed;
     public void AlignCamera(Camera camera) => UpdatePlayingCamera(camera);
@@ -125,7 +130,8 @@ private Vector2 _checkpoint;
             scenario.LdtkLevelId,
             scenario.CameraBehavior,
             scenario.PlayerScreenHeightRatio,
-            scenario.SupportsPlayerScalePreview)
+            scenario.SupportsPlayerScalePreview,
+            LdtkRoomLinks.For(scenario.Id))
     {
     }
 
@@ -143,9 +149,10 @@ private Vector2 _checkpoint;
         string ldtkLevelId = null,
         ScenarioCameraBehavior cameraBehavior = ScenarioCameraBehavior.FOLLOW_PLAYER,
         float? playerScreenHeightRatio = null,
-        bool supportsPlayerScalePreview = false)
+        bool supportsPlayerScalePreview = false,
+        LdtkRoomLinks roomLinks = null)
     {
-        _map = new LevelMap(mapPath, ldtkLevelId);
+        _map = new LevelMap(mapPath, ldtkLevelId, roomLinks);
         _cameraBehavior = cameraBehavior;
         _playerScreenHeightRatio = playerScreenHeightRatio;
         _supportsPlayerScalePreview = supportsPlayerScalePreview;
@@ -231,7 +238,7 @@ private Vector2 _checkpoint;
             _map.SetObjectTexture("espinhos_lateral", LoadDiagnostics.LoadTexture(content, "visual/espinho_lateral"));
         }
         loading.Mark("texturas de plataformas legadas", includeInSummary: true);
-        if (IsAffordance)
+        if (UsesRoomFormat)
         {
             _interactionFont = content.Load<SpriteFont>("patrick");
             _passageSymbols = LoadDiagnostics.LoadTexture(content, "ui/icons/icons");
@@ -387,18 +394,17 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
     // Room 2's way to room 3 stays sealed until a first solution is chosen in the intervention.
     private IEnumerable<SceneExit> GetRoom3Barriers()
     {
-        if (!IsAffordance || _phaseState.HasFirstChoice ||
-            _phaseState.CurrentScenarioId != ScenarioCatalog.AffordanceRoom2ScenarioId)
+        if (!UsesRoomFormat || _phaseState.HasFirstChoice || CurrentRoomIndex != 1)
             return Enumerable.Empty<SceneExit>();
-        return _map.SceneExits.Where(exit =>
-            exit.DestinationScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId);
+        string lastRoom = _phaseState.Definition.LastRoomScenarioId;
+        return _map.SceneExits.Where(exit => exit.DestinationScenarioId == lastRoom);
     }
 
     // Open ways forward in the challenge rooms, marked with a light.
     // RoomBack exits lead to "retorno_tela" and stay unmarked.
     private IEnumerable<SceneExit> GetLitExits()
     {
-        if (!IsAffordance || IsAffordanceIntervention) return Enumerable.Empty<SceneExit>();
+        if (!UsesRoomFormat || IsInterventionRoom) return Enumerable.Empty<SceneExit>();
         var barriers = GetRoom3Barriers().ToList();
         return _map.SceneExits.Where(exit =>
             exit.DestinationSpawnId != "retorno_tela" && !barriers.Contains(exit) &&
@@ -455,7 +461,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
         _interventionTrigger.Update(
             _map.InterventionButtons, _player.HitBox, _player.IsGrounded,
-            IsAffordance, _interactPressed, deltaTime);
+            UsesRoomFormat, _interactPressed, deltaTime);
         _exitDoor.Update(
             InterventionButtonPressed || _phaseState?.VerticalRouteRevealed == true,
             deltaTime);
@@ -474,7 +480,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
     if (PlayerFell())
         {
-            if (IsAffordance) RecoverAffordance(camera, true);
+            if (UsesRoomFormat) RespawnInRoom(camera, true);
             else KillPlayer();
             return;
         }
@@ -482,26 +488,26 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         UpdatePlayingCamera(camera);
 
         SceneExit sceneExit = _map.GetSceneExit(
-            IsAffordanceIntervention ? PassageInteractionBounds : _player.HitBox,
+            IsInterventionRoom ? PassageInteractionBounds : _player.HitBox,
             _exitDoor.IsOpen,
             _phaseState?.ExitDoorIsOpen == true);
-        if (sceneExit != null && (!IsAffordanceIntervention || _interactPressed))
+        if (sceneExit != null && (!IsInterventionRoom || _interactPressed))
         {
             _requestedScenarioId = sceneExit.DestinationScenarioId;
             _requestedSpawnId = sceneExit.DestinationSpawnId;
-            ResolveAffordanceInterventionReturn();
+            ResolveInterventionReturn();
             return;
         }
 
         InterventionEntrance interventionEntrance = _map.GetInterventionEntrance(
-            IsAffordance ? PassageInteractionBounds : _player.HitBox,
+            UsesRoomFormat ? PassageInteractionBounds : _player.HitBox,
             GetActiveInterventionEntrancePlacement());
 
-        if (interventionEntrance != null && (!IsAffordance || _interactPressed))
+        if (interventionEntrance != null && (!UsesRoomFormat || _interactPressed))
         {
             _requestedScenarioId = interventionEntrance.DestinationScenarioId;
             _requestedSpawnId = interventionEntrance.DestinationSpawnId;
-            ResolveAffordanceInterventionReturn();
+            ResolveInterventionReturn();
             return;
         }
 
@@ -565,7 +571,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         // Affordance spikes work like falling: lose a heart and respawn, even while invulnerable.
         if (damageVolume != null && IsAffordance)
         {
-            RecoverAffordance(camera, true);
+            RespawnInRoom(camera, true);
             return true;
         }
 
@@ -804,9 +810,11 @@ private static bool RectanglesTouchOrIntersect(
         return _map.HasCutsceneTrigger(_player.HitBox);
     }
 
-    private void RecoverAffordance(Camera camera, bool fall)
+    // Room format: losing a heart (fall, or an Affordance spike) returns the player to
+    // the room's entry point; the run only ends when the hearts run out.
+    private void RespawnInRoom(Camera camera, bool fall)
     {
-        _phaseState.RegisterAffordanceRespawn(fall);
+        _phaseState.RegisterRoomRespawn(fall);
         if (_phaseState.CurrentHealth <= 0)
         {
             KillPlayer();
@@ -824,7 +832,7 @@ private static bool RectanglesTouchOrIntersect(
                 _map.HeightInPixels + GameScaleConfig.AffordanceVisibilityFallMargin;
         }
 
-        return _player.Position.Y > (IsAffordance ? ScreenHeight + 16 : FallLimitY);
+        return _player.Position.Y > (UsesRoomFormat ? ScreenHeight + 16 : FallLimitY);
     }
 
     private void KillPlayer()
@@ -932,7 +940,7 @@ private static bool RectanglesTouchOrIntersect(
         camera.Zoom = SupportsCameraScalePreview
             ? GameScaleConfig.GetCameraZoom(camera.Dimensions.Y, _player.UnscaledReferenceHeight)
             : GameScaleConfig.OriginalCameraZoom;
-        if (IsAffordance) camera.LookAt(new Vector2(ScreenWidth / 2f, ScreenHeight / 2f));
+        if (UsesRoomFormat) camera.LookAt(new Vector2(ScreenWidth / 2f, ScreenHeight / 2f));
         else camera.Follow(_player);
     }
 
@@ -1108,7 +1116,7 @@ private static bool RectanglesTouchOrIntersect(
             _phaseState?.VerticalRouteRevealed == true);
     }
 
-    if (IsAffordance) DrawAffordanceEffects(spriteBatch);
+    if (UsesRoomFormat) DrawRoomFormatEffects(spriteBatch);
     DrawDamageEventEffects(spriteBatch, visualModules);
     _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
     _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
@@ -1170,52 +1178,48 @@ private static bool RectanglesTouchOrIntersect(
         spriteBatch.End();
     }
 
-    private bool _affordanceCombinationDemo;
+    private bool _combinationDemo;
 
-    public void EnableAffordanceCombinationDemo()
+    public void EnableCombinationDemo()
     {
-        _affordanceCombinationDemo =
-            _phaseState?.CurrentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId;
+        _combinationDemo = _phaseState != null &&
+            _phaseState.CurrentScenarioId == _phaseState.Definition.LastRoomScenarioId;
     }
 
     private SolutionVisualModule GetAppliedVisualModules()
     {
         SolutionVisualModule modules = _phaseState?.AppliedVisualModules ?? SolutionVisualModule.NONE;
-        if (_affordanceCombinationDemo)
+        if (_combinationDemo)
         {
             // Demonstration only: preserve the player's choice and completion records.
-            modules &= ~SolutionVisualModule.GELATIN_TERRAIN_MARK;
-            modules |= SolutionVisualModule.GELATIN_COLOR |
-                       SolutionVisualModule.GELATIN_JELLY_MOTION;
+            // It only runs on top of the phase's best solution, so nothing needs removing.
+            modules |= _phaseState.Definition.DemonstrationModules;
         }
         return modules;
     }
 
-    private void ResolveAffordanceInterventionReturn()
+    private void ResolveInterventionReturn()
     {
-        if (IsAffordance &&
-            _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceInterventionScenarioId &&
-            _requestedScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        if (IsInterventionRoom &&
+            _requestedScenarioId == _phaseState.Definition.RoomScenarioIds[0])
         {
-            _requestedScenarioId = _phaseState.AffordanceInterventionReturnScenarioId;
+            _requestedScenarioId = _phaseState.InterventionReturnScenarioId;
             _requestedSpawnId = "retorno_intervencao";
         }
     }
 
     private InterventionEntrancePlacement? GetActiveInterventionEntrancePlacement()
     {
-        if (IsAffordance)
+        if (UsesRoomFormat)
         {
-            bool returningFromIntervention =
-                _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceInterventionScenarioId;
-            if (returningFromIntervention)
+            if (IsInterventionRoom)
                 return _phaseState.HasFirstChoice ? InterventionEntrancePlacement.LATE : null;
 
+            // The entrance shows in room 2, or in room 1 after two deaths.
             // Once a solution is applied the entrance closes: the choice is final.
             bool entranceIsAvailable = !_phaseState.HasFirstChoice &&
-                (_phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ||
-                 _phaseState.CurrentScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId &&
-                 _phaseState.DeathCount >= 2);
+                (CurrentRoomIndex == 1 ||
+                 CurrentRoomIndex == 0 && _phaseState.DeathCount >= 2);
             return entranceIsAvailable ? InterventionEntrancePlacement.LATE : null;
         }
         if (_phaseState == null || !_phaseState.InterventionEntranceIsActive)
@@ -1226,7 +1230,7 @@ private static bool RectanglesTouchOrIntersect(
         return _phaseState.InterventionEntrancePlacement;
     }
 
-    private void DrawAffordanceEffects(SpriteBatch spriteBatch)
+    private void DrawRoomFormatEffects(SpriteBatch spriteBatch)
     {
         foreach (InterventionEntrance entrance in _map.InterventionEntrances)
             if (entrance.Placement == GetActiveInterventionEntrancePlacement())
@@ -1237,7 +1241,7 @@ private static bool RectanglesTouchOrIntersect(
         foreach (SceneExit barrier in GetRoom3Barriers())
             FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols,
                 GetBarrierSmokeBounds(barrier.Bounds), _passageTime);
-        if (IsAffordanceIntervention)
+        if (IsInterventionRoom)
             foreach (SceneExit exit in _map.SceneExits)
             {
                 FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols, exit.Bounds, _passageTime);

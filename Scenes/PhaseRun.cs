@@ -49,10 +49,11 @@ public sealed class PhaseRun : IDisposable
         get
         {
             PhaseDefinition phase = PhaseCatalog.GetForScenario(_currentScenarioId);
+            // Room-format phases finish from their last room; the others from the problem room.
             return phase != null &&
-                (_currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId ||
-                 phase.Id != ScenarioCatalog.AffordanceVisibilityScenarioId &&
-                 _currentScenarioId == phase.ProblemScenarioId) &&
+                _currentScenarioId == (phase.UsesRoomFormat
+                    ? phase.LastRoomScenarioId
+                    : phase.ProblemScenarioId) &&
                 _phaseState?.PhaseId == phase.Id &&
                 _phaseState.ExitDoorIsOpen;
         }
@@ -144,17 +145,17 @@ public sealed class PhaseRun : IDisposable
 
         // Wait until the room slide finishes so the blink reveals the live scene,
         // rather than a captured image of the room before the demonstration.
-        // The combined demo only builds on the appearance (gelatin) choice;
+        // The combined demo only builds on the phase's best choice;
         // with any other choice it would replace the player's own solution.
-        if (_currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId &&
-            !_mortCombinationSpoken && isActive && AppliedAppearanceSolution)
+        if (_currentScenarioId == _phaseState?.Definition.LastRoomScenarioId &&
+            !_mortCombinationSpoken && isActive && AppliedBestSolution)
         {
             _mortCombinationSpoken = true;
             _mortSubtitle.Show(false, MortDialogueCatalog.Conclusion(_phaseState.AppliedSolutionId));
             _solutionBlink.Start(() =>
             {
-                _phaseState.RegisterAffordanceDemonstration();
-                _scene.EnableAffordanceCombinationDemo();
+                _phaseState.RegisterDemonstration();
+                _scene.EnableCombinationDemo();
             });
             return;
         }
@@ -244,7 +245,7 @@ public sealed class PhaseRun : IDisposable
         _sceneUpdatedLastFrame = true;
         _scene.Update(_camera, deltaTime);
 
-        if (!_mortPassageSpoken && _scene.HasVisibleAffordancePassage)
+        if (!_mortPassageSpoken && _scene.HasVisibleInterventionPassage)
         {
             _mortPassageSpoken = true;
             _mortSubtitle.Show(false, MortDialogueCatalog.Passage);
@@ -312,8 +313,9 @@ public sealed class PhaseRun : IDisposable
         }
     }
 
-    private bool AppliedAppearanceSolution =>
-        _phaseState?.AppliedSolutionId == AffordanceChoiceCatalog.AppearanceSolutionId;
+    private bool AppliedBestSolution =>
+        _phaseState?.Definition.BestSolutionId != null &&
+        _phaseState.AppliedSolutionId == _phaseState.Definition.BestSolutionId;
 
     private void ApplyChoiceWithBlink(Action applyChoice, string solutionId)
     {
@@ -388,12 +390,13 @@ public sealed class PhaseRun : IDisposable
         string destinationScenarioId,
         string destinationSpawnId)
     {
-        if (ScenarioCatalog.IsAffordanceChallenge(_currentScenarioId) &&
-            ScenarioCatalog.IsAffordanceChallenge(destinationScenarioId))
+        PhaseDefinition phase = _phaseState?.Definition;
+        int currentRoom = phase?.GetRoomIndex(_currentScenarioId) ?? -1;
+        int destinationRoom = phase?.GetRoomIndex(destinationScenarioId) ?? -1;
+        if (currentRoom >= 0 && destinationRoom >= 0)
         {
-            int slideDirection = destinationScenarioId == ScenarioCatalog.AffordanceVisibilityScenarioId ||
-                _currentScenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId &&
-                destinationScenarioId == ScenarioCatalog.AffordanceRoom2ScenarioId ? -1 : 1;
+            // Rooms sit side by side: going to an earlier room slides left.
+            int slideDirection = destinationRoom < currentRoom ? -1 : 1;
             _scenarioTransition.BeginSlide(
                 _graphicsDevice,
                 slideDirection,
@@ -466,7 +469,8 @@ public sealed class PhaseRun : IDisposable
         _currentScenarioId = scenarioId;
 
         loading.Mark("estado da fase");
-        if (destinationPhase?.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        // Every room-format phase reuses the Affordance panorama.
+        if (destinationPhase?.UsesRoomFormat == true)
             _affordanceBackground ??= new AffordanceBackground(_content);
 
         loading.Mark("cenario de fundo (criar ou reutilizar)", includeInSummary: true);
@@ -479,9 +483,9 @@ public sealed class PhaseRun : IDisposable
         _scene.LoadContent(_graphicsDevice, _content);
         loading.Mark("criar e carregar Scene");
         _scene.AlignCamera(_camera);
-        if (scenarioId == ScenarioCatalog.AffordanceRoom3ScenarioId && _mortCombinationSpoken &&
-            AppliedAppearanceSolution)
-            _scene.EnableAffordanceCombinationDemo();
+        if (scenarioId == _phaseState?.Definition.LastRoomScenarioId && _mortCombinationSpoken &&
+            AppliedBestSolution)
+            _scene.EnableCombinationDemo();
         _overlayState = OverlayState.NONE;
         _mapReloadErrorMessage = null;
     }
@@ -564,7 +568,7 @@ public sealed class PhaseRun : IDisposable
         }
         else
         {
-            bool hasAffordanceBackground = ScenarioCatalog.IsAffordanceChallenge(_currentScenarioId);
+            bool hasAffordanceBackground = PhaseCatalog.IsChallengeRoom(_currentScenarioId);
             if (hasAffordanceBackground)
             {
                 _affordanceBackground.DrawBackground(_spriteBatch,
