@@ -11,7 +11,7 @@
 	"iid": "adf00000-1012-4000-8000-000000000001",
 	"jsonVersion": "1.5.3",
 	"appBuildId": 473703,
-	"nextUid": 150,
+	"nextUid": 153,
 	"identifierStyle": "Capitalize",
 	"toc": [],
 	"worldLayout": "Free",
@@ -2178,6 +2178,117 @@
 					"tilesetUid": null
 				}
 			]
+		},
+		{
+			"identifier": "Controles",
+			"uid": 150,
+			"tags": [],
+			"exportToToc": false,
+			"allowOutOfBounds": false,
+			"doc": "Placa: perto dela, E abre o seletor de controles do tutorial.",
+			"width": 192,
+			"height": 96,
+			"resizableX": true,
+			"resizableY": true,
+			"minWidth": null,
+			"maxWidth": null,
+			"minHeight": null,
+			"maxHeight": null,
+			"keepAspectRatio": false,
+			"tileOpacity": 1,
+			"fillOpacity": 0.2,
+			"lineOpacity": 1,
+			"hollow": true,
+			"color": "#D8D0BB",
+			"renderMode": "Rectangle",
+			"showName": true,
+			"tilesetId": null,
+			"tileRenderMode": "FitInside",
+			"tileRect": null,
+			"uiTileRect": null,
+			"nineSliceBorders": [],
+			"maxCount": 0,
+			"limitScope": "PerLevel",
+			"limitBehavior": "MoveLastOne",
+			"pivotX": 0,
+			"pivotY": 0,
+			"fieldDefs": []
+		},
+		{
+			"identifier": "FalaMort",
+			"uid": 151,
+			"tags": [],
+			"exportToToc": false,
+			"allowOutOfBounds": false,
+			"doc": "Area: ao entrar, o Mort fala uma vez (balao com zoom).",
+			"width": 192,
+			"height": 192,
+			"resizableX": true,
+			"resizableY": true,
+			"minWidth": null,
+			"maxWidth": null,
+			"minHeight": null,
+			"maxHeight": null,
+			"keepAspectRatio": false,
+			"tileOpacity": 1,
+			"fillOpacity": 0.2,
+			"lineOpacity": 1,
+			"hollow": true,
+			"color": "#E0A458",
+			"renderMode": "Rectangle",
+			"showName": true,
+			"tilesetId": null,
+			"tileRenderMode": "FitInside",
+			"tileRect": null,
+			"uiTileRect": null,
+			"nineSliceBorders": [],
+			"maxCount": 0,
+			"limitScope": "PerLevel",
+			"limitBehavior": "MoveLastOne",
+			"pivotX": 0,
+			"pivotY": 0,
+			"fieldDefs": [
+				{
+					"identifier": "Texto",
+					"doc": "Frase curta do Mort (balao com zoom).",
+					"__type": "String",
+					"uid": 152,
+					"type": "F_String",
+					"isArray": false,
+					"canBeNull": false,
+					"arrayMinLength": null,
+					"arrayMaxLength": null,
+					"editorDisplayMode": "ValueOnly",
+					"editorDisplayScale": 1,
+					"editorDisplayPos": "Above",
+					"editorLinkStyle": "StraightArrow",
+					"editorDisplayColor": null,
+					"editorAlwaysShow": true,
+					"editorShowInWorld": true,
+					"editorCutLongValues": true,
+					"editorTextSuffix": null,
+					"editorTextPrefix": null,
+					"useForSmartColor": false,
+					"exportToToc": false,
+					"searchable": false,
+					"min": null,
+					"max": null,
+					"regex": null,
+					"acceptFileTypes": null,
+					"defaultOverride": {
+						"id": "V_String",
+						"params": ["..."]
+					},
+					"textLanguageMode": null,
+					"symmetricalRef": false,
+					"autoChainRef": true,
+					"allowOutOfLevelRef": true,
+					"allowedRefs": "OnlySame",
+					"allowedRefsEntityUid": null,
+					"allowedRefTags": [],
+					"tilesetUid": null
+				}
+			]
 		}
 	], "tilesets": [
 		{
@@ -3024,6 +3135,36 @@
 					"overrideTilesetUid": null,
 					"gridTiles": [],
 					"entityInstances": [
+						{
+							"__identifier": "FalaMort",
+							"__grid": [21,60],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#D8D0BB",
+							"iid": "bb0e17f7-d035-43c4-8261-448162f4885d",
+							"width": 144,
+							"height": 192,
+							"defUid": 151,
+							"px": [336,960],
+							"fieldInstances": [
+								{
+									"__identifier": "Texto",
+									"__type": "String",
+									"__value": "Que terreno estranho... Encoste nele e tente o dash de novo!",
+									"__tile": null,
+									"defUid": 152,
+									"realEditorValues": [
+										{
+											"id": "V_String",
+											"params": ["Que terreno estranho... Encoste nele e tente o dash de novo!"]
+										}
+									]
+								}
+							],
+							"__worldX": 336,
+							"__worldY": 960
+						},
 						{
 							"__identifier": "PlayerSpawn",
 							"__grid": [15,71],
@@ -17262,6 +17403,82 @@
 					"overrideTilesetUid": null,
 					"gridTiles": [],
 					"entityInstances": [
+						{
+							"__identifier": "Controles",
+							"__grid": [24,78],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#D8D0BB",
+							"iid": "20a2e605-3365-459d-9b60-529b63f3f8a5",
+							"width": 192,
+							"height": 96,
+							"defUid": 150,
+							"px": [384,1248],
+							"fieldInstances": [],
+							"__worldX": 384,
+							"__worldY": -1952
+						},
+						{
+							"__identifier": "FalaMort",
+							"__grid": [48,60],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#D8D0BB",
+							"iid": "c2df383d-327a-43a0-a03f-c323e0a6a965",
+							"width": 288,
+							"height": 288,
+							"defUid": 151,
+							"px": [768,960],
+							"fieldInstances": [
+								{
+									"__identifier": "Texto",
+									"__type": "String",
+									"__value": "Buraco grande? Pule e use o dash no ar!",
+									"__tile": null,
+									"defUid": 152,
+									"realEditorValues": [
+										{
+											"id": "V_String",
+											"params": ["Buraco grande? Pule e use o dash no ar!"]
+										}
+									]
+								}
+							],
+							"__worldX": 768,
+							"__worldY": -2240
+						},
+						{
+							"__identifier": "FalaMort",
+							"__grid": [126,18],
+							"__pivot": [0,0],
+							"__tags": [],
+							"__tile": null,
+							"__smartColor": "#D8D0BB",
+							"iid": "e2f3e47c-9ad3-4f64-83c5-3838847cc9b3",
+							"width": 192,
+							"height": 192,
+							"defUid": 151,
+							"px": [2016,288],
+							"fieldInstances": [
+								{
+									"__identifier": "Texto",
+									"__type": "String",
+									"__value": "Dá para combinar direções no dash!",
+									"__tile": null,
+									"defUid": 152,
+									"realEditorValues": [
+										{
+											"id": "V_String",
+											"params": ["Dá para combinar direções no dash!"]
+										}
+									]
+								}
+							],
+							"__worldX": 2016,
+							"__worldY": -2912
+						},
 						{
 							"__identifier": "PlayerSpawn",
 							"__grid": [9,83],

@@ -5,5 +5,6 @@ public enum OverlayState
     NONE = 0,
     PAUSED = 1,
     DEATH_MENU = 2,
-    INTERVENTION_CHOICES = 3
+    INTERVENTION_CHOICES = 3,
+    TUTORIAL_CONTROLS = 4
 }

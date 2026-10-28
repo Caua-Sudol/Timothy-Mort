@@ -12,10 +12,10 @@ public static class MortDialogueCatalog
     public const string Room3Barrier =
         "Ainda não dá para seguir. Precisamos passar na sala da intervenção!";
 
+    // The dash tip moved to the tutorial and to the FalaMort balloon next to the first special platform.
     public static readonly string[] Introduction =
     {
-        "Cuidado, garoto! Não dá para entender o que cada coisa faz só pela aparência.",
-        "Vou te ajudar: use o dash (Shift, X ou J) mais uma vez ao encostar nos terrenos estranhos."
+        "Cuidado, garoto! Não dá para entender o que cada coisa faz só pela aparência."
     };
 
     // Feedback has no subtitle introduction: Mort speaks in a short balloon instead,

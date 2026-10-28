@@ -150,9 +150,13 @@ private Vector2 _checkpoint;
 
     // Tutorial room: flat background, control signs, falls only send the player back.
     private readonly bool _isTutorial;
+    private bool _tutorialExitReached;
+    private Rectangle _tutorialExitBounds;
+    private bool _controlsSignActivated;
+    // FalaMort areas already spoken in this session (LDtk entity iids).
+    private static readonly HashSet<string> ShownMortCallouts = new();
     private static readonly Color TutorialBackgroundColor = new Color(0x15, 0x19, 0x1F);
     private static readonly Color TutorialSignColor = new Color(0xD8, 0xD0, 0xBB);
-    private static readonly Color TutorialPlatformColor = new Color(0x2A, 0x30, 0x3A);
 
     public Scene(string mapPath, Vector2 playerStart)
         : this(mapPath, playerStart, null, null, false)
@@ -432,6 +436,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 {
     _map.UpdateVisualEffects(deltaTime);
     TryStartRoom2Callout();
+    TryStartAreaCallout();
     if (UpdateMortCallout(camera, deltaTime)) return;
     _respawnEffectTime = Math.Max(0, _respawnEffectTime - (float)deltaTime);
     _map.UpdateDynamicPlatforms(_player, deltaTime);
@@ -511,6 +516,16 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             IsInterventionRoom ? PassageInteractionBounds : _player.HitBox,
             _exitDoor.IsOpen,
             _phaseState?.ExitDoorIsOpen == true);
+        if (_isTutorial && _interactPressed &&
+            _map.ControlSigns.Any(sign => sign.Intersects(PassageInteractionBounds)))
+            _controlsSignActivated = true;
+        // Tutorial exit: PhaseRun asks for confirmation before leaving.
+        if (sceneExit != null && _isTutorial)
+        {
+            _tutorialExitReached = true;
+            _tutorialExitBounds = sceneExit.Bounds;
+            return;
+        }
         if (sceneExit != null && GetRoom3Barriers().Contains(sceneExit))
         {
             // Blocked passage: back to the room's start (no heart lost) and Mort explains.
@@ -661,6 +676,45 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             HandleHeartsDepleted(camera);
         }
         return true;
+    }
+
+    public bool TryTakeTutorialExit()
+    {
+        if (!_tutorialExitReached) return false;
+        _tutorialExitReached = false;
+        return true;
+    }
+
+    public bool TryTakeControlsSignActivation()
+    {
+        if (!_controlsSignActivated) return false;
+        _controlsSignActivated = false;
+        return true;
+    }
+
+    // "Testar mais": move the player back out of the exit so it does not trigger again at once.
+    public void StepBackFromTutorialExit()
+    {
+        bool exitOnRight = _tutorialExitBounds.Center.X > _map.WidthInPixels / 2;
+        int x = exitOnRight
+            ? _tutorialExitBounds.Left - _player.HitBox.Width - 96
+            : _tutorialExitBounds.Right + 96;
+        _player.Move(x, _player.HitBox.Y);
+        _player.ResetVelocity();
+        _tutorialExitReached = false;
+    }
+
+    // FalaMort: entering the area makes Mort speak once per session.
+    private void TryStartAreaCallout()
+    {
+        if (_calloutTimer > 0) return;
+        foreach (var (bounds, text, id) in _map.MortCallouts)
+        {
+            if (ShownMortCallouts.Contains(id) || !_player.HitBox.Intersects(bounds)) continue;
+            ShownMortCallouts.Add(id);
+            StartMortCallout(text);
+            return;
+        }
     }
 
     private bool IsFeedback => _phaseState?.PhaseId == ScenarioCatalog.DamageFeedbackScenarioId;
@@ -1198,13 +1252,14 @@ private static bool RectanglesTouchOrIntersect(
             DrawSignArrow(spriteBatch, bounds, direction);
         foreach (var (bounds, text) in _map.SignTexts)
             DrawSignText(spriteBatch, bounds, TutorialControls.Fill(text));
-        // Plain look for the solid platforms; tiles painted in LDtk are drawn on top of it.
-        foreach (Rectangle platform in _map.Platforms)
+        foreach (Rectangle sign in _map.ControlSigns)
         {
-            spriteBatch.Draw(_fadeTexture, platform, TutorialSignColor * 0.55f);
-            Rectangle inner = platform;
+            spriteBatch.Draw(_fadeTexture, sign, TutorialSignColor);
+            Rectangle inner = sign;
             inner.Inflate(-4, -4);
-            spriteBatch.Draw(_fadeTexture, inner, TutorialPlatformColor);
+            spriteBatch.Draw(_fadeTexture, inner, TutorialBackgroundColor);
+            inner.Inflate(-14, -14);
+            DrawSignText(spriteBatch, inner, "Controles");
         }
         spriteBatch.End();
     }
@@ -1445,6 +1500,9 @@ private static bool RectanglesTouchOrIntersect(
     }
 
     if (UsesRoomFormat) DrawRoomFormatEffects(spriteBatch);
+    if (_isTutorial)
+        foreach (Rectangle sign in _map.ControlSigns)
+            DrawInteractionPrompt(spriteBatch, sign);
     DrawDamageEventEffects(spriteBatch, visualModules);
     _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
     _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);

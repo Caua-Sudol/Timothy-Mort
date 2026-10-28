@@ -20,6 +20,7 @@ public sealed class PhaseRun : IDisposable
     private readonly DeathMenu _deathMenu;
     private readonly DamageHud _damageHud = new();
     private readonly InterventionChoiceMenu _interventionChoiceMenu;
+    private readonly ControlSchemeMenu _controlSchemeMenu;
     private readonly ScenarioTransition _scenarioTransition = new();
     private readonly EyeBlinkTransition _solutionBlink = new();
     private readonly Random _choicePresentationRandom = new();
@@ -82,6 +83,7 @@ public sealed class PhaseRun : IDisposable
         _pauseMenu = new PauseMenu(titleFont, bodyFont, selector, center);
         _deathMenu = new DeathMenu(titleFont, bodyFont, selector, center);
         _interventionChoiceMenu = new InterventionChoiceMenu(font, titleFont, bodyFont);
+        _controlSchemeMenu = new ControlSchemeMenu(titleFont, bodyFont, selector, center);
     }
 
     public void LoadContent(SpriteBatch spriteBatch)
@@ -186,6 +188,12 @@ public sealed class PhaseRun : IDisposable
             return;
         }
 
+        if (_overlayState == OverlayState.TUTORIAL_CONTROLS)
+        {
+            UpdateControlSchemeMenu(keyboardState);
+            return;
+        }
+
         if (_overlayState == OverlayState.INTERVENTION_CHOICES)
         {
             if (isActive)
@@ -246,6 +254,20 @@ public sealed class PhaseRun : IDisposable
             _scene.ResyncPlayerInput();
         _sceneUpdatedLastFrame = true;
         _scene.Update(_camera, deltaTime);
+
+        if (_scene.TryTakeTutorialExit())
+        {
+            _controlSchemeMenu.OpenExitConfirmation();
+            _overlayState = OverlayState.TUTORIAL_CONTROLS;
+            return;
+        }
+
+        if (_scene.TryTakeControlsSignActivation())
+        {
+            _controlSchemeMenu.OpenChoice();
+            _overlayState = OverlayState.TUTORIAL_CONTROLS;
+            return;
+        }
 
         if (!_mortPassageSpoken && _scene.HasVisibleInterventionPassage)
         {
@@ -490,6 +512,12 @@ public sealed class PhaseRun : IDisposable
             AppliedBestSolution)
             _scene.EnableCombinationDemo();
         _overlayState = OverlayState.NONE;
+        // The tutorial opens with the control choice.
+        if (scenarioId == ScenarioCatalog.TutorialScenarioId)
+        {
+            _controlSchemeMenu.OpenChoice();
+            _overlayState = OverlayState.TUTORIAL_CONTROLS;
+        }
         _mapReloadErrorMessage = null;
     }
 
@@ -507,6 +535,24 @@ public sealed class PhaseRun : IDisposable
             ReturnToMenuRequested = true;
         else if (selectedOption == PauseOption.QUIT)
             ExitRequested = true;
+    }
+
+    private void UpdateControlSchemeMenu(KeyboardState keyboardState)
+    {
+        switch (_controlSchemeMenu.Update(keyboardState, _previousKeyboardState))
+        {
+            case ControlSchemeMenuResult.CLOSED:
+                _overlayState = OverlayState.NONE;
+                break;
+            case ControlSchemeMenuResult.CONTINUE:
+                _overlayState = OverlayState.NONE;
+                ReturnToSelectionRequested = true;
+                break;
+            case ControlSchemeMenuResult.TEST_MORE:
+                _scene.StepBackFromTutorialExit();
+                _overlayState = OverlayState.NONE;
+                break;
+        }
     }
 
     private void UpdateDeathMenu(KeyboardState keyboardState)
@@ -618,6 +664,10 @@ public sealed class PhaseRun : IDisposable
         else if (_overlayState == OverlayState.INTERVENTION_CHOICES)
         {
             _interventionChoiceMenu.Draw(_spriteBatch);
+        }
+        else if (_overlayState == OverlayState.TUTORIAL_CONTROLS)
+        {
+            _controlSchemeMenu.Draw(_spriteBatch, fadeTexture);
         }
 
         if (_overlayState == OverlayState.NONE &&

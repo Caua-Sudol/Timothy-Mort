@@ -57,6 +57,11 @@ public partial class LevelMap
     private List<(Rectangle Bounds, string Direction)> _signArrows = [];
     public IReadOnlyList<(Rectangle Bounds, string Text)> SignTexts => _signTexts;
     public IReadOnlyList<(Rectangle Bounds, string Direction)> SignArrows => _signArrows;
+    // "Controles" signs (tutorial) and "FalaMort" areas (Mort's short balloon, once per session).
+    private List<Rectangle> _controlSigns = [];
+    private List<(Rectangle Bounds, string Text, string Id)> _mortCallouts = [];
+    public IReadOnlyList<Rectangle> ControlSigns => _controlSigns;
+    public IReadOnlyList<(Rectangle Bounds, string Text, string Id)> MortCallouts => _mortCallouts;
     private List<(Rectangle Bounds, Rectangle Source, SpriteEffects Flip, float Alpha, int TilesetUid, SolutionVisualModule Solution, int LayerOrder)> _ldtkTiles = [];
     private Dictionary<int, string> _ldtkTilesetPaths = [];
     private Dictionary<int, Texture2D> _ldtkTextures = [];
@@ -400,6 +405,15 @@ public partial class LevelMap
                     case "Seta":
                         _signArrows.Add((bounds, GetLdtkField(entity, "Direcao")?.GetString() ?? "direita"));
                         break;
+                    case "Controles":
+                        _controlSigns.Add(bounds); break;
+                    case "FalaMort":
+                    {
+                        string value = GetLdtkField(entity, "Texto")?.GetString();
+                        if (!string.IsNullOrWhiteSpace(value))
+                            _mortCallouts.Add((bounds, value, entity.GetProperty("iid").GetString()));
+                        break;
+                    }
                     case "Decoracao":
                     {
                         // Imagem: PNG name in assets/eureka (".png" optional). Frente: draw in front of the player.
