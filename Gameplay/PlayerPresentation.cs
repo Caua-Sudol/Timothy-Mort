@@ -28,6 +28,10 @@ internal sealed class PlayerPresentation
     private double _walkAnimationTime;
     private Texture2D[] _jumpFrames;
     private Texture2D[] _glideFrames;
+    // Same glide loop with the spent-dash colors (hat and Mort's eye).
+    private Texture2D[] _glideDashUsedFrames;
+    // glide0000 is the rising pose; the loop is the frames after it.
+    private bool _airRising;
     private Texture2D[] _upDashFrames;
     private Texture2D[] _sideDashFrames;
     // Body lean for a fully sideways dash; diagonals lean proportionally less.
@@ -47,10 +51,12 @@ internal sealed class PlayerPresentation
     private int _lookDirection;
     private double _lookTime;
 
-    public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames)
+    public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames,
+        Texture2D[] glideDashUsedFrames)
     {
         _jumpFrames = jumpFrames;
         _glideFrames = glideFrames;
+        _glideDashUsedFrames = glideDashUsedFrames;
         _airAnimation = AirAnimation.None;
         _airAnimationTime = 0;
         _wasAirborne = false;
@@ -113,7 +119,8 @@ internal sealed class PlayerPresentation
                 _airAnimation = AirAnimation.Glide;
             }
             if (_airAnimation == AirAnimation.Glide)
-                _airAnimationTime %= _glideFrames.Length / AirFramesPerSecond;
+                _airAnimationTime %= GlideLoopLength / AirFramesPerSecond;
+            _airRising = velocity.Y < 0;
         }
         _wasAirborne = !isGrounded;
     }
@@ -122,6 +129,17 @@ internal sealed class PlayerPresentation
     {
         _upDashFrames = upFrames;
         _sideDashFrames = sideFrames;
+    }
+
+    private int GlideLoopLength => Math.Max(1, _glideFrames.Length - 1);
+
+    private Texture2D GetGlideFrame(int frame, bool canDash)
+    {
+        if (!canDash && _glideDashUsedFrames is { Length: > 0 })
+            return _glideDashUsedFrames[frame % _glideDashUsedFrames.Length];
+        if (_airRising || _glideFrames.Length == 1)
+            return _glideFrames[0];
+        return _glideFrames[1 + frame % GlideLoopLength];
     }
 
     private bool HasDashFrames => _upDashFrames != null && _sideDashFrames != null;
@@ -376,7 +394,7 @@ internal sealed class PlayerPresentation
             sprite = _airAnimation switch
             {
                 AirAnimation.Jump => _jumpFrames[3],
-                AirAnimation.Glide => _glideFrames[frame % _glideFrames.Length],
+                AirAnimation.Glide => GetGlideFrame(frame, player.CanDash),
                 AirAnimation.Landing => _jumpFrames[2 - Math.Min(frame, 2)],
                 // Dash poses are chosen below.
                 _ => _jumpFrames[_jumpFrames.Length - 1]

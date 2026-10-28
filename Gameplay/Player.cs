@@ -74,8 +74,9 @@ public class Player
 
     public float DebugReferenceHeight => UnscaledReferenceHeight * RelativeScale;
 
-    public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames) =>
-        _presentation.SetAirAnimations(jumpFrames, glideFrames);
+    public void SetAirAnimations(Texture2D[] jumpFrames, Texture2D[] glideFrames,
+        Texture2D[] glideDashUsedFrames) =>
+        _presentation.SetAirAnimations(jumpFrames, glideFrames, glideDashUsedFrames);
 
     public void SetDashAnimations(Texture2D[] upFrames, Texture2D[] sideFrames) =>
         _presentation.SetDashAnimations(upFrames, sideFrames);

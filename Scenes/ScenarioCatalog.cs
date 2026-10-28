@@ -61,18 +61,18 @@ public static class ScenarioCatalog
                 AffordanceInterventionScenarioId,
                 "Content/Maps/Affordance.ldtk",
                 new Vector2(160, 816),
-                "Sala_intervencao",
+                "Aff_Sala_intervencao",
                 ScenarioCameraBehavior.CENTER_MAP,
                 0.14f,
                 true
             ),
             // Phases 2 and 3 use the Affordance room format: three rooms in the same .ldtk
-            // and the shared intervention room (Sala_intervencao).
+            // and their own intervention room.
             [DamageFeedbackScenarioId] = Room(DamageFeedbackScenarioId, "FeedbackTela1", 160),
             [DamageFeedbackRoom2ScenarioId] = Room(DamageFeedbackRoom2ScenarioId, "FeedbackTela2", 96),
             [DamageFeedbackRoom3ScenarioId] = Room(DamageFeedbackRoom3ScenarioId, "FeedbackTela3", 96),
             [DamageFeedbackInterventionScenarioId] =
-                Room(DamageFeedbackInterventionScenarioId, "Sala_intervencao", 160),
+                Room(DamageFeedbackInterventionScenarioId, "Feed_Sala_intervencao2", 160),
             [ConceptualModelsConstraintsScenarioId] =
                 Room(ConceptualModelsConstraintsScenarioId, "ModelosTela1", 160),
             [ConceptualModelsConstraintsRoom2ScenarioId] =
@@ -80,7 +80,7 @@ public static class ScenarioCatalog
             [ConceptualModelsConstraintsRoom3ScenarioId] =
                 Room(ConceptualModelsConstraintsRoom3ScenarioId, "ModelosTela3", 96),
             [ConceptualModelsConstraintsInterventionScenarioId] =
-                Room(ConceptualModelsConstraintsInterventionScenarioId, "Sala_intervencao", 160),
+                Room(ConceptualModelsConstraintsInterventionScenarioId, "Concept_Sala_intervencao3", 160),
             [PropVisualScenarioId] = new ScenarioDefinition(
                 PropVisualScenarioId,
                 "Content/PropVisual.tmx",

@@ -54,6 +54,9 @@ public sealed class PhaseState
     }
     public int SolutionSelectionCount { get; private set; }
     public bool HasRevision { get; private set; }
+    // Room format: the choice can be changed freely inside the intervention room
+    // and becomes final when the player leaves it with a solution applied.
+    public bool ChoiceLocked { get; private set; }
     public bool VerticalRouteRevealed { get; private set; }
     public bool ExitDoorIsOpen
     {
@@ -197,6 +200,11 @@ public sealed class PhaseState
         }
     }
 
+    public void LockChoice()
+    {
+        if (HasFirstChoice) ChoiceLocked = true;
+    }
+
     public void RegisterRoomRespawn(bool lostHeartFromFall)
     {
         if (!_definition.UsesRoomFormat) return;
@@ -227,6 +235,7 @@ public sealed class PhaseState
         Demonstration = null;
         SolutionSelectionCount = 0;
         HasRevision = false;
+        ChoiceLocked = false;
         VerticalRouteRevealed = false;
         _appliedSolutionAllowsExit = false;
         _deathRegisteredInCurrentAttempt = false;
@@ -438,7 +447,8 @@ public sealed class PhaseState
             throw new ArgumentNullException(nameof(justification));
         }
 
-        if (HasFirstChoice)
+        bool canChangeChoice = _definition.UsesRoomFormat && !ChoiceLocked;
+        if (HasFirstChoice && !canChangeChoice)
         {
             throw new InvalidOperationException("A primeira escolha da fase ja foi registrada.");
         }
@@ -460,10 +470,11 @@ public sealed class PhaseState
                 $"A justificativa {justification.Id} nao pertence a apresentacao inicial da fase.");
         }
 
+        // A change inside the intervention replaces the choice; the count keeps every pick.
+        SolutionSelectionCount = HasFirstChoice ? SolutionSelectionCount + 1 : 1;
         FirstSolutionId = solution.Id;
         FirstJustificationId = justification.Id;
         AppliedSolutionId = solution.Id;
-        SolutionSelectionCount = 1;
         VerticalRouteRevealed = true;
         _appliedSolutionAllowsExit = solution.OpensExitDoor;
     }

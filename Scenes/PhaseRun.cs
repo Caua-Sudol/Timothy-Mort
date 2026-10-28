@@ -32,6 +32,8 @@ public sealed class PhaseRun : IDisposable
     private KeyboardState _previousKeyboardState;
     private bool _mortCombinationSpoken;
     private bool _mortPassageSpoken;
+    // The passage hint is only spoken the first time Affordance is played in the session.
+    private bool _affordancePassageHintShown;
     private bool _mortBarrierSpoken;
     private bool _sceneUpdatedLastFrame;
     private string _mapReloadErrorMessage;
@@ -248,7 +250,12 @@ public sealed class PhaseRun : IDisposable
         if (!_mortPassageSpoken && _scene.HasVisibleInterventionPassage)
         {
             _mortPassageSpoken = true;
-            _mortSubtitle.Show(false, MortDialogueCatalog.Passage);
+            if (!_affordancePassageHintShown &&
+                _phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+            {
+                _affordancePassageHintShown = true;
+                _mortSubtitle.Show(false, MortDialogueCatalog.Passage);
+            }
         }
 
         if (_scene.TryTakeRoom3BarrierTouch() && !_mortBarrierSpoken)
@@ -264,7 +271,9 @@ public sealed class PhaseRun : IDisposable
                 return;
             }
 
-            if (!_phaseState.HasFirstChoice)
+            // Room format: the choice can be changed until the player leaves the intervention.
+            if (!_phaseState.HasFirstChoice ||
+                _phaseState.Definition.UsesRoomFormat && !_phaseState.ChoiceLocked)
             {
                 _interventionChoiceMenu.OpenInitial(
                     GetOrCreateInitialSolutions(),
@@ -523,6 +532,14 @@ public sealed class PhaseRun : IDisposable
     private void RestartAttempt()
     {
         _phaseState?.BeginAttempt();
+        // Room format: a new attempt starts again from the phase's first room.
+        // The intervention room keeps restarting in place.
+        PhaseDefinition phase = _phaseState?.Definition;
+        if (phase != null && phase.UsesRoomFormat && phase.GetRoomIndex(_currentScenarioId) > 0)
+        {
+            ChangeScenario(phase.RoomScenarioIds[0], null);
+            return;
+        }
         _scene.Restart(_camera);
         _overlayState = OverlayState.NONE;
     }

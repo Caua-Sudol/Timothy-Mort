@@ -60,14 +60,18 @@ public partial class LevelMap
 
     internal void UseLdtkTextureCache(LdtkTextureCache cache) => _ldtkTextureCache = cache;
 
-    // Sala_intervencao art: full 1920x1080 layers, back to front, drawn to cover the room.
+    // Intervention room art (every phase): one full 1920x1080 background drawn to cover the room.
     // Collision still comes only from the LDtk Colisao layer.
-    private const string InterventionLevelId = "Sala_intervencao";
+    private const string InterventionBackgroundFile = "../../assets/mg/root/intervencao/fundo_intervencao.png";
+    // Decoracao entities keep reading their PNGs from assets/eureka.
     private const string InterventionSceneryDirectory = "../../assets/eureka";
-    private static readonly string[] InterventionSceneryBehindPlayer =
-        { "Intervencao_bg_geral.png", "fumaca_frente.png", "Intervencao_plataformas_fundo.png" };
-    private static readonly string[] InterventionSceneryInFrontOfPlayer =
-        { "Intervencao_plataformas_fg.png", "fg_fumaca_frente.png" };
+    // Soft dark-blue light rising from the bottom of the intervention room.
+    private static readonly Color InterventionGlowColor = new Color(40, 80, 170);
+    private const float InterventionGlowMaxAlpha = 0.28f;
+    private const float InterventionGlowHeightShare = 0.4f;
+    private const int InterventionGlowBands = 48;
+    private const double InterventionGlowPeriodSeconds = 6.0;
+    private static Texture2D _whitePixel;
     private List<Texture2D> _sceneryBehindPlayer = [];
     private List<Texture2D> _sceneryInFrontOfPlayer = [];
 
@@ -90,13 +94,15 @@ public partial class LevelMap
 
     private void LoadInterventionScenery(GraphicsDevice graphicsDevice, string ldtkDirectory)
     {
-        if (_ldtkLevelId != InterventionLevelId || _ldtkTextureCache == null) return;
-        List<Texture2D> Load(string[] files) => files
-            .Select(file => _ldtkTextureCache.GetOrLoad(graphicsDevice, Path.GetFullPath(
-                Path.Combine(ldtkDirectory, InterventionSceneryDirectory, file))))
-            .ToList();
-        _sceneryBehindPlayer = Load(InterventionSceneryBehindPlayer);
-        _sceneryInFrontOfPlayer = Load(InterventionSceneryInFrontOfPlayer);
+        if (_roomLinks?.IsInterventionRoom != true || _ldtkTextureCache == null) return;
+        _sceneryBehindPlayer = [_ldtkTextureCache.GetOrLoad(graphicsDevice,
+            Path.GetFullPath(Path.Combine(ldtkDirectory, InterventionBackgroundFile)))];
+        _sceneryInFrontOfPlayer = [];
+        if (_whitePixel == null)
+        {
+            _whitePixel = new Texture2D(graphicsDevice, 1, 1);
+            _whitePixel.SetData(new[] { Color.White });
+        }
     }
 
     private bool HasSceneryLayers => _sceneryBehindPlayer.Count + _sceneryInFrontOfPlayer.Count > 0;
@@ -156,7 +162,31 @@ public partial class LevelMap
             batch.Draw(texture, position, null, Color.White, 0f, Vector2.Zero, scale,
                 SpriteEffects.None, 0f);
         }
-        if (!inFrontOfPlayer) DrawDecorations(batch, false);
+        if (!inFrontOfPlayer)
+        {
+            DrawInterventionGlow(batch);
+            DrawDecorations(batch, false);
+        }
+    }
+
+    // Kept faint and slow so the bottom reads as light, not as a path to jump into.
+    private void DrawInterventionGlow(SpriteBatch batch)
+    {
+        if (_roomLinks?.IsInterventionRoom != true || _whitePixel == null) return;
+        float breathing = 0.85f + 0.15f *
+            (float)Math.Sin(_visualEffectTime / InterventionGlowPeriodSeconds * Math.PI * 2.0);
+        float glowHeight = HeightInPixels * InterventionGlowHeightShare;
+        float bandHeight = glowHeight / InterventionGlowBands;
+        for (int band = 0; band < InterventionGlowBands; band++)
+        {
+            // Strongest at the bottom edge, fading out smoothly upwards.
+            float strength = (band + 1) / (float)InterventionGlowBands;
+            float alpha = InterventionGlowMaxAlpha * strength * strength * breathing;
+            int top = (int)(HeightInPixels - glowHeight + band * bandHeight);
+            int bottom = (int)Math.Ceiling(HeightInPixels - glowHeight + (band + 1) * bandHeight);
+            batch.Draw(_whitePixel, new Rectangle(0, top, WidthInPixels, bottom - top),
+                InterventionGlowColor * alpha);
+        }
     }
 
     private void LoadLdtkTextures(GraphicsDevice graphicsDevice)

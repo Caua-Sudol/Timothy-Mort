@@ -288,7 +288,11 @@ private Vector2 _checkpoint;
             var glideFrames = new Texture2D[5];
             for (int index = 0; index < glideFrames.Length; index++)
                 glideFrames[index] = LoadDiagnostics.LoadTexture(content, $"player/glide/glide{index:D4}");
-            _player.SetAirAnimations(jumpFrames, glideFrames);
+            var glideDashUsedFrames = new Texture2D[4];
+            for (int index = 0; index < glideDashUsedFrames.Length; index++)
+                glideDashUsedFrames[index] = LoadDiagnostics.LoadTexture(content,
+                    $"player/dash/glide_dash_used{index:D4}");
+            _player.SetAirAnimations(jumpFrames, glideFrames, glideDashUsedFrames);
             var upDashFrames = new Texture2D[2];
             var sideDashFrames = new Texture2D[2];
             for (int index = 0; index < upDashFrames.Length; index++)
@@ -493,6 +497,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             _phaseState?.ExitDoorIsOpen == true);
         if (sceneExit != null && (!IsInterventionRoom || _interactPressed))
         {
+            // Leaving the intervention with a solution makes the choice final.
+            if (IsInterventionRoom) _phaseState.LockChoice();
             _requestedScenarioId = sceneExit.DestinationScenarioId;
             _requestedSpawnId = sceneExit.DestinationSpawnId;
             ResolveInterventionReturn();
@@ -591,7 +597,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
         if (_phaseState.CurrentHealth <= 0)
         {
-            KillPlayer();
+            HandleHeartsDepleted(camera);
         }
         return true;
     }
@@ -817,9 +823,23 @@ private static bool RectanglesTouchOrIntersect(
         _phaseState.RegisterRoomRespawn(fall);
         if (_phaseState.CurrentHealth <= 0)
         {
+            HandleHeartsDepleted(camera);
+            return;
+        }
+        RespawnPlayer(camera);
+        _respawnEffectTime = 0.22f;
+    }
+
+    // In the intervention room the player tests solutions freely: running out of hearts
+    // only refills them at the room's spawn. Elsewhere it opens the death menu.
+    private void HandleHeartsDepleted(Camera camera)
+    {
+        if (!IsInterventionRoom)
+        {
             KillPlayer();
             return;
         }
+        _phaseState.BeginAttempt();
         RespawnPlayer(camera);
         _respawnEffectTime = 0.22f;
     }

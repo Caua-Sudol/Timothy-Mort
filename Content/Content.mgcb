@@ -820,6 +820,66 @@ $endif
 /processorParam:TextureFormat=Color
 /build:../assets/animation/glide/glide0004.png;player/glide/glide0004.png
 
+#begin ../assets/animation/dash/glide_dash_used0000.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/dash/glide_dash_used0000.png;player/dash/glide_dash_used0000.png
+
+#begin ../assets/animation/dash/glide_dash_used0001.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/dash/glide_dash_used0001.png;player/dash/glide_dash_used0001.png
+
+#begin ../assets/animation/dash/glide_dash_used0002.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/dash/glide_dash_used0002.png;player/dash/glide_dash_used0002.png
+
+#begin ../assets/animation/dash/glide_dash_used0003.png
+/importer:TextureImporter
+/processor:PlayerTextureProcessor
+/processorParam:ResolutionDivisor=1
+$if PlayerTextureDivisor=2
+/processorParam:ResolutionDivisor=2
+$endif
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../assets/animation/dash/glide_dash_used0003.png;player/dash/glide_dash_used0003.png
+
 #begin ../assets/animation/dash/dash0000.png
 /importer:TextureImporter
 /processor:PlayerTextureProcessor
