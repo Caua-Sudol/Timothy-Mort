@@ -57,6 +57,8 @@ public sealed class PhaseState
     // Room format: the choice can be changed freely inside the intervention room
     // and becomes final when the player leaves it with a solution applied.
     public bool ChoiceLocked { get; private set; }
+    // Feedback: Mort's balloon about the unsignalled damage plays once per run.
+    private bool _damageCalloutShown;
     public bool VerticalRouteRevealed { get; private set; }
     public bool ExitDoorIsOpen
     {
@@ -182,6 +184,12 @@ public sealed class PhaseState
 
     public void EnterScenario(string scenarioId)
     {
+        // Leaving the intervention room refills the hearts, as a help to the player.
+        if (CurrentScenarioId == _definition.InterventionScenarioId &&
+            scenarioId != _definition.InterventionScenarioId)
+        {
+            RestoreDamageState();
+        }
         if (scenarioId == _definition.InterventionScenarioId &&
             _definition.GetRoomIndex(CurrentScenarioId) >= 0)
         {
@@ -198,6 +206,13 @@ public sealed class PhaseState
         {
             BeginAttempt();
         }
+    }
+
+    public bool TryTakeDamageCallout()
+    {
+        if (_damageCalloutShown) return false;
+        _damageCalloutShown = true;
+        return true;
     }
 
     public void LockChoice()
@@ -236,6 +251,7 @@ public sealed class PhaseState
         SolutionSelectionCount = 0;
         HasRevision = false;
         ChoiceLocked = false;
+        _damageCalloutShown = false;
         VerticalRouteRevealed = false;
         _appliedSolutionAllowsExit = false;
         _deathRegisteredInCurrentAttempt = false;

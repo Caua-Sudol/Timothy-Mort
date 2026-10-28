@@ -8,14 +8,25 @@ public static class MortDialogueCatalog
         "Está vendo os símbolos flutuando? Aproxime-se e pressione E. " +
         "Vou te levar a um lugar onde podemos facilitar a travessia.";
 
+    // Short: shown in the balloon when the player tries the blocked passage.
     public const string Room3Barrier =
-        "Os símbolos fecharam esta passagem. Antes de seguir, procure a fumaça " +
-        "de símbolos e pressione E para irmos à sala da intervenção.";
+        "Ainda não dá para seguir. Precisamos passar na sala da intervenção!";
 
     public static readonly string[] Introduction =
     {
         "Cuidado, garoto! Não dá para entender o que cada coisa faz só pela aparência.",
         "Vou te ajudar: use o dash (Shift, X ou J) mais uma vez ao encostar nos terrenos estranhos."
+    };
+
+    // Feedback has no subtitle introduction: Mort speaks in a short balloon instead,
+    // on the first hot-rock hit, or on entering room 2 if the player was never hit.
+    public const string FeedbackFirstDamageCallout = "Ei! Você se feriu e nada mostrou isso!";
+    public const string FeedbackRoom2Callout = "Essas rochas ferem, e nada avisa. Precisamos arrumar isso!";
+
+    public static string[] GetIntroduction(string phaseId) => phaseId switch
+    {
+        ScenarioCatalog.AffordanceVisibilityScenarioId => Introduction,
+        _ => null
     };
 
     public static string AfterChoice(string solutionId) => solutionId switch
@@ -26,7 +37,13 @@ public static class MortDialogueCatalog
             "Agora eles têm uma marca. Ela mostra quais são diferentes... mas conta o que fazem?",
         AffordanceChoiceCatalog.MotionSolutionId =>
             "Agora eles se mexem, mesmo sem você tocar. Que comportamento esse movimento sugere?",
-        _ => "Experimente e veja se ajuda a entender o terreno."
+        FeedbackDamageChoiceCatalog.KnockbackSolutionId =>
+            "Pronto! Agora o calor te empurra para longe. Encoste numa rocha quente e sinta a diferença.",
+        FeedbackDamageChoiceCatalog.HeartCrackSolutionId =>
+            "Agora um coração racha sobre você quando se fere. Ele mostra a perda... mas mostra de onde ela veio?",
+        FeedbackDamageChoiceCatalog.ScreenShakeSolutionId =>
+            "Agora a tela treme quando você se fere. Chama atenção... mas aponta o que causou o dano?",
+        _ => "Experimente e veja se ajuda."
     };
 
     public static string Conclusion(string solutionId) => solutionId switch
@@ -40,6 +57,10 @@ public static class MortDialogueCatalog
         AffordanceChoiceCatalog.AppearanceSolutionId =>
             "A gelatina já dá uma pista sobre o terreno. Vamos acrescentar a pulsação " +
             "para mostrar como podemos combinar ideias!",
+        // The demonstration only runs on the best choice, so phase 2 needs only this one.
+        FeedbackDamageChoiceCatalog.KnockbackSolutionId =>
+            "O recuo já mostra onde e quando você se feriu. Vamos somar o coração rachando " +
+            "para mostrar também o quanto perdeu!",
         _ => "Podemos combinar ideias para dar pistas sobre o terreno. " +
              "Vou mostrar a aparência de gelatina junto com a pulsação!"
     };

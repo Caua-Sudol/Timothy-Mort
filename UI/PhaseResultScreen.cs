@@ -46,14 +46,10 @@ public sealed class PhaseResultScreen
             ? null
             : state.ChoiceCatalog.GetSolution(state.AppliedSolutionId);
 
-        bool isAffordance = state.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId;
-        string assessment(InterventionSolutionDefinition solution) => isAffordance
-            ? solution == null ? "Sem escolha"
-                : solution.Id == AffordanceChoiceCatalog.AppearanceSolutionId
-                    ? "Pista de material (arte provisória)"
-                    : solution.Id == AffordanceChoiceCatalog.MarkSolutionId
-                        ? "Pista de identificação" : "Pista de movimento"
-            : GetQualityText(solution?.Quality);
+        // Room-format phases bring their own texts; the others use the quality labels.
+        string assessment(InterventionSolutionDefinition solution) =>
+            state.ChoiceCatalog.GetResultAssessment(solution?.Id) ??
+            GetQualityText(solution?.Quality);
 
         long totalSeconds = (long)Math.Floor(state.ElapsedSeconds);
         var text = new StringBuilder();
@@ -69,15 +65,13 @@ public sealed class PhaseResultScreen
         {
             text.AppendLine($"Escolha: {GetSolutionText(finalSolution ?? firstSolution)}");
             text.AppendLine($"Avaliação: {assessment(finalSolution ?? firstSolution)}");
-            text.AppendLine("Sem revisão");
         }
         text.AppendLine();
         text.AppendLine($"Tempo da fase: {totalSeconds / 60:00}:{totalSeconds % 60:00}");
         text.AppendLine($"Mortes: {state.TotalDeathCount}");
         _explanationHeading = state.HasRevision ? "Sobre a escolha inicial" : "Sobre sua escolha";
-        string explanation = isAffordance
-            ? AffordanceChoiceCatalog.GetExplanation(firstSolution?.Id)
-            : PhaseResultTextCatalog.GetExplanation(state.PhaseId, firstSolution?.Quality);
+        string explanation = state.ChoiceCatalog.GetResultExplanation(firstSolution?.Id) ??
+            PhaseResultTextCatalog.GetExplanation(state.PhaseId, firstSolution?.Quality);
         if (!state.HasRevision)
         {
             explanation = explanation.Replace("A primeira intervenção", "A intervenção");

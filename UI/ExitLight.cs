@@ -16,14 +16,19 @@ public static class ExitLight
     private const float PulseAmount = 0.2f;
     private const double PulsePeriodSeconds = 2.4;
     private static readonly Color LightColor = new(255, 210, 140);
+    // Blocked passages: the same shape as a shadow (drawn with alpha blending, not additive).
+    private const float DarkIntensity = 0.7f;
 
     private static Texture2D _gradient;
 
-    public static void Draw(SpriteBatch batch, Rectangle exit, int roomWidth, int roomHeight, double time)
+    public static void Draw(SpriteBatch batch, Rectangle exit, int roomWidth, int roomHeight, double time,
+        bool dark = false)
     {
         _gradient ??= CreateGradient(batch.GraphicsDevice);
         float pulse = 1f - PulseAmount * 0.5f * (1f + (float)Math.Sin(time / PulsePeriodSeconds * Math.PI * 2.0));
-        var color = new Color(LightColor.R, LightColor.G, LightColor.B, (byte)(255 * Intensity * pulse));
+        var color = dark
+            ? new Color((byte)0, (byte)0, (byte)0, (byte)(255 * DarkIntensity * pulse))
+            : new Color(LightColor.R, LightColor.G, LightColor.B, (byte)(255 * Intensity * pulse));
 
         // The texture is brightest at its bottom row; rotate it so that row faces the room edge.
         int toRight = roomWidth - exit.Right, toLeft = exit.Left, toBottom = roomHeight - exit.Bottom, toTop = exit.Top;

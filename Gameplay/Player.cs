@@ -40,6 +40,7 @@ public class Player
     private Vector2 _velocity;
     private readonly Vector2 _maxVelocity;
     private readonly double _gravity;
+    private double _controlLockTimer;
     private bool _isGrounded;
     private Direction _direction = Direction.Right;
 
@@ -176,6 +177,17 @@ public void Update(double deltaTime)
 {
         _presentation.UpdateEffects(deltaTime);
     _input.Update();
+        if (_controlLockTimer > 0)
+        {
+            // Knockback: ignore input briefly so the push reads clearly; gravity still applies.
+            _controlLockTimer -= deltaTime;
+            if (!_isGrounded)
+                _velocity = new Vector2(_velocity.X,
+                    (float)(_velocity.Y - _gravity * RelativeScale * deltaTime));
+            State = _isGrounded ? PlayerState.Idle
+                : _velocity.Y < 0 ? PlayerState.Jumping : PlayerState.Falling;
+            return;
+        }
         int horizontalInput = _input.Horizontal;
 
         UpdateCoyoteTimer(deltaTime);
@@ -429,6 +441,7 @@ public void EndDash()
     {
         _presentation.ResetAnimation();
         _velocity = Vector2.Zero;
+        _controlLockTimer = 0;
         _dashRequested = false;
         _jumpCanBeCut = false;
     }
@@ -498,6 +511,24 @@ public void EndDash()
             DamageFeedbackSettings.KnockbackVerticalSpeed);
         NotGrounded();
         State = PlayerState.Jumping;
+    }
+
+    // Pushes the player away from a hurting surface: up from a floor, sideways from a wall,
+    // down from a ceiling. Input is ignored for a short moment.
+    public void ApplySurfaceKnockback(Vector2 awayFromSurface)
+    {
+        _dashRequested = false;
+        _jumpCanBeCut = false;
+        CancelDash();
+        float verticalSpeed = awayFromSurface.Y < 0 ? DamageFeedbackSettings.HotSurfaceKnockbackVerticalSpeed
+            : awayFromSurface.Y > 0 ? DamageFeedbackSettings.CeilingKnockbackVerticalSpeed
+            : DamageFeedbackSettings.WallKnockbackVerticalSpeed;
+        _velocity = new Vector2(
+            awayFromSurface.X * DamageFeedbackSettings.HotSurfaceKnockbackHorizontalSpeed,
+            verticalSpeed) * RelativeScale;
+        NotGrounded();
+        State = PlayerState.Jumping;
+        _controlLockTimer = DamageFeedbackSettings.KnockbackControlLockSeconds;
     }
 
     public void StartDamageCompression() => _presentation.StartDamageCompression();

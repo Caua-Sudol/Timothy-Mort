@@ -118,7 +118,7 @@ public static class AffordanceChoiceCatalog
     {
         AppearanceSolutionId =>
             "O material aparente oferece uma pista. " +
-            "A superfície gelatinosa é a proposta mais adequada neste cenário, se sua aparência " +
+            "A aparência macia é a proposta mais adequada neste cenário, se sua aparência " +
             "corresponder ao comportamento percebido.",
         MarkSolutionId =>
             "A marca diferencia os terrenos, mas seu significado precisa ser aprendido. " +
@@ -126,6 +126,6 @@ public static class AffordanceChoiceCatalog
         MotionSolutionId =>
             "A pulsação oferece uma pista. A terra em movimento sugere uma propriedade " +
             "incomum, mas também pode sugerir elasticidade ou instabilidade.",
-        _ => "Nenhuma intervenção foi escolhida para comparar a aparência e o comportamento dos terrenos."
+        _ => "Nenhuma mudança foi escolhida para comparar a aparência e o comportamento dos terrenos."
     };
 }

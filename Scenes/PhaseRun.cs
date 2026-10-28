@@ -34,7 +34,6 @@ public sealed class PhaseRun : IDisposable
     private bool _mortPassageSpoken;
     // The passage hint is only spoken the first time Affordance is played in the session.
     private bool _affordancePassageHintShown;
-    private bool _mortBarrierSpoken;
     private bool _sceneUpdatedLastFrame;
     private string _mapReloadErrorMessage;
 
@@ -258,11 +257,6 @@ public sealed class PhaseRun : IDisposable
             }
         }
 
-        if (_scene.TryTakeRoom3BarrierTouch() && !_mortBarrierSpoken)
-        {
-            _mortBarrierSpoken = true;
-            _mortSubtitle.Show(false, MortDialogueCatalog.Room3Barrier);
-        }
 
         if (_scene.TryTakeInterventionButtonActivation())
         {
@@ -279,15 +273,14 @@ public sealed class PhaseRun : IDisposable
                     GetOrCreateInitialSolutions(),
                     GetOrCreateInitialJustifications(),
                     _phaseState.ChoiceCatalog.JustificationQuestion,
-                    _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
-                        ? AffordanceChoiceCatalog.SolutionQuestion : null);
+                    _phaseState.ChoiceCatalog.SolutionQuestion);
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
 
-            // Affordance: the first choice is final, so no revision round is offered.
+            // Room format: no revision round; the choice changes inside the intervention.
             if (_phaseState.NeedsSolutionRevision &&
-                _phaseState.PhaseId != ScenarioCatalog.AffordanceVisibilityScenarioId)
+                !_phaseState.Definition.UsesRoomFormat)
             {
                 _interventionChoiceMenu.OpenRevision(
                     _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
@@ -335,7 +328,7 @@ public sealed class PhaseRun : IDisposable
             _scene.SyncInterventionState();
             ShowMortChoiceComment(solutionId);
         }
-        if (_phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        if (_phaseState?.Definition.UsesRoomFormat == true)
             _solutionBlink.Start(Apply);
         else
             Apply();
@@ -343,7 +336,7 @@ public sealed class PhaseRun : IDisposable
 
     private void ShowMortChoiceComment(string solutionId)
     {
-        if (_phaseState?.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId)
+        if (_phaseState?.Definition.UsesRoomFormat == true)
             _mortSubtitle.Show(false, MortDialogueCatalog.AfterChoice(solutionId));
     }
 
@@ -465,10 +458,10 @@ public sealed class PhaseRun : IDisposable
                 baseVisualModulesOverride);
             _mortCombinationSpoken = false;
             _mortPassageSpoken = false;
-            _mortBarrierSpoken = false;
             _mortSubtitle.Clear();
-            if (destinationPhase.Id == ScenarioCatalog.AffordanceVisibilityScenarioId)
-                _mortSubtitle.Show(false, MortDialogueCatalog.Introduction);
+            string[] introduction = MortDialogueCatalog.GetIntroduction(destinationPhase.Id);
+            if (introduction != null)
+                _mortSubtitle.Show(false, introduction);
         }
         else
         {
@@ -534,8 +527,10 @@ public sealed class PhaseRun : IDisposable
         _phaseState?.BeginAttempt();
         // Room format: a new attempt starts again from the phase's first room.
         // The intervention room keeps restarting in place.
+        // Debug keeps restarting in the current room to speed up testing.
         PhaseDefinition phase = _phaseState?.Definition;
-        if (phase != null && phase.UsesRoomFormat && phase.GetRoomIndex(_currentScenarioId) > 0)
+        if (!ResearchStudyConfiguration.DevToolsEnabled &&
+            phase != null && phase.UsesRoomFormat && phase.GetRoomIndex(_currentScenarioId) > 0)
         {
             ChangeScenario(phase.RoomScenarioIds[0], null);
             return;

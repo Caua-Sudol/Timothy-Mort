@@ -47,9 +47,8 @@ public sealed class PhaseProgress
             ScenarioCatalog.DamageFeedbackScenarioId =>
                 !ResearchStudyConfiguration.BetaAffordanceOnly &&
                 IsCompleted(ScenarioCatalog.AffordanceVisibilityScenarioId),
-            ScenarioCatalog.ConceptualModelsConstraintsScenarioId =>
-                !ResearchStudyConfiguration.BetaAffordanceOnly &&
-                IsCompleted(ScenarioCatalog.DamageFeedbackScenarioId),
+            // Locked in the expert/student demo; Debug still opens it (case above).
+            ScenarioCatalog.ConceptualModelsConstraintsScenarioId => false,
             _ => false
         };
     }

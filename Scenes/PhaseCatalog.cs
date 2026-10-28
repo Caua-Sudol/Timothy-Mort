@@ -46,14 +46,16 @@ public static class PhaseCatalog
             FeedbackDamageChoiceCatalog.Instance,
             true,
             DamageFeedbackSettings.MaximumHealth,
-            DamageFeedbackSettings.InvulnerabilityDurationSeconds,
+            DamageFeedbackSettings.HotSurfaceDamageIntervalSeconds,
             roomScenarioIds: new[]
             {
                 ScenarioCatalog.DamageFeedbackScenarioId,
                 ScenarioCatalog.DamageFeedbackRoom2ScenarioId,
                 ScenarioCatalog.DamageFeedbackRoom3ScenarioId
             },
-            interventionScenarioId: ScenarioCatalog.DamageFeedbackInterventionScenarioId);
+            interventionScenarioId: ScenarioCatalog.DamageFeedbackInterventionScenarioId,
+            bestSolutionId: FeedbackDamageChoiceCatalog.KnockbackSolutionId,
+            demonstrationModules: SolutionVisualModule.DAMAGE_HEART_CRACK);
 
     public static PhaseDefinition ConceptualModelsConstraints { get; } =
         new PhaseDefinition(

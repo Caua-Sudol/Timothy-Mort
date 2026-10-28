@@ -46,7 +46,6 @@ public class Scene
     public bool HasVisibleInterventionPassage => UsesRoomFormat &&
         _map.InterventionEntrances.Any(e => e.Placement == GetActiveInterventionEntrancePlacement());
     private bool _interactPressed;
-    private bool _room3BarrierTouched;
     private float _respawnEffectTime;
     // Room format (shared by every phase built like Affordance): rooms, intervention room,
     // barrier, lights, fixed camera and respawn. Content rules stay under IsAffordance.
@@ -60,6 +59,19 @@ public class Scene
     private double _damageParticlesTimer;
     private double _damageImpactMarkTimer;
     private Vector2 _damageContactPoint;
+    // Phase 2 solution effects. The heart is a placeholder until the 3-frame art arrives.
+    private double _heartCrackTimer;
+    private double _screenShakeTimer;
+    private static Texture2D _heartTexture;
+    // Mort balloon (Feedback): the player freezes and the camera zooms in until it ends.
+    private const double CalloutSeconds = 2.8;
+    private const double CalloutEaseSeconds = 0.35;
+    private const float CalloutZoom = 1.8f;
+    private double _calloutTimer;
+    private string _calloutText;
+    private bool _room2CalloutChecked;
+    private static readonly Color HeartCrackColor = new Color(214, 52, 62);
+    private static readonly Color DamageBorderColor = new Color(190, 20, 30);
     private Rectangle _fadeRectangle;
     private float _fadeAlpha;
 
@@ -202,7 +214,6 @@ private Vector2 _checkpoint;
         _requestedScenarioId = null;
         _requestedSpawnId = null;
         _interventionTrigger.Reset();
-        _room3BarrierTouched = false;
         SyncInterventionState();
         _usedGelatins.Clear();
         _playerWasTouchingSolidSurface = false;
@@ -242,6 +253,8 @@ private Vector2 _checkpoint;
         {
             _interactionFont = content.Load<SpriteFont>("patrick");
             _passageSymbols = LoadDiagnostics.LoadTexture(content, "ui/icons/icons");
+            _heartTexture ??= CreateRedHeart(graphicsDevice,
+                LoadDiagnostics.LoadTexture(content, "ui/icons/coracao"));
             _interventionTrigger.SetSwordTexture(LoadDiagnostics.LoadTexture(content, "visual/intervention_sword"));
         }
         _propVisualPresentation?.LoadContent(content);
@@ -361,7 +374,6 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
         _requestedScenarioId = null;
         _requestedSpawnId = null;
         _interventionTrigger.Reset();
-        _room3BarrierTouched = false;
         SyncInterventionState();
         ConfigureExitDoor();
 
@@ -388,14 +400,8 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
 
     public void ResyncPlayerInput() => _player.ResyncInput();
 
-    public bool TryTakeRoom3BarrierTouch()
-    {
-        if (!_room3BarrierTouched) return false;
-        _room3BarrierTouched = false;
-        return true;
-    }
-
-    // Room 2's way to room 3 stays sealed until a first solution is chosen in the intervention.
+    // Room 2's way to room 3 stays blocked until a first solution is chosen in the intervention:
+    // entering it sends the player back to the room's start, and it shows a dark light.
     private IEnumerable<SceneExit> GetRoom3Barriers()
     {
         if (!UsesRoomFormat || _phaseState.HasFirstChoice || CurrentRoomIndex != 1)
@@ -415,20 +421,11 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
             (!exit.RequiresAppliedSolution || _phaseState.ExitDoorIsOpen));
     }
 
-    // Visible part of an exit, at least one passage tall, so the smoke shows even
-    // when the exit is a pit that extends below the room.
-    private Rectangle GetBarrierSmokeBounds(Rectangle barrier)
-    {
-        const int minimumHeight = 192;
-        Rectangle visible = Rectangle.Intersect(barrier,
-            new Rectangle(0, 0, _map.WidthInPixels, _map.HeightInPixels));
-        if (visible.Height >= minimumHeight) return visible;
-        return new Rectangle(visible.X, visible.Bottom - minimumHeight, visible.Width, minimumHeight);
-    }
-
 private void UpdatePlaying(Camera camera, double deltaTime)
 {
     _map.UpdateVisualEffects(deltaTime);
+    TryStartRoom2Callout();
+    if (UpdateMortCallout(camera, deltaTime)) return;
     _respawnEffectTime = Math.Max(0, _respawnEffectTime - (float)deltaTime);
     _map.UpdateDynamicPlatforms(_player, deltaTime);
     _phaseState?.UpdateDamageInvulnerability(deltaTime);
@@ -440,6 +437,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         ApplyGelatinFallSpeed();
         _damageParticlesTimer = Math.Max(0, _damageParticlesTimer - deltaTime);
         _damageImpactMarkTimer = Math.Max(0, _damageImpactMarkTimer - deltaTime);
+        _heartCrackTimer = Math.Max(0, _heartCrackTimer - deltaTime);
+        _screenShakeTimer = Math.Max(0, _screenShakeTimer - deltaTime);
         UpdateDamage(camera);
 
         if (_playerIsDead)
@@ -495,6 +494,14 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             IsInterventionRoom ? PassageInteractionBounds : _player.HitBox,
             _exitDoor.IsOpen,
             _phaseState?.ExitDoorIsOpen == true);
+        if (sceneExit != null && GetRoom3Barriers().Contains(sceneExit))
+        {
+            // Blocked passage: back to the room's start (no heart lost) and Mort explains.
+            RespawnPlayer(camera);
+            _respawnEffectTime = 0.22f;
+            StartMortCallout(MortDialogueCatalog.Room3Barrier);
+            return;
+        }
         if (sceneExit != null && (!IsInterventionRoom || _interactPressed))
         {
             // Leaving the intervention with a solution makes the choice final.
@@ -529,11 +536,6 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             _player,
             GetSolidColliders(),
             deltaTime);
-
-        Rectangle touchArea = _player.HitBox;
-        touchArea.Inflate(4, 4);
-        if (GetRoom3Barriers().Any(exit => touchArea.Intersects(exit.Bounds)))
-            _room3BarrierTouched = true;
     }
 
     private IEnumerable<Rectangle> GetSolidColliders()
@@ -547,8 +549,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             .Concat(_exitDoor.Collider.HasValue
                 ? new[] { _exitDoor.Collider.Value }
                 : Enumerable.Empty<Rectangle>())
-            .Concat(_additionalSolidColliders)
-            .Concat(GetRoom3Barriers().Select(exit => exit.Bounds));
+            .Concat(_additionalSolidColliders);
     }
 
     private bool UpdateDamage(Camera camera)
@@ -556,6 +557,11 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         if (_phaseState?.HasDamageSystem != true)
         {
             return false;
+        }
+
+        if (TryApplyHotSurfaceDamage(camera))
+        {
+            return true;
         }
 
         SolutionVisualModule visualModules = GetAppliedVisualModules();
@@ -602,6 +608,141 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         return true;
     }
 
+    // Hot rocks (phase 2): touching one (floor, wall or ceiling) costs a heart; the phase's
+    // hidden invulnerability spaces the hits to one per second. No sign unless a solution adds it.
+    private bool TryApplyHotSurfaceDamage(Camera camera)
+    {
+        Rectangle playerBounds = _player.HitBox;
+        Rectangle? touchedSurface = null;
+        foreach (Rectangle surface in _map.HotSurfaces)
+        {
+            if (RectanglesTouchOrIntersect(playerBounds, surface))
+            {
+                touchedSurface = surface;
+                break;
+            }
+        }
+
+        if (touchedSurface == null || !_phaseState.TryApplyDamage(1))
+        {
+            return false;
+        }
+
+        if (IsFeedback && !IsInterventionRoom && _phaseState.TryTakeDamageCallout())
+            StartMortCallout(MortDialogueCatalog.FeedbackFirstDamageCallout);
+
+        SolutionVisualModule visualModules = GetAppliedVisualModules();
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_KNOCKBACK))
+            _player.ApplySurfaceKnockback(GetAwayFromSurface(playerBounds, touchedSurface.Value, _player.FacingDirection));
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_HEART_CRACK))
+            _heartCrackTimer = DamageFeedbackSettings.HeartCrackSeconds;
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_SCREEN_SHAKE))
+            _screenShakeTimer = DamageFeedbackSettings.ScreenShakeSeconds;
+
+        if (_phaseState.CurrentHealth <= 0)
+        {
+            HandleHeartsDepleted(camera);
+        }
+        return true;
+    }
+
+    private bool IsFeedback => _phaseState?.PhaseId == ScenarioCatalog.DamageFeedbackScenarioId;
+
+    // Reaching room 2 without a hit: Mort points to the intervention instead.
+    private void TryStartRoom2Callout()
+    {
+        if (_room2CalloutChecked) return;
+        _room2CalloutChecked = true;
+        if (IsFeedback && CurrentRoomIndex == 1 && !_phaseState.HasFirstChoice &&
+            _phaseState.TryTakeDamageCallout())
+            StartMortCallout(MortDialogueCatalog.FeedbackRoom2Callout);
+    }
+
+    private void StartMortCallout(string text)
+    {
+        _calloutText = text;
+        _calloutTimer = CalloutSeconds;
+    }
+
+    // While the balloon shows, the game stands still and the camera eases in on the player.
+    private bool UpdateMortCallout(Camera camera, double deltaTime)
+    {
+        if (_calloutTimer <= 0) return false;
+        _calloutTimer = Math.Max(0, _calloutTimer - deltaTime);
+        UpdatePlayingCamera(camera);
+        float ease = CalloutEase;
+        camera.Zoom *= 1f + (CalloutZoom - 1f) * ease;
+        camera.LookAt(Vector2.Lerp(camera.Position, _player.HitBox.Center.ToVector2(), ease));
+        return true;
+    }
+
+    private float CalloutEase
+    {
+        get
+        {
+            double edge = Math.Min(CalloutSeconds - _calloutTimer, _calloutTimer);
+            float t = (float)Math.Clamp(edge / CalloutEaseSeconds, 0, 1);
+            return t * t * (3f - 2f * t);
+        }
+    }
+
+    // Balloon in screen space above the player's head, in the style of the "E" prompt.
+    private void DrawMortCallout(SpriteBatch spriteBatch, Camera camera)
+    {
+        if (_calloutTimer <= 0 || string.IsNullOrEmpty(_calloutText) || _interactionFont == null) return;
+        float alpha = Math.Min(1f, CalloutEase * 1.5f);
+        Vector2 head = Vector2.Transform(
+            new Vector2(_player.HitBox.Center.X, _player.HitBox.Top), camera.GetTransform());
+        Vector2 size = _interactionFont.MeasureString(_calloutText);
+        const int padding = 18, tail = 14, outline = 3;
+        var plate = new Rectangle(0, 0, (int)size.X + padding * 2, (int)size.Y + padding);
+        plate.X = (int)Math.Clamp(head.X - plate.Width / 2f, 16, _fadeRectangle.Width - plate.Width - 16);
+        plate.Y = (int)Math.Max(16, head.Y - plate.Height - tail - 24);
+        Color cream = new Color(255, 237, 182) * alpha;
+        Color dark = new Color(17, 20, 26) * alpha;
+        spriteBatch.Begin();
+        spriteBatch.Draw(_fadeTexture, plate, cream);
+        Rectangle inner = plate;
+        inner.Inflate(-outline, -outline);
+        spriteBatch.Draw(_fadeTexture, inner, dark);
+        // Tail pointing at the player's head.
+        int tailX = (int)Math.Clamp(head.X, plate.Left + 20, plate.Right - 20);
+        for (int row = 0; row < tail; row++)
+        {
+            int half = tail - row;
+            spriteBatch.Draw(_fadeTexture, new Rectangle(tailX - half, plate.Bottom + row, half * 2, 1), cream);
+            if (half > outline)
+                spriteBatch.Draw(_fadeTexture,
+                    new Rectangle(tailX - half + outline, plate.Bottom + row - (row == 0 ? outline : 0),
+                        (half - outline) * 2, row == 0 ? outline + 1 : 1), dark);
+        }
+        spriteBatch.DrawString(_interactionFont, _calloutText,
+            new Vector2(plate.X + padding, plate.Y + padding / 2f), cream);
+        spriteBatch.End();
+    }
+
+    // The heart icon is only an outline: paint every visible pixel red for contrast.
+    private static Texture2D CreateRedHeart(GraphicsDevice graphicsDevice, Texture2D icon)
+    {
+        var pixels = new Color[icon.Width * icon.Height];
+        icon.GetData(pixels);
+        for (int index = 0; index < pixels.Length; index++)
+            pixels[index] = HeartCrackColor * (pixels[index].A / 255f);
+        var red = new Texture2D(graphicsDevice, icon.Width, icon.Height);
+        red.SetData(pixels);
+        return red;
+    }
+
+    private static Vector2 GetAwayFromSurface(Rectangle player, Rectangle surface, Direction facing)
+    {
+        const int edgeTolerance = 2;
+        // On a floor, push back against the way the player was facing, with a low hop.
+        if (player.Bottom <= surface.Top + edgeTolerance)
+            return new Vector2(facing == Direction.Left ? 1 : -1, -1);
+        if (player.Top >= surface.Bottom - edgeTolerance) return new Vector2(0, 1);
+        return new Vector2(player.Center.X < surface.Center.X ? -1 : 1, 0);
+    }
+
     private void ApplyDamageFeedback(DamageVolume damageVolume)
     {
         SolutionVisualModule visualModules = GetAppliedVisualModules();
@@ -638,6 +779,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
     {
         _damageParticlesTimer = 0;
         _damageImpactMarkTimer = 0;
+        _heartCrackTimer = 0;
+        _screenShakeTimer = 0;
         _player?.ClearDamageFeedback();
     }
 
@@ -995,6 +1138,7 @@ private static bool RectanglesTouchOrIntersect(
     public void Draw(SpriteBatch spriteBatch, Camera camera, Effect playerEffect = null)
     {
         DrawWorld(spriteBatch, camera, playerEffect);
+        DrawMortCallout(spriteBatch, camera);
         DrawScreenEffects(spriteBatch);
     }
 
@@ -1026,10 +1170,79 @@ private static bool RectanglesTouchOrIntersect(
             _playerScreenHeightRatio.HasValue);
     }
 
+    // Screen-space offset that decays over the shake.
+    private Matrix GetScreenShakeTransform()
+    {
+        if (_screenShakeTimer <= 0) return Matrix.Identity;
+        float strength = (float)(_screenShakeTimer / DamageFeedbackSettings.ScreenShakeSeconds);
+        float amplitude = DamageFeedbackSettings.ScreenShakePixels * strength;
+        return Matrix.CreateTranslation(
+            (float)Math.Sin(_screenShakeTimer * 95.0) * amplitude,
+            (float)Math.Cos(_screenShakeTimer * 77.0) * amplitude * 0.6f, 0f);
+    }
+
+    // Red glow on the screen edges, fading inward and over time.
+    private void DrawDamageBorder(SpriteBatch spriteBatch)
+    {
+        if (_screenShakeTimer <= 0) return;
+        const int bands = 24;
+        const int thickness = 110;
+        float strength = (float)(_screenShakeTimer / DamageFeedbackSettings.ScreenShakeSeconds);
+        int width = _fadeRectangle.Width, height = _fadeRectangle.Height;
+        int step = thickness / bands;
+        spriteBatch.Begin();
+        for (int band = 0; band < bands; band++)
+        {
+            float edge = 1f - band / (float)bands;
+            Color color = DamageBorderColor * (0.5f * edge * edge * strength);
+            int inset = band * step;
+            spriteBatch.Draw(_fadeTexture, new Rectangle(0, inset, width, step), color);
+            spriteBatch.Draw(_fadeTexture, new Rectangle(0, height - inset - step, width, step), color);
+            spriteBatch.Draw(_fadeTexture, new Rectangle(inset, 0, step, height), color);
+            spriteBatch.Draw(_fadeTexture, new Rectangle(width - inset - step, 0, step, height), color);
+        }
+        spriteBatch.End();
+    }
+
+    // Placeholder for the 3-frame art: the heart pops in, trembles as it cracks,
+    // then splits in two halves that fall and fade.
+    private void DrawHeartCrack(SpriteBatch spriteBatch)
+    {
+        if (_heartCrackTimer <= 0 || _heartTexture == null) return;
+        float progress = 1f - (float)(_heartCrackTimer / DamageFeedbackSettings.HeartCrackSeconds);
+        Rectangle player = _player.HitBox;
+        float size = player.Width * 1.4f;
+        float scale = size / _heartTexture.Width;
+        var center = new Vector2(player.Center.X, player.Top - size * 0.8f);
+        int halfWidth = _heartTexture.Width / 2;
+        if (progress < 0.45f)
+        {
+            float pop = Math.Min(1f, progress / 0.12f);
+            float tremble = progress > 0.2f ? (float)Math.Sin(progress * 90.0) * size * 0.04f : 0f;
+            spriteBatch.Draw(_heartTexture, center + new Vector2(tremble, 0), null, Color.White, 0f,
+                new Vector2(_heartTexture.Width / 2f, _heartTexture.Height / 2f), scale * pop,
+                SpriteEffects.None, 0f);
+            return;
+        }
+
+        float split = (progress - 0.45f) / 0.55f;
+        float spread = split * size * 0.35f;
+        float drop = split * split * size * 0.6f;
+        Color color = Color.White * (1f - split);
+        var halfOrigin = new Vector2(halfWidth / 2f, _heartTexture.Height / 2f);
+        spriteBatch.Draw(_heartTexture, center + new Vector2(-size / 4f - spread, drop),
+            new Rectangle(0, 0, halfWidth, _heartTexture.Height), color, -split * 0.5f,
+            halfOrigin, scale, SpriteEffects.None, 0f);
+        spriteBatch.Draw(_heartTexture, center + new Vector2(size / 4f + spread, drop),
+            new Rectangle(halfWidth, 0, _heartTexture.Width - halfWidth, _heartTexture.Height), color,
+            split * 0.5f, halfOrigin, scale, SpriteEffects.None, 0f);
+    }
+
     private void DrawDamageEventEffects(
         SpriteBatch spriteBatch,
         SolutionVisualModule visualModules)
     {
+        DrawHeartCrack(spriteBatch);
         if (_damageParticlesTimer > 0 &&
             visualModules.HasFlag(SolutionVisualModule.DAMAGE_PARTICLES))
         {
@@ -1083,7 +1296,7 @@ private static bool RectanglesTouchOrIntersect(
             return;
         }
 
-        var cameraTransform = camera.GetTransform();
+        var cameraTransform = camera.GetTransform() * GetScreenShakeTransform();
         bool drawsScenery = _map.HasLdtkScenery && !_useAdditionalCollidersOnly;
         if (drawsScenery)
         {
@@ -1150,6 +1363,16 @@ private static bool RectanglesTouchOrIntersect(
                 transformMatrix: cameraTransform);
             foreach (SceneExit exit in litExits)
                 ExitLight.Draw(spriteBatch, exit.Bounds, _map.WidthInPixels, _map.HeightInPixels, _passageTime);
+            spriteBatch.End();
+        }
+
+        var blockedExits = GetRoom3Barriers().ToList();
+        if (blockedExits.Count > 0)
+        {
+            spriteBatch.Begin(samplerState: SamplerState.LinearClamp, transformMatrix: cameraTransform);
+            foreach (SceneExit exit in blockedExits)
+                ExitLight.Draw(spriteBatch, exit.Bounds, _map.WidthInPixels, _map.HeightInPixels,
+                    _passageTime, dark: true);
             spriteBatch.End();
         }
 
@@ -1258,9 +1481,6 @@ private static bool RectanglesTouchOrIntersect(
                 FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols, entrance.Bounds, _passageTime);
                 DrawInteractionPrompt(spriteBatch, entrance.Bounds);
             }
-        foreach (SceneExit barrier in GetRoom3Barriers())
-            FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols,
-                GetBarrierSmokeBounds(barrier.Bounds), _passageTime);
         if (IsInterventionRoom)
             foreach (SceneExit exit in _map.SceneExits)
             {
@@ -1298,6 +1518,7 @@ private static bool RectanglesTouchOrIntersect(
 
     private void DrawScreenEffects(SpriteBatch spriteBatch)
     {
+        DrawDamageBorder(spriteBatch);
         if (!ShouldDrawFade())
         {
             return;

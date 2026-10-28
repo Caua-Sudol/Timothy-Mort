@@ -11,4 +11,16 @@ public static class DamageFeedbackSettings
     public const double BlinkIntervalSeconds = 0.12;
     public const double ImpactEffectDurationSeconds = 0.25;
     public const double CompressionDurationSeconds = 0.12;
+
+    // Phase 2 hot rocks: one heart per second of contact (hidden invulnerability between hits).
+    public const double HotSurfaceDamageIntervalSeconds = 1.0;
+    // Recuo: the push plays without player input for a short moment.
+    public const double KnockbackControlLockSeconds = 0.2;
+    public const float HotSurfaceKnockbackHorizontalSpeed = 600f;
+    public const float HotSurfaceKnockbackVerticalSpeed = -300f;
+    public const float WallKnockbackVerticalSpeed = -300f;
+    public const float CeilingKnockbackVerticalSpeed = 300f;
+    public const double HeartCrackSeconds = 0.7;
+    public const double ScreenShakeSeconds = 0.35;
+    public const float ScreenShakePixels = 10f;
 }

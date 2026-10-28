@@ -18,9 +18,22 @@ public sealed class AffordanceChoiceCatalogAdapter : IInterventionChoiceCatalog
         get { return AffordanceChoiceCatalog.AvailableRevisionSolutions; }
     }
 
+    public string SolutionQuestion => AffordanceChoiceCatalog.SolutionQuestion;
+
     private AffordanceChoiceCatalogAdapter()
     {
     }
+
+    public string GetResultAssessment(string solutionId) => solutionId switch
+    {
+        null => "Sem escolha",
+        AffordanceChoiceCatalog.AppearanceSolutionId => "Pista de material (arte provisória)",
+        AffordanceChoiceCatalog.MarkSolutionId => "Pista de identificação",
+        _ => "Pista de movimento"
+    };
+
+    public string GetResultExplanation(string solutionId) =>
+        AffordanceChoiceCatalog.GetExplanation(solutionId);
 
     public IReadOnlyList<PresentedSolutionDefinition> CreateInitialSolutionPresentation(
         Random random)
