@@ -6,8 +6,13 @@ namespace DontLikePoetry;
 
 public static class ResearchStudyConfiguration
 {
-    // Beta: only Affordance is playable, and finishing it completes the study.
-    public const bool BetaAffordanceOnly = true;
+    // True: only Affordance is playable, and finishing it completes the study.
+    // False: Feedback unlocks after Affordance, and finishing Feedback completes the study
+    // (phase 3 stays locked in Release).
+    public const bool BetaAffordanceOnly = false;
+
+    // Address shown on the final screen for sending the session file.
+    public const string ResearchEmail = "timothy.mort.game@gmail.com";
 
     // Developer tools (test room, Ctrl+P, Ctrl+R, 1-4 player scale) exist only in Debug builds
     // (Rider / dotnet run). Release builds (dotnet publish -c Release) hide them automatically.

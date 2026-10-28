@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -405,8 +406,21 @@ public class Game1 : Game
 
         if (action == StudyCompletionAction.RETURN_TO_MENU)
         {
+            string previousExportFolder = string.IsNullOrEmpty(_studyCompletionScreen.ExportPath)
+                ? null
+                : Path.GetDirectoryName(_studyCompletionScreen.ExportPath);
             _studySession.Reset();
             _phaseSelectMenu.SetSessionCode(null);
+
+            // A finished study goes straight to phase select with a fresh session.
+            if (_studySession.TryStartNewSession())
+            {
+                ActivateSession();
+                _phaseSelectMenu.ShowNewSessionNotice(previousExportFolder);
+                _activeScreen = AppScreen.PHASE_SELECT;
+                return;
+            }
+
             OpenSessionStartFlow();
             return;
         }
@@ -419,7 +433,7 @@ public class Game1 : Game
 
         if (action == StudyCompletionAction.OPEN_EXPORT_FOLDER)
         {
-            _studyCompletionScreen.SetFormStatus(
+            _studyCompletionScreen.SetFolderStatus(
                 ResearchStudyConfiguration.TryOpenExportFolder(
                     _studyCompletionScreen.ExportPath,
                     out string folderError)
@@ -543,10 +557,11 @@ public class Game1 : Game
         if (_phaseRun.CanComplete)
         {
             string persistenceMessage;
+            // Phase 3 is locked in the demo, so the study ends after Feedback.
             bool completesStudy = _phaseRun.State.PhaseId ==
                 (ResearchStudyConfiguration.BetaAffordanceOnly
                     ? ScenarioCatalog.AffordanceVisibilityScenarioId
-                    : ScenarioCatalog.ConceptualModelsConstraintsScenarioId);
+                    : ScenarioCatalog.DamageFeedbackScenarioId);
             if (_studySession.TryRecordPhaseCompletion(
                 _phaseRun.State,
                 completesStudy))
@@ -559,7 +574,10 @@ public class Game1 : Game
                 }
                 else
                 {
-                    persistenceMessage = "Progresso salvo localmente.";
+                    // Partial export to the same file, so the data survives if the player stops early.
+                    persistenceMessage = _studySession.TryExportProgress(out string progressPath)
+                        ? $"Progresso salvo em: {progressPath}"
+                        : "Progresso salvo localmente.";
                 }
             }
             else

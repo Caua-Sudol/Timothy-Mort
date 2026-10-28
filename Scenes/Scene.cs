@@ -490,6 +490,11 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             _usedGelatins.Clear();
         }
 
+        // Affordance room 1: Mort speaks on the first touch of any gelatin, before the choice.
+        if (playerIsTouchingGelatin && IsAffordance && CurrentRoomIndex == 0 &&
+            !_phaseState.HasFirstChoice && _phaseState.TryTakeGelatinCallout())
+            StartMortCallout(MortDialogueCatalog.AffordanceFirstGelatinCallout);
+
     UpdateGelatinContact();
     UpdateSurfaceContactFeedback();
     // Tutorial: the last ground touched is the checkpoint, so a fall only repeats that stretch.

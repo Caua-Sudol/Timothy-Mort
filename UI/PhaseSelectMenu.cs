@@ -35,6 +35,9 @@ public sealed class PhaseSelectMenu
     private const float BetaNoticeOffsetY = 30.0f;
     private const float StatusIconOffsetY = 110.0f;
     private const int StatusIconSize = 96;
+    // Notices shown after a finished study starts a new session.
+    private const double NewSessionNoticeSeconds = 4.0;
+    private const string NewSessionNoticeText = "Nova sessão criada";
 
     private static readonly string[] PhaseTitles =
     {
@@ -58,6 +61,8 @@ public sealed class PhaseSelectMenu
     private static readonly Color CardTextColor = new Color(37, 40, 43);
     private static readonly Color LockedCardTint = new Color(120, 120, 120);
     private static readonly Color LockedTextColor = new Color(70, 72, 75);
+    private static readonly Color NewSessionNoticeColor = new Color(120, 200, 120);
+    private static readonly Color PreviousFilesNoticeColor = new Color(232, 150, 70);
     private readonly Vector2 _center;
     private readonly PhaseProgress _progress;
     private Texture2D _selectedCard;
@@ -69,6 +74,8 @@ public sealed class PhaseSelectMenu
     private int _shakeIndex = -1;
     private double _shakeTimer;
     private string _sessionCode;
+    private double _newSessionNoticeTimer;
+    private string _previousExportFolder;
 
     public PhaseSelectMenu(SpriteFont titleFont, SpriteFont font, Vector2 center, PhaseProgress progress)
     {
@@ -92,11 +99,19 @@ public sealed class PhaseSelectMenu
     {
         _symbols.Update(deltaTime);
         _shakeTimer = Math.Max(0.0, _shakeTimer - deltaTime);
+        _newSessionNoticeTimer = Math.Max(0.0, _newSessionNoticeTimer - deltaTime);
     }
 
     public void SetSessionCode(string sessionCode)
     {
         _sessionCode = sessionCode;
+    }
+
+    // Green notice fades after a few seconds; the orange folder notice stays until the game closes.
+    public void ShowNewSessionNotice(string previousExportFolder)
+    {
+        _newSessionNoticeTimer = NewSessionNoticeSeconds;
+        _previousExportFolder = previousExportFolder;
     }
 
     public PhaseSelectOption Update(
@@ -212,7 +227,9 @@ public sealed class PhaseSelectMenu
             Vector2 statusPosition = cardRectangle.Center.ToVector2() +
                 new Vector2(0.0f, StatusIconOffsetY);
 
-            if (ResearchStudyConfiguration.BetaAffordanceOnly && isLocked && index > 0)
+            // Phase 3 is always out of the demo; in Affordance-only mode Feedback is too.
+            if (isLocked && (PhaseIds[index] == ScenarioCatalog.ConceptualModelsConstraintsScenarioId ||
+                             ResearchStudyConfiguration.BetaAffordanceOnly && index > 0))
             {
                 DrawCenteredText(spriteBatch, "Indisponível na beta",
                     cardRectangle.Center.ToVector2() + new Vector2(0.0f, BetaNoticeOffsetY),
@@ -236,7 +253,33 @@ public sealed class PhaseSelectMenu
         DrawCenteredText(spriteBatch,
             ResearchStudyConfiguration.DevToolsEnabled ? NavigationText : NavigationTextWithoutTestRoom,
             new Vector2(_center.X, 960.0f), SecondaryColor, scale: 0.75f);
+        DrawNewSessionNotices(spriteBatch);
         spriteBatch.End();
+    }
+
+    private void DrawNewSessionNotices(SpriteBatch spriteBatch)
+    {
+        if (_newSessionNoticeTimer > 0)
+        {
+            // Fades out during the last second.
+            float alpha = (float)Math.Min(1.0, _newSessionNoticeTimer);
+            DrawCenteredText(spriteBatch, NewSessionNoticeText,
+                new Vector2(_center.X, 60.0f), NewSessionNoticeColor * alpha, scale: 0.75f);
+        }
+
+        if (string.IsNullOrEmpty(_previousExportFolder))
+        {
+            return;
+        }
+
+        // Bottom-left corner, shrunk to fit if the path is long.
+        string text = $"Arquivos anteriores em: {_previousExportFolder}";
+        const float margin = 32.0f;
+        float maximumWidth = _center.X * 2.0f - margin * 2.0f;
+        float scale = Math.Min(0.6f, maximumWidth / Math.Max(1.0f, _font.MeasureString(text).X));
+        var position = new Vector2(margin, _center.Y * 2.0f - margin - _font.LineSpacing * scale);
+        spriteBatch.DrawString(_font, text, position, PreviousFilesNoticeColor,
+            0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
     }
 
     private bool IsUnlocked(int index)

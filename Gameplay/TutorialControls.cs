@@ -12,7 +12,8 @@ public enum ControlScheme
 public static class TutorialControls
 {
     // Kept for the whole session (static), chosen in the tutorial's control menu.
-    public static ControlScheme Current { get; set; } = ControlScheme.SHIFT;
+    // Starts on the Celeste layout (arrows, C, X); the "Controles" sign changes it.
+    public static ControlScheme Current { get; set; } = ControlScheme.ARROWS;
 
     private static (string Walk, string Jump, string Dash, string Up, string Right, string Left) Keys(
         ControlScheme scheme) => scheme switch
@@ -26,7 +27,7 @@ public static class TutorialControls
     public static string Describe(ControlScheme scheme)
     {
         var keys = Keys(scheme);
-        return $"{keys.Walk} anda   ·   {keys.Jump} pula   ·   {keys.Dash} dash";
+        return $"{keys.Walk} anda   ·   {keys.Jump} pula   ·   {keys.Dash} impulso";
     }
 
     public static string Fill(string text)

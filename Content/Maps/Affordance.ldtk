@@ -3136,36 +3136,6 @@
 					"gridTiles": [],
 					"entityInstances": [
 						{
-							"__identifier": "FalaMort",
-							"__grid": [21,60],
-							"__pivot": [0,0],
-							"__tags": [],
-							"__tile": null,
-							"__smartColor": "#D8D0BB",
-							"iid": "bb0e17f7-d035-43c4-8261-448162f4885d",
-							"width": 144,
-							"height": 192,
-							"defUid": 151,
-							"px": [336,960],
-							"fieldInstances": [
-								{
-									"__identifier": "Texto",
-									"__type": "String",
-									"__value": "Que terreno estranho... Encoste nele e tente o dash de novo!",
-									"__tile": null,
-									"defUid": 152,
-									"realEditorValues": [
-										{
-											"id": "V_String",
-											"params": ["Que terreno estranho... Encoste nele e tente o dash de novo!"]
-										}
-									]
-								}
-							],
-							"__worldX": 336,
-							"__worldY": 960
-						},
-						{
 							"__identifier": "PlayerSpawn",
 							"__grid": [15,71],
 							"__pivot": [0.5,1],
@@ -17421,36 +17391,6 @@
 						},
 						{
 							"__identifier": "FalaMort",
-							"__grid": [48,60],
-							"__pivot": [0,0],
-							"__tags": [],
-							"__tile": null,
-							"__smartColor": "#D8D0BB",
-							"iid": "c2df383d-327a-43a0-a03f-c323e0a6a965",
-							"width": 288,
-							"height": 288,
-							"defUid": 151,
-							"px": [768,960],
-							"fieldInstances": [
-								{
-									"__identifier": "Texto",
-									"__type": "String",
-									"__value": "Buraco grande? Pule e use o dash no ar!",
-									"__tile": null,
-									"defUid": 152,
-									"realEditorValues": [
-										{
-											"id": "V_String",
-											"params": ["Buraco grande? Pule e use o dash no ar!"]
-										}
-									]
-								}
-							],
-							"__worldX": 768,
-							"__worldY": -2240
-						},
-						{
-							"__identifier": "FalaMort",
 							"__grid": [126,18],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -17465,13 +17405,13 @@
 								{
 									"__identifier": "Texto",
 									"__type": "String",
-									"__value": "Dá para combinar direções no dash!",
+									"__value": "Dá para combinar direções no impulso!",
 									"__tile": null,
 									"defUid": 152,
 									"realEditorValues": [
 										{
 											"id": "V_String",
-											"params": ["Dá para combinar direções no dash!"]
+											"params": ["Dá para combinar direções no impulso!"]
 										}
 									]
 								}
@@ -17561,9 +17501,9 @@
 							"height": 112,
 							"defUid": 145,
 							"px": [940,900],
-							"fieldInstances": [{ "__identifier": "Texto", "__type": "String", "__value": "{dash}  dash", "__tile": null, "defUid": 146, "realEditorValues": [{
+							"fieldInstances": [{ "__identifier": "Texto", "__type": "String", "__value": "{dash}  impulso", "__tile": null, "defUid": 146, "realEditorValues": [{
 								"id": "V_String",
-								"params": ["{dash}  dash"]
+								"params": ["{dash}  impulso"]
 							}] }],
 							"__worldX": 940,
 							"__worldY": -2300

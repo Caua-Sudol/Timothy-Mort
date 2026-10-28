@@ -59,6 +59,7 @@ public sealed class PhaseState
     public bool ChoiceLocked { get; private set; }
     // Feedback: Mort's balloon about the unsignalled damage plays once per run.
     private bool _damageCalloutShown;
+    private bool _gelatinCalloutShown;
     public bool VerticalRouteRevealed { get; private set; }
     public bool ExitDoorIsOpen
     {
@@ -215,6 +216,13 @@ public sealed class PhaseState
         return true;
     }
 
+    public bool TryTakeGelatinCallout()
+    {
+        if (_gelatinCalloutShown) return false;
+        _gelatinCalloutShown = true;
+        return true;
+    }
+
     public void LockChoice()
     {
         if (HasFirstChoice) ChoiceLocked = true;
@@ -252,6 +260,7 @@ public sealed class PhaseState
         HasRevision = false;
         ChoiceLocked = false;
         _damageCalloutShown = false;
+        _gelatinCalloutShown = false;
         VerticalRouteRevealed = false;
         _appliedSolutionAllowsExit = false;
         _deathRegisteredInCurrentAttempt = false;

@@ -21,6 +21,10 @@ public sealed class PhaseIntroductionScreen
     private string _navigationText = DefaultNavigationText;
     private float _bodyScale = BodyScale;
     private double _visibleCharacters;
+    // Body area as fractions of the screen; the final screen asks for a larger one.
+    private float _bodyX = 0.18f;
+    private float _bodyWidth = 0.64f;
+    private float _bodyHeight = 0.43f;
 
     public PhaseIntroductionScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions, Texture2D symbols)
     {
@@ -30,15 +34,22 @@ public sealed class PhaseIntroductionScreen
         _symbols = new SymbolRain(symbols, dimensions);
     }
 
+    public void SetBodyArea(float x, float width, float height)
+    {
+        _bodyX = x;
+        _bodyWidth = width;
+        _bodyHeight = height;
+    }
+
     public void Open(string title, string text, string navigationText = DefaultNavigationText)
     {
         _title = title;
         _navigationText = navigationText;
-        _body = WrapText(text.Replace("\r\n", "\n"), _dimensions.X * 0.64f / BodyScale);
+        _body = WrapText(text.Replace("\r\n", "\n"), _dimensions.X * _bodyWidth / BodyScale);
         Vector2 bodySize = _font.MeasureString(_body);
         _bodyScale = Math.Min(BodyScale, Math.Min(
-            _dimensions.Y * 0.43f / Math.Max(1.0f, bodySize.Y),
-            _dimensions.X * 0.64f / Math.Max(1.0f, bodySize.X)));
+            _dimensions.Y * _bodyHeight / Math.Max(1.0f, bodySize.Y),
+            _dimensions.X * _bodyWidth / Math.Max(1.0f, bodySize.X)));
 
         _visibleCharacters = 0;
         _symbols.Reset();
@@ -63,7 +74,7 @@ public sealed class PhaseIntroductionScreen
 
         DrawCenteredText(spriteBatch, _title, _dimensions.Y * 0.25f, new Color(216, 208, 187), TitleScale, _titleFont);
 
-        Vector2 bodyPosition = new Vector2(_dimensions.X * 0.18f, _dimensions.Y * 0.37f);
+        Vector2 bodyPosition = new Vector2(_dimensions.X * _bodyX, _dimensions.Y * 0.37f);
         spriteBatch.DrawString(
             _font, _body.Substring(0, Math.Min(_body.Length, (int)_visibleCharacters)), bodyPosition, new Color(216, 208, 187),
             0.0f, Vector2.Zero, _bodyScale, SpriteEffects.None, 0.0f);

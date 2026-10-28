@@ -95,6 +95,21 @@ public sealed class StudySessionFlow
         }
     }
 
+    // Writes the session file after a phase that does not end the study.
+    public bool TryExportProgress(out string exportPath)
+    {
+        try
+        {
+            exportPath = _sessionStore.ExportSession(_activeSession.SessionId);
+            return true;
+        }
+        catch
+        {
+            exportPath = null;
+            return false;
+        }
+    }
+
     public bool TryPrepareCompletion(out string exportPath)
     {
         try

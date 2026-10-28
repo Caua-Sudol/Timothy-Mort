@@ -512,12 +512,6 @@ public sealed class PhaseRun : IDisposable
             AppliedBestSolution)
             _scene.EnableCombinationDemo();
         _overlayState = OverlayState.NONE;
-        // The tutorial opens with the control choice.
-        if (scenarioId == ScenarioCatalog.TutorialScenarioId)
-        {
-            _controlSchemeMenu.OpenChoice();
-            _overlayState = OverlayState.TUTORIAL_CONTROLS;
-        }
         _mapReloadErrorMessage = null;
     }
 

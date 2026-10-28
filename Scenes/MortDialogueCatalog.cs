@@ -12,7 +12,7 @@ public static class MortDialogueCatalog
     public const string Room3Barrier =
         "Ainda não dá para seguir. Precisamos passar na sala da intervenção!";
 
-    // The dash tip moved to the tutorial and to the FalaMort balloon next to the first special platform.
+    // The dash tip moved to the tutorial and to the gelatin balloon below.
     public static readonly string[] Introduction =
     {
         "Cuidado, garoto! Não dá para entender o que cada coisa faz só pela aparência."
@@ -20,6 +20,10 @@ public static class MortDialogueCatalog
 
     // Feedback has no subtitle introduction: Mort speaks in a short balloon instead,
     // on the first hot-rock hit, or on entering room 2 if the player was never hit.
+    // Affordance room 1: short balloon on the first touch of any gelatin, before the choice.
+    public const string AffordanceFirstGelatinCallout =
+        "Que terreno estranho... Encoste nele e tente o impulso de novo!";
+
     public const string FeedbackFirstDamageCallout = "Ei! Você se feriu e nada mostrou isso!";
     public const string FeedbackRoom2Callout = "Essas rochas ferem, e nada avisa. Precisamos arrumar isso!";
 

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -22,12 +23,20 @@ public sealed class StudyCompletionScreen
     private string _exportPath;
     private string _exportError;
     private string _formStatus;
+    // Leaving stays locked until the folder was opened (or failed to open).
+    private bool _folderOpenAttempted;
 
     public string ExportPath => _exportPath;
+
+    // Without an exported file there is no folder to open, so leaving is allowed.
+    private bool CanLeave => _folderOpenAttempted || string.IsNullOrEmpty(_exportPath);
 
     public StudyCompletionScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions, Texture2D symbols)
     {
         _presentation = new PhaseIntroductionScreen(titleFont, font, dimensions, symbols);
+        // Wider and taller than the introduction so the text keeps a readable size;
+        // the height stops just above the navigation line.
+        _presentation.SetBodyArea(0.10f, 0.80f, 0.47f);
     }
 
     public void Open(
@@ -38,6 +47,7 @@ public sealed class StudyCompletionScreen
         _session = session;
         _exportPath = exportPath;
         _exportError = exportError;
+        _folderOpenAttempted = false;
         // While the MEEGA+ form is not configured (expert beta), the screen does not mention it.
         _formStatus = ResearchStudyConfiguration.IsMeegaFormConfigured
             ? "Questionário MEEGA+ pronto para abrir."
@@ -58,6 +68,13 @@ public sealed class StudyCompletionScreen
         RefreshPresentation();
     }
 
+    // Called after trying to open the folder; success or failure unlocks leaving.
+    public void SetFolderStatus(string folderStatus)
+    {
+        _folderOpenAttempted = true;
+        SetFormStatus(folderStatus);
+    }
+
     public StudyCompletionAction Update(
         KeyboardState keyboardState,
         KeyboardState previousKeyboardState,
@@ -68,7 +85,13 @@ public sealed class StudyCompletionScreen
         if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.Enter) ||
             KeyWasPressed(keyboardState, previousKeyboardState, Keys.Escape))
         {
-            return StudyCompletionAction.RETURN_TO_MENU;
+            if (CanLeave)
+            {
+                return StudyCompletionAction.RETURN_TO_MENU;
+            }
+
+            SetFormStatus("Abra a pasta antes de sair (tecla O).");
+            return StudyCompletionAction.NONE;
         }
 
         if (KeyWasPressed(keyboardState, previousKeyboardState, Keys.R))
@@ -108,8 +131,7 @@ public sealed class StudyCompletionScreen
             string title = PhaseIntroductionCatalog.Get(phase.PhaseId).Title;
             text.AppendLine(title);
             text.AppendLine(
-                $"  Primeira: {GetQualityText(phase.FirstSolutionQuality)} | " +
-                $"Final: {GetQualityText(phase.FinalSolutionQuality)} | " +
+                $"  Escolha: {GetSolutionTitle(phase)} | " +
                 $"Tempo: {totalSeconds / 60:00}:{totalSeconds % 60:00} | " +
                 $"Mortes: {phase.TotalDeaths}");
         }
@@ -117,8 +139,12 @@ public sealed class StudyCompletionScreen
         text.AppendLine();
         if (!string.IsNullOrEmpty(_exportPath))
         {
-            text.AppendLine("Envie este arquivo ao pesquisador (O abre a pasta):");
-            text.AppendLine(_exportPath);
+            // Folder and file name on separate lines, so the long path does not shrink the text.
+            text.AppendLine("1. Seus dados foram salvos neste arquivo:");
+            text.AppendLine("   Pasta: " + Path.GetDirectoryName(_exportPath));
+            text.AppendLine("   Arquivo: " + Path.GetFileName(_exportPath));
+            text.AppendLine("2. Aperte O para abrir a pasta.");
+            text.AppendLine($"3. Envie o arquivo para {ResearchStudyConfiguration.ResearchEmail}");
         }
         else
         {
@@ -134,21 +160,22 @@ public sealed class StudyCompletionScreen
         string navigation =
             (ResearchStudyConfiguration.IsMeegaFormConfigured ? "F: abrir MEEGA+    " : "") +
             (!string.IsNullOrEmpty(_exportPath) ? "O: abrir pasta    " : "") +
-            "R: exportar novamente    Enter: voltar ao menu";
+            "R: exportar novamente" +
+            (CanLeave ? "    Enter: voltar ao seletor" : "");
         _presentation.Open("PESQUISA CONCLUÍDA", text.ToString(), navigation);
         // Session data and export status are shown at once, without typing.
         _presentation.CompleteTyping();
     }
 
-    private static string GetQualityText(string quality)
+    private static string GetSolutionTitle(PhaseCompletionData phase)
     {
-        return quality switch
+        if (string.IsNullOrEmpty(phase.FinalSolutionId))
         {
-            nameof(SolutionQuality.INADEQUATE) => "I",
-            nameof(SolutionQuality.PARTIAL) => "P",
-            nameof(SolutionQuality.ADEQUATE) => "A",
-            _ => "-"
-        };
+            return "Nenhuma";
+        }
+
+        return PhaseCatalog.GetForScenario(phase.PhaseId)?.ChoiceCatalog
+            .GetSolution(phase.FinalSolutionId)?.Title ?? "-";
     }
 
     private static bool KeyWasPressed(
