@@ -24,6 +24,8 @@ public static class ScenarioCatalog
     public const string ConceptualModelsConstraintsInterventionScenarioId =
         "modelos_conceituais_restricoes_intervencao";
     public const string PropVisualScenarioId = "prop_visual";
+    // Shown before Affordance the first time in a session; not part of any phase (no telemetry).
+    public const string TutorialScenarioId = "tutorial";
 
     private static readonly IReadOnlyDictionary<string, ScenarioDefinition> Scenarios = new Dictionary<string, ScenarioDefinition>(StringComparer.Ordinal)
         {
@@ -81,6 +83,7 @@ public static class ScenarioCatalog
                 Room(ConceptualModelsConstraintsRoom3ScenarioId, "ModelosTela3", 96),
             [ConceptualModelsConstraintsInterventionScenarioId] =
                 Room(ConceptualModelsConstraintsInterventionScenarioId, "Concept_Sala_intervencao3", 160),
+            [TutorialScenarioId] = Room(TutorialScenarioId, "Tutorial", 160),
             [PropVisualScenarioId] = new ScenarioDefinition(
                 PropVisualScenarioId,
                 "Content/PropVisual.tmx",

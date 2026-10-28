@@ -145,7 +145,14 @@ private Vector2 _checkpoint;
             scenario.SupportsPlayerScalePreview,
             LdtkRoomLinks.For(scenario.Id))
     {
+        _isTutorial = scenario.Id == ScenarioCatalog.TutorialScenarioId;
     }
+
+    // Tutorial room: flat background, control signs, falls only send the player back.
+    private readonly bool _isTutorial;
+    private static readonly Color TutorialBackgroundColor = new Color(0x15, 0x19, 0x1F);
+    private static readonly Color TutorialSignColor = new Color(0xD8, 0xD0, 0xBB);
+    private static readonly Color TutorialPlatformColor = new Color(0x2A, 0x30, 0x3A);
 
     public Scene(string mapPath, Vector2 playerStart)
         : this(mapPath, playerStart, null, null, false)
@@ -249,7 +256,7 @@ private Vector2 _checkpoint;
             _map.SetObjectTexture("espinhos_lateral", LoadDiagnostics.LoadTexture(content, "visual/espinho_lateral"));
         }
         loading.Mark("texturas de plataformas legadas", includeInSummary: true);
-        if (UsesRoomFormat)
+        if (UsesRoomFormat || _isTutorial)
         {
             _interactionFont = content.Load<SpriteFont>("patrick");
             _passageSymbols = LoadDiagnostics.LoadTexture(content, "ui/icons/icons");
@@ -414,11 +421,11 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
     // RoomBack exits lead to "retorno_tela" and stay unmarked.
     private IEnumerable<SceneExit> GetLitExits()
     {
-        if (!UsesRoomFormat || IsInterventionRoom) return Enumerable.Empty<SceneExit>();
+        if (!(UsesRoomFormat || _isTutorial) || IsInterventionRoom) return Enumerable.Empty<SceneExit>();
         var barriers = GetRoom3Barriers().ToList();
         return _map.SceneExits.Where(exit =>
             exit.DestinationSpawnId != "retorno_tela" && !barriers.Contains(exit) &&
-            (!exit.RequiresAppliedSolution || _phaseState.ExitDoorIsOpen));
+            (!exit.RequiresAppliedSolution || _phaseState?.ExitDoorIsOpen == true));
     }
 
 private void UpdatePlaying(Camera camera, double deltaTime)
@@ -480,10 +487,20 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
     UpdateGelatinContact();
     UpdateSurfaceContactFeedback();
+    // Tutorial: the last ground touched is the checkpoint, so a fall only repeats that stretch.
+    if (_isTutorial && _player.IsGrounded)
+        _checkpoint = new Vector2(
+            _player.HitBox.X - (PlayerWidth - _player.HitBox.Width) / 2f,
+            _player.HitBox.Bottom - PlayerHeight);
 
     if (PlayerFell())
         {
             if (UsesRoomFormat) RespawnInRoom(camera, true);
+            else if (_isTutorial)
+            {
+                RespawnPlayer(camera);
+                _respawnEffectTime = 0.22f;
+            }
             else KillPlayer();
             return;
         }
@@ -1170,6 +1187,83 @@ private static bool RectanglesTouchOrIntersect(
             _playerScreenHeightRatio.HasValue);
     }
 
+    private void DrawTutorialBackground(SpriteBatch spriteBatch, Matrix cameraTransform)
+    {
+        spriteBatch.Begin();
+        spriteBatch.Draw(_fadeTexture, _fadeRectangle, TutorialBackgroundColor);
+        spriteBatch.End();
+
+        spriteBatch.Begin(samplerState: SamplerState.LinearClamp, transformMatrix: cameraTransform);
+        foreach (var (bounds, direction) in _map.SignArrows)
+            DrawSignArrow(spriteBatch, bounds, direction);
+        foreach (var (bounds, text) in _map.SignTexts)
+            DrawSignText(spriteBatch, bounds, TutorialControls.Fill(text));
+        // Plain look for the solid platforms; tiles painted in LDtk are drawn on top of it.
+        foreach (Rectangle platform in _map.Platforms)
+        {
+            spriteBatch.Draw(_fadeTexture, platform, TutorialSignColor * 0.55f);
+            Rectangle inner = platform;
+            inner.Inflate(-4, -4);
+            spriteBatch.Draw(_fadeTexture, inner, TutorialPlatformColor);
+        }
+        spriteBatch.End();
+    }
+
+    // The text fills its LDtk box (keeping proportions), with a soft shadow for contrast.
+    private void DrawSignText(SpriteBatch spriteBatch, Rectangle bounds, string text)
+    {
+        if (_interactionFont == null) return;
+        Vector2 size = _interactionFont.MeasureString(text);
+        if (size.X <= 0 || size.Y <= 0) return;
+        float scale = Math.Min(bounds.Width / size.X, bounds.Height / size.Y);
+        Vector2 position = bounds.Center.ToVector2() - size * scale / 2f;
+        Vector2 shadow = new Vector2(1f, 1f) * Math.Max(2f, bounds.Height * 0.04f);
+        spriteBatch.DrawString(_interactionFont, text, position + shadow, Color.Black * 0.5f,
+            0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+        spriteBatch.DrawString(_interactionFont, text, position, TutorialSignColor,
+            0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+    }
+
+    private void DrawSignArrow(SpriteBatch spriteBatch, Rectangle bounds, string direction)
+    {
+        Vector2 dir = direction switch
+        {
+            "cima" => new Vector2(0, -1),
+            "baixo" => new Vector2(0, 1),
+            "esquerda" => new Vector2(-1, 0),
+            "cima-direita" => Vector2.Normalize(new Vector2(1, -1)),
+            "cima-esquerda" => Vector2.Normalize(new Vector2(-1, -1)),
+            _ => new Vector2(1, 0)
+        };
+        bool diagonal = dir.X != 0 && dir.Y != 0;
+        float length = diagonal
+            ? MathF.Sqrt(bounds.Width * bounds.Width + bounds.Height * bounds.Height) * 0.8f
+            : (dir.X != 0 ? bounds.Width : bounds.Height) * 0.9f;
+        float thickness = Math.Max(6f, Math.Min(bounds.Width, bounds.Height) * 0.14f);
+        float headLength = Math.Min(length * 0.35f, thickness * 4f);
+        Vector2 center = bounds.Center.ToVector2();
+        Vector2 tail = center - dir * length / 2f;
+        Vector2 tip = center + dir * length / 2f;
+        Vector2 shadow = new Vector2(1f, 1f) * Math.Max(2f, thickness * 0.3f);
+        foreach ((Vector2 offset, Color color) in new[]
+                 { (shadow, Color.Black * 0.5f), (Vector2.Zero, TutorialSignColor) })
+        {
+            DrawSignLine(spriteBatch, tail + offset, tip + offset, thickness, color);
+            foreach (float side in new[] { -1f, 1f })
+            {
+                Vector2 back = Vector2.Transform(-dir, Matrix.CreateRotationZ(side * MathHelper.ToRadians(40)));
+                DrawSignLine(spriteBatch, tip + offset, tip + offset + back * headLength, thickness, color);
+            }
+        }
+    }
+
+    private void DrawSignLine(SpriteBatch spriteBatch, Vector2 from, Vector2 to, float thickness, Color color)
+    {
+        Vector2 delta = to - from;
+        spriteBatch.Draw(_fadeTexture, from, null, color, MathF.Atan2(delta.Y, delta.X),
+            new Vector2(0f, 0.5f), new Vector2(delta.Length(), thickness), SpriteEffects.None, 0f);
+    }
+
     // Screen-space offset that decays over the shake.
     private Matrix GetScreenShakeTransform()
     {
@@ -1298,6 +1392,7 @@ private static bool RectanglesTouchOrIntersect(
 
         var cameraTransform = camera.GetTransform() * GetScreenShakeTransform();
         bool drawsScenery = _map.HasLdtkScenery && !_useAdditionalCollidersOnly;
+        if (_isTutorial) DrawTutorialBackground(spriteBatch, cameraTransform);
         if (drawsScenery)
         {
             // Painted 1080p layers are upscaled; linear filtering avoids blocky edges.

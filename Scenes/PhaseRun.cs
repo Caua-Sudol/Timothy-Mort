@@ -38,6 +38,7 @@ public sealed class PhaseRun : IDisposable
     private string _mapReloadErrorMessage;
 
     public PhaseState State => _phaseState;
+    public bool IsInTutorial => _currentScenarioId == ScenarioCatalog.TutorialScenarioId;
     public bool ExitRequested { get; private set; }
     public bool ReturnToSelectionRequested { get; private set; }
     // Leave the phase from the pause or death menu without trying to complete it.

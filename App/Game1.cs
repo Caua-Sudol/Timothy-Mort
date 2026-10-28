@@ -21,6 +21,8 @@ public class Game1 : Game
     private PhaseResultScreen _phaseResultScreen;
     private StudyCompletionScreen _studyCompletionScreen;
     private string _introductionScenarioId;
+    // The tutorial plays once per session, the first time Affordance is chosen.
+    private bool _tutorialShown;
     private MortSubtitle _mortSubtitle;
     private readonly PhaseProgress _phaseProgress = new PhaseProgress();
     private readonly StudySessionFlow _studySession;
@@ -312,17 +314,30 @@ public class Game1 : Game
             return;
         }
 
+        if (phase?.Id == ScenarioCatalog.AffordanceVisibilityScenarioId && !_tutorialShown)
+        {
+            _tutorialShown = true;
+            _phaseRun.ChangeScenario(ScenarioCatalog.TutorialScenarioId, null);
+            _activeScreen = AppScreen.PLAYING;
+            return;
+        }
+
         if (phase != null)
         {
-            var introduction = PhaseIntroductionCatalog.Get(phase.Id);
-            _phaseIntroductionScreen.Open(introduction.Title, introduction.Text);
-            _introductionScenarioId = scenarioId;
-            _activeScreen = AppScreen.PHASE_INTRODUCTION;
+            OpenPhaseIntroduction(phase.Id, scenarioId);
             return;
         }
 
         _phaseRun.ChangeScenario(scenarioId, null);
         _activeScreen = AppScreen.PLAYING;
+    }
+
+    private void OpenPhaseIntroduction(string phaseId, string scenarioId)
+    {
+        var introduction = PhaseIntroductionCatalog.Get(phaseId);
+        _phaseIntroductionScreen.Open(introduction.Title, introduction.Text);
+        _introductionScenarioId = scenarioId;
+        _activeScreen = AppScreen.PHASE_INTRODUCTION;
     }
 
     private void UpdatePhaseIntroduction(KeyboardState keyboardState, double deltaTime)
@@ -508,6 +523,14 @@ public class Game1 : Game
         if (_phaseRun.ReturnToMenuRequested)
         {
             ReturnToPhaseSelect();
+            return;
+        }
+
+        // Leaving the tutorial goes on to the Affordance introduction.
+        if (_phaseRun.ReturnToSelectionRequested && _phaseRun.IsInTutorial)
+        {
+            OpenPhaseIntroduction(ScenarioCatalog.AffordanceVisibilityScenarioId,
+                ScenarioCatalog.AffordanceVisibilityScenarioId);
             return;
         }
 

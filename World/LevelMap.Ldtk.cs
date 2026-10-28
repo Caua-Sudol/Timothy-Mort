@@ -52,6 +52,11 @@ public partial class LevelMap
     // Phase 2 hot rock: also listed in _platforms (it is solid); damage comes in Scene.
     private List<Rectangle> _hotSurfaces = [];
     public IReadOnlyList<Rectangle> HotSurfaces => _hotSurfaces;
+    // Tutorial "Texto" and "Seta" entities, drawn by Scene on the background.
+    private List<(Rectangle Bounds, string Text)> _signTexts = [];
+    private List<(Rectangle Bounds, string Direction)> _signArrows = [];
+    public IReadOnlyList<(Rectangle Bounds, string Text)> SignTexts => _signTexts;
+    public IReadOnlyList<(Rectangle Bounds, string Direction)> SignArrows => _signArrows;
     private List<(Rectangle Bounds, Rectangle Source, SpriteEffects Flip, float Alpha, int TilesetUid, SolutionVisualModule Solution, int LayerOrder)> _ldtkTiles = [];
     private Dictionary<int, string> _ldtkTilesetPaths = [];
     private Dictionary<int, Texture2D> _ldtkTextures = [];
@@ -386,6 +391,15 @@ public partial class LevelMap
                         _sceneExits.Add(new SceneExit(bounds, links.PreviousScenarioId, "retorno_tela", false)); break;
                     case "InterventionSword":
                         _interventionButtons.Add(bounds); break;
+                    case "Texto":
+                    {
+                        string value = GetLdtkField(entity, "Texto")?.GetString();
+                        if (!string.IsNullOrWhiteSpace(value)) _signTexts.Add((bounds, value));
+                        break;
+                    }
+                    case "Seta":
+                        _signArrows.Add((bounds, GetLdtkField(entity, "Direcao")?.GetString() ?? "direita"));
+                        break;
                     case "Decoracao":
                     {
                         // Imagem: PNG name in assets/eureka (".png" optional). Frente: draw in front of the player.

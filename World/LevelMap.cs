@@ -747,6 +747,8 @@ private void ApplyObjectState(LevelMap candidate)
     _damageVolumes = candidate._damageVolumes;
     _harmlessSpikeVolumes = candidate._harmlessSpikeVolumes;
     _hotSurfaces = candidate._hotSurfaces;
+    _signTexts = candidate._signTexts;
+    _signArrows = candidate._signArrows;
     _verticalRouteDamageVolumes = candidate._verticalRouteDamageVolumes;
     _propVisualForegrounds = candidate._propVisualForegrounds;
     _playerSpawns = candidate._playerSpawns;
