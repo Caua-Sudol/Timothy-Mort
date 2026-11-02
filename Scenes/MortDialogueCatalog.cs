@@ -47,6 +47,12 @@ public static class MortDialogueCatalog
             "Agora um coração racha sobre você quando se fere. Ele mostra a perda... mas mostra de onde ela veio?",
         FeedbackDamageChoiceCatalog.ScreenShakeSolutionId =>
             "Agora a tela treme quando você se fere. Chama atenção... mas aponta o que causou o dano?",
+        ConceptualModelsConstraintsChoiceCatalog.DifferentiateSolutionId =>
+            "Pronto, as diferentes ganharam outra cor. Agora dá para saber o que esperar antes de pisar.",
+        ConceptualModelsConstraintsChoiceCatalog.RestoreSolutionId =>
+            "Agora todas fazem o que você já conhecia. Nada de surpresas... mas o que perdemos?",
+        ConceptualModelsConstraintsChoiceCatalog.NeutralizeSolutionId =>
+            "Agora as diferentes viraram chão comum. O engano sumiu... e o efeito delas também.",
         _ => "Experimente e veja se ajuda."
     };
 

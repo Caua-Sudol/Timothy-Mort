@@ -3,285 +3,147 @@ using System.Collections.Generic;
 
 namespace DontLikePoetry;
 
+// Phase 3 (Conceptual models): some gelatins and hot rocks look like the ones already learned
+// but act differently (impostors). The three alternatives change how that mismatch is resolved.
 public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoiceCatalog
 {
+    public const string DifferentiateSolutionId = "concept_differentiate";
+    public const string RestoreSolutionId = "concept_restore";
+    public const string NeutralizeSolutionId = "concept_neutralize";
+
     public static ConceptualModelsConstraintsChoiceCatalog Instance { get; } =
         new ConceptualModelsConstraintsChoiceCatalog();
 
-    public string JustificationQuestion { get; } =
+    public string SolutionQuestion =>
+        "Qual mudança ajuda você a prever o que cada plataforma faz?";
+
+    public string JustificationQuestion =>
         "Que resultado você espera obter com essa intervenção?";
 
-    public IReadOnlyList<InterventionSolutionDefinition> InitialInadequateSolutions { get; } =
-        new List<InterventionSolutionDefinition>
+    public IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; } =
+        Array.AsReadOnly(new[]
         {
             new InterventionSolutionDefinition(
-                "I1",
-                "Realce uniforme",
-                "Destacar todas as plataformas especiais das normais.",
-                SolutionQuality.INADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.GELATIN_GLOW |
-                SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT),
-            new InterventionSolutionDefinition(
-                "I2",
-                "Regras explícitas",
-                "Exibir lembretes curtos com ícones de dano e impulso.",
-                SolutionQuality.INADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS),
-            new InterventionSolutionDefinition(
-                "I3",
-                "Rota indicada",
-                "Indicar visualmente a rota até a saída.",
-                SolutionQuality.INADEQUATE,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.PATH_INDICATOR)
-        };
-
-    public IReadOnlyList<InterventionSolutionDefinition> InitialPartialSolutions { get; } =
-        new List<InterventionSolutionDefinition>
-        {
-            new InterventionSolutionDefinition(
-                "P1",
-                "Perigo consistente",
-                "Fazer todos os espinhos causarem dano e realçar as plataformas especiais.",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE |
-                SolutionVisualModule.GELATIN_GLOW |
-                SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT),
-            new InterventionSolutionDefinition(
-                "P2",
-                "Propriedade restauradas",
-                "Todas as plataformas não sólidas recuperam a propriedade já vista e exibir lembretes de dano e impulso.",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
-                SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS),
-            new InterventionSolutionDefinition(
-                "P3",
-                "Perigo e rota",
-                "Fazer todos os espinhos causarem dano e indicar a rota até a saída.",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE |
-                SolutionVisualModule.PATH_INDICATOR)
-        };
-
-    public IReadOnlyList<InterventionSolutionDefinition> InitialAdequateSolutions { get; } =
-        new List<InterventionSolutionDefinition>
-        {
-            new InterventionSolutionDefinition(
-                "A1",
-                "Plataformas restauradas",
-                "Restaurar as propriedades já vistas para os perigos e plataformas não sólidas.",
+                DifferentiateSolutionId,
+                "Diferenciar",
+                "Dar uma nova aparência às plataformas que agem diferente",
                 SolutionQuality.ADEQUATE,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
-                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE),
+                SolutionVisualModule.IMPOSTOR_DIFFERENTIATE),
             new InterventionSolutionDefinition(
-                "A2",
-                "Variantes diferenciadas",
-                "Diferenciar as plataformas alteradas e ajustar suas propriedades.",
-                SolutionQuality.ADEQUATE,
+                RestoreSolutionId,
+                "Restaurar",
+                "Fazer as plataformas que agem diferente voltarem ao efeito já conhecido",
+                SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.DISTINCT_TRAMPOLINE_GELATIN |
-                SolutionVisualModule.TRAMPOLINE_DASH_EQUIVALENT |
-                SolutionVisualModule.DISTINCT_HARMLESS_SPIKES |
-                SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE),
+                SolutionVisualModule.IMPOSTOR_RESTORE),
             new InterventionSolutionDefinition(
-                "A3",
-                "Propriedade antiga e novos perigos",
-                "Propriedade de plataformas não sólidas restaurada e diferenciar visualmente novos perigos.",
-                SolutionQuality.ADEQUATE,
+                NeutralizeSolutionId,
+                "Neutralizar",
+                "Transformar as plataformas que agem diferente em plataformas sólidas comuns",
+                SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN |
-                SolutionVisualModule.DISTINCT_HARMLESS_SPIKES |
-                SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE)
-        };
+                SolutionVisualModule.IMPOSTOR_NEUTRALIZE)
+        });
 
-    public IReadOnlyList<InterventionSolutionDefinition> InitialSolutions { get; }
+    // The choice can be changed inside the intervention room; there is no revision round.
+    public IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions =>
+        InitialSolutions;
 
     public IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
-        new List<InterventionJustificationDefinition>
+        Array.AsReadOnly(new[]
         {
             new InterventionJustificationDefinition(
-                "J1",
-                "Facilitar a identificação das plataformas importantes para a travessia."),
+                "concept_predict", "Prever o que cada plataforma faz antes de tocá-la"),
             new InterventionJustificationDefinition(
-                "J2",
-                "Explicar diretamente quais recursos cada plataforma deveria oferecer."),
+                "concept_same_look", "Fazer plataformas iguais se comportarem do mesmo jeito"),
             new InterventionJustificationDefinition(
-                "J3",
-                "Indicar o percurso necessário para alcançar a saída."),
+                "concept_keep_new", "Manter os novos comportamentos disponíveis na travessia"),
             new InterventionJustificationDefinition(
-                "J4",
-                "Fazer plataformas visualmente iguais manterem o mesmo comportamento."),
+                "concept_learned", "Aproveitar o que já foi aprendido nas fases anteriores"),
             new InterventionJustificationDefinition(
-                "J5",
-                "Diferenciar plataformas que possuem comportamentos diferentes."),
+                "concept_surprise", "Evitar surpresas ao pisar nas plataformas"),
             new InterventionJustificationDefinition(
-                "J6",
-                "Alinhar aparência, comportamento e restrições do percurso.")
-        };
-
-    public IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions
-    { get; } =
-        new List<InterventionSolutionDefinition>
-        {
-            new InterventionSolutionDefinition(
-                "P4",
-                "Plataformas originais",
-                "Restaurar apenas as plataformas não sólidas ao comportamento original.",
-                SolutionQuality.PARTIAL,
-                SolutionChoiceRound.REVISION,
-                SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN),
-            new InterventionSolutionDefinition(
-                "A4",
-                "Plataformas distinta",
-                "Diferenciar plataformas com propriedades ainda não vistas.",
-                SolutionQuality.ADEQUATE,
-                SolutionChoiceRound.REVISION,
-                SolutionVisualModule.DISTINCT_TRAMPOLINE_GELATIN |
-                SolutionVisualModule.TRAMPOLINE_DASH_EQUIVALENT |
-                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE)
-        };
+                "concept_fewer_rules", "Reduzir a quantidade de regras para lembrar")
+        });
 
     private ConceptualModelsConstraintsChoiceCatalog()
     {
-        InitialSolutions = CreateInitialSolutions();
     }
 
     public IReadOnlyList<PresentedSolutionDefinition> CreateInitialSolutionPresentation(
         Random random)
     {
-        if (random == null)
-        {
-            throw new ArgumentNullException(nameof(random));
-        }
-
-        var selectedSolutions = new List<InterventionSolutionDefinition>
-        {
-            PickSolution(InitialInadequateSolutions, random, "inadequado"),
-            PickSolution(InitialPartialSolutions, random, "parcial"),
-            PickSolution(InitialAdequateSolutions, random, "adequado")
-        };
-
-        Shuffle(selectedSolutions, random);
-
-        var presentation =
-            new List<PresentedSolutionDefinition>(selectedSolutions.Count);
-
-        for (int index = 0; index < selectedSolutions.Count; index++)
-        {
-            presentation.Add(new PresentedSolutionDefinition(
-                selectedSolutions[index].Id,
-                index + 1));
-        }
-
+        ArgumentNullException.ThrowIfNull(random);
+        var solutions = new List<InterventionSolutionDefinition>(InitialSolutions);
+        Shuffle(solutions, random);
+        var presentation = new List<PresentedSolutionDefinition>(solutions.Count);
+        for (int index = 0; index < solutions.Count; index++)
+            presentation.Add(new PresentedSolutionDefinition(solutions[index].Id, index + 1));
         return presentation.AsReadOnly();
     }
 
     public IReadOnlyList<PresentedJustificationDefinition>
         CreateInitialJustificationPresentation(Random random)
     {
-        if (random == null)
-        {
-            throw new ArgumentNullException(nameof(random));
-        }
-
-        var shuffledJustifications =
-            new List<InterventionJustificationDefinition>(Justifications);
-
-        Shuffle(shuffledJustifications, random);
-
-        var presentation =
-            new List<PresentedJustificationDefinition>(
-                shuffledJustifications.Count);
-
-        for (int index = 0; index < shuffledJustifications.Count; index++)
-        {
-            presentation.Add(new PresentedJustificationDefinition(
-                shuffledJustifications[index].Id,
-                index + 1));
-        }
-
+        ArgumentNullException.ThrowIfNull(random);
+        var justifications = new List<InterventionJustificationDefinition>(Justifications);
+        Shuffle(justifications, random);
+        var presentation = new List<PresentedJustificationDefinition>(justifications.Count);
+        for (int index = 0; index < justifications.Count; index++)
+            presentation.Add(new PresentedJustificationDefinition(justifications[index].Id, index + 1));
         return presentation.AsReadOnly();
     }
 
     public InterventionSolutionDefinition GetSolution(string solutionId)
     {
         foreach (InterventionSolutionDefinition solution in InitialSolutions)
-        {
             if (solution.Id == solutionId)
-            {
                 return solution;
-            }
-        }
-
-        foreach (InterventionSolutionDefinition solution in AvailableRevisionSolutions)
-        {
-            if (solution.Id == solutionId)
-            {
-                return solution;
-            }
-        }
-
         throw new InvalidOperationException(
             $"Solução de modelos conceituais não registrada: {solutionId}");
     }
 
-    public InterventionJustificationDefinition GetJustification(
-        string justificationId)
+    public InterventionJustificationDefinition GetJustification(string justificationId)
     {
         foreach (InterventionJustificationDefinition justification in Justifications)
-        {
             if (justification.Id == justificationId)
-            {
                 return justification;
-            }
-        }
-
         throw new InvalidOperationException(
             $"Justificativa de modelos conceituais não registrada: {justificationId}");
     }
 
-    private IReadOnlyList<InterventionSolutionDefinition> CreateInitialSolutions()
+    public string GetResultAssessment(string solutionId) => solutionId switch
     {
-        var solutions = new List<InterventionSolutionDefinition>(
-            InitialInadequateSolutions.Count +
-            InitialPartialSolutions.Count +
-            InitialAdequateSolutions.Count);
+        DifferentiateSolutionId => "Pista de aparência",
+        RestoreSolutionId => "Consistência com o já conhecido",
+        NeutralizeSolutionId => "Remoção do comportamento",
+        _ => "Sem escolha"
+    };
 
-        solutions.AddRange(InitialInadequateSolutions);
-        solutions.AddRange(InitialPartialSolutions);
-        solutions.AddRange(InitialAdequateSolutions);
-
-        return solutions.AsReadOnly();
-    }
-
-    private static InterventionSolutionDefinition PickSolution(
-        IReadOnlyList<InterventionSolutionDefinition> pool,
-        Random random,
-        string qualityName)
+    public string GetResultExplanation(string solutionId) => solutionId switch
     {
-        if (pool == null || pool.Count == 0)
-        {
-            throw new InvalidOperationException(
-                $"O pool inicial {qualityName} não possui soluções.");
-        }
-
-        return pool[random.Next(pool.Count)];
-    }
+        DifferentiateSolutionId =>
+            "Diferenciar dá a cada comportamento a sua própria aparência: o que já foi aprendido " +
+            "continua valendo, e as plataformas novas avisam que são outra coisa antes do contato. " +
+            "É a proposta mais adequada neste cenário, porque permite prever o efeito e mantém a variedade da travessia.",
+        RestoreSolutionId =>
+            "Restaurar faz a aparência voltar a corresponder ao comportamento já conhecido, " +
+            "então nada surpreende. Mas os novos comportamentos deixam de existir, " +
+            "e a travessia perde as possibilidades que eles traziam.",
+        NeutralizeSolutionId =>
+            "Neutralizar troca as plataformas que enganavam por plataformas sólidas comuns. " +
+            "O engano desaparece, mas junto com ele somem tanto os efeitos novos quanto os conhecidos " +
+            "nesses pontos: o problema é evitado, e não comunicado.",
+        _ => "Nenhuma mudança foi escolhida para alinhar a aparência ao comportamento das plataformas."
+    };
 
     private static void Shuffle<T>(IList<T> entries, Random random)
     {
         for (int index = entries.Count - 1; index > 0; index--)
         {
             int swapIndex = random.Next(index + 1);
-            T temporary = entries[index];
-            entries[index] = entries[swapIndex];
-            entries[swapIndex] = temporary;
+            (entries[index], entries[swapIndex]) = (entries[swapIndex], entries[index]);
         }
     }
 }

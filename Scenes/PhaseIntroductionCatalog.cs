@@ -25,13 +25,11 @@ public static class PhaseIntroductionCatalog
                 "Nesta fase, observe como o jogo comunica as consequências do contato com o perigo."),
 
             ScenarioCatalog.ConceptualModelsConstraintsScenarioId => (
-                "Modelos conceituais e restrições",
+                "Modelos conceituais",
                 "Um modelo conceitual é uma explicação de como algo funciona. " +
                 "Ao jogar, construímos uma compreensão das regras e a usamos para prever resultados.\n\n" +
-                "Restrições limitam as ações possíveis: uma barreira, um recurso limitado ou uma condição " +
-                "para avançar podem orientar nossas decisões.\n\n" +
-                "Nesta fase, compare suas expectativas com o comportamento das plataformas " +
-                "e observe os limites que influenciam a travessia."),
+                "Quando algo parece igual ao que já conhecemos, esperamos que funcione do mesmo jeito.\n\n" +
+                "Nesta fase, compare suas expectativas com o comportamento das plataformas."),
 
             _ => throw new ArgumentException("A fase não possui introdução.", nameof(phaseId))
         };

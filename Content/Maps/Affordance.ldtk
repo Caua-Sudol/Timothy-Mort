@@ -1333,7 +1333,8 @@
 				{ "value": 3, "identifier": "espinhos", "color": "#0099DB", "tile": null, "groupUid": 0 },
 				{ "value": 4, "identifier": "rochaQuente", "color": "#E8590C", "tile": null, "groupUid": 0 },
 				{ "value": 5, "identifier": "gelatinaTrampolim", "color": "#7B2FBE", "tile": null, "groupUid": 0 },
-				{ "value": 6, "identifier": "espinhoInofensivo", "color": "#59C1E8", "tile": null, "groupUid": 0 }
+				{ "value": 6, "identifier": "espinhoInofensivo", "color": "#59C1E8", "tile": null, "groupUid": 0 },
+				{ "value": 7, "identifier": "rochaImpostora", "color": "#C2185B", "tile": null, "groupUid": 0 }
 			],
 			"intGridValuesGroups": [],
 			"autoRuleGroups": [],

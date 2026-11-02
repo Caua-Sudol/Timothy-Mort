@@ -207,9 +207,21 @@ private Vector2 _checkpoint;
     public void SetAdditionalGelatinVolumes(IEnumerable<Rectangle> volumes) =>
         _additionalGelatinVolumes = volumes ?? Enumerable.Empty<Rectangle>();
 
-    private IEnumerable<Rectangle> GetGelatinVolumes(bool verticalRouteRevealed) =>
-        _useAdditionalCollidersOnly ? _additionalGelatinVolumes :
-        _map.GetGelatinVolumes(verticalRouteRevealed).Concat(_additionalGelatinVolumes);
+    private IEnumerable<Rectangle> GetGelatinVolumes(bool verticalRouteRevealed)
+    {
+        if (_useAdditionalCollidersOnly) return _additionalGelatinVolumes;
+        bool neutralized = ImpostorsNeutralized;
+        return _map.GetGelatinVolumes(verticalRouteRevealed)
+            // Neutralizar: the trampoline impostors stop being gelatin (they turn solid).
+            .Where(gelatin => !neutralized || !_map.IsTrampolineGelatin(gelatin))
+            .Concat(_additionalGelatinVolumes);
+    }
+
+    // Phase 3 solutions for the impostor gelatins and rocks.
+    private bool ImpostorsNeutralized =>
+        GetAppliedVisualModules().HasFlag(SolutionVisualModule.IMPOSTOR_NEUTRALIZE);
+    private bool ImpostorsRestored =>
+        GetAppliedVisualModules().HasFlag(SolutionVisualModule.IMPOSTOR_RESTORE);
 
     public void UseAdditionalCollidersOnly() => _useAdditionalCollidersOnly = true;
 
@@ -586,6 +598,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             .Concat(_exitDoor.Collider.HasValue
                 ? new[] { _exitDoor.Collider.Value }
                 : Enumerable.Empty<Rectangle>())
+            // Neutralizar: the trampoline impostors become plain solid platforms.
+            .Concat(ImpostorsNeutralized ? _map.TrampolineGelatins : Enumerable.Empty<Rectangle>())
             .Concat(_additionalSolidColliders);
     }
 
@@ -653,6 +667,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         Rectangle? touchedSurface = null;
         foreach (Rectangle surface in _map.HotSurfaces)
         {
+            // Neutralizar: the impostor rock is plain solid ground and does not hurt.
+            if (ImpostorsNeutralized && _map.IsImpostorRock(surface)) continue;
             if (RectanglesTouchOrIntersect(playerBounds, surface))
             {
                 touchedSurface = surface;
@@ -660,9 +676,19 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             }
         }
 
-        if (touchedSurface == null || !_phaseState.TryApplyDamage(1))
+        // Phase 3 impostor rock costs two hearts; Restaurar brings it back to one.
+        bool impostorHit = touchedSurface != null && _map.IsImpostorRock(touchedSurface.Value) &&
+                           !ImpostorsRestored;
+        if (touchedSurface == null || !_phaseState.TryApplyDamage(impostorHit ? 2 : 1))
         {
             return false;
+        }
+
+        // The heavier hit always gets the stronger signal: heart crack and screen shake.
+        if (impostorHit)
+        {
+            _heartCrackTimer = DamageFeedbackSettings.HeartCrackSeconds;
+            _screenShakeTimer = DamageFeedbackSettings.ScreenShakeSeconds;
         }
 
         if (IsFeedback && !IsInterventionRoom && _phaseState.TryTakeDamageCallout())
@@ -902,8 +928,9 @@ private void UpdateGelatinContact()
         bool dashWasAvailable = _player.CanDash;
 
         SolutionVisualModule visualModules = GetAppliedVisualModules();
+        // Restaurar (phase 3) makes the trampoline impostor act like the known gelatin.
         bool restoresTrampolineGelatin = visualModules.HasFlag(
-            SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN);
+            SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN) || ImpostorsRestored;
 
         if (_map.IsTrampolineGelatin(gelatin) && !restoresTrampolineGelatin)
         {

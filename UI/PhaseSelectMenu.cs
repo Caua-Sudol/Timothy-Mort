@@ -43,7 +43,7 @@ public sealed class PhaseSelectMenu
     {
         "Affordance\ne visibilidade",
         "Feedback",
-        "Modelos conceituais\ne restrições"
+        "Modelos conceituais"
     };
 
     private static readonly string[] PhaseIds =

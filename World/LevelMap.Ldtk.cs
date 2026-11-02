@@ -52,6 +52,11 @@ public partial class LevelMap
     // Phase 2 hot rock: also listed in _platforms (it is solid); damage comes in Scene.
     private List<Rectangle> _hotSurfaces = [];
     public IReadOnlyList<Rectangle> HotSurfaces => _hotSurfaces;
+    // Phase 3 impostor rock: looks like a hot rock but costs two hearts. Also in _platforms
+    // and _hotSurfaces, so it is solid and hurts like the known one.
+    private List<Rectangle> _impostorRocks = [];
+    public IReadOnlyList<Rectangle> ImpostorRocks => _impostorRocks;
+    public bool IsImpostorRock(Rectangle surface) => _impostorRocks.Contains(surface);
     // Tutorial "Texto" and "Seta" entities, drawn by Scene on the background.
     private List<(Rectangle Bounds, string Text)> _signTexts = [];
     private List<(Rectangle Bounds, string Direction)> _signArrows = [];
@@ -349,6 +354,15 @@ public partial class LevelMap
                         _hotSurfaces.AddRange(hotRocks);
                         continue;
                     }
+                    // Phase 3: looks like the hot rock already seen, but costs two hearts.
+                    if (kind.Value.Equals("rochaImpostora", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var impostorRocks = MergeLdtkCells(cells, columns, size, kind.Key, ox, oy).ToList();
+                        _platforms.AddRange(impostorRocks);
+                        _hotSurfaces.AddRange(impostorRocks);
+                        _impostorRocks.AddRange(impostorRocks);
+                        continue;
+                    }
                     if (!gelatin && !kind.Value.Equals("solido", StringComparison.OrdinalIgnoreCase)) continue;
                     var target = gelatin ? _gelatins : _platforms;
                     target.AddRange(MergeLdtkCells(cells, columns, size, kind.Key, ox, oy));
@@ -508,6 +522,11 @@ public partial class LevelMap
             return SolutionVisualModule.GELATIN_COLOR;
         if (string.Equals(name, "solucao_mark", StringComparison.OrdinalIgnoreCase))
             return SolutionVisualModule.GELATIN_TERRAIN_MARK;
+        // Phase 3: new art for the impostors (Diferenciar) or plain solid art (Neutralizar).
+        if (string.Equals(name, "solucao_diferenciar", StringComparison.OrdinalIgnoreCase))
+            return SolutionVisualModule.IMPOSTOR_DIFFERENTIATE;
+        if (string.Equals(name, "solucao_neutralizar", StringComparison.OrdinalIgnoreCase))
+            return SolutionVisualModule.IMPOSTOR_NEUTRALIZE;
         return SolutionVisualModule.NONE;
     }
 
@@ -550,7 +569,8 @@ public partial class LevelMap
         for (int index = 0; index < _ldtkTiles.Count; index++)
         {
             Rectangle bounds = _ldtkTiles[index].Bounds;
-            if (IsBase(index) && _gelatins.Any(g => g.Contains(bounds.Center)) &&
+            if (IsBase(index) && (_gelatins.Any(g => g.Contains(bounds.Center)) ||
+                                  IsInsideImpostor(bounds.Center)) &&
                 replacements.Any(area => area.Contains(bounds)) && hidden.Add(index))
                 pending.Enqueue(index);
         }
@@ -576,6 +596,13 @@ public partial class LevelMap
         return hidden;
     }
 
+    private static readonly Color DifferentiatePlaceholderTint = new Color(170, 120, 255);
+    private static readonly Color NeutralizePlaceholderTint = new Color(140, 140, 140);
+
+    private bool IsInsideImpostor(Point point) =>
+        _trampolineGelatins.Any(g => g.Contains(point)) ||
+        _impostorRocks.Any(r => r.Contains(point));
+
     private void DrawLdtk(SpriteBatch batch, SolutionVisualModule modules, bool background = false)
     {
         HashSet<int> hidden = GetHiddenLdtkTiles(modules, background);
@@ -588,6 +615,15 @@ public partial class LevelMap
             if (hidden.Contains(index)) continue;
             var gelatin = _gelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center));
             Color tint = Color.White;
+            // Placeholder until the phase 3 art exists: base tiles of impostors get a tint.
+            // Where solution art covers them they are hidden above, so the tint goes away.
+            if (tile.Solution == SolutionVisualModule.NONE && IsInsideImpostor(tile.Bounds.Center))
+            {
+                if (modules.HasFlag(SolutionVisualModule.IMPOSTOR_DIFFERENTIATE))
+                    tint = DifferentiatePlaceholderTint;
+                else if (modules.HasFlag(SolutionVisualModule.IMPOSTOR_NEUTRALIZE))
+                    tint = NeutralizePlaceholderTint;
+            }
             Rectangle destination = tile.Bounds;
             if (gelatin.Width > 0 && modules.HasFlag(SolutionVisualModule.GELATIN_JELLY_MOTION))
             {

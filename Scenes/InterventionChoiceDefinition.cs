@@ -58,7 +58,11 @@ public enum SolutionVisualModule : long
     GELATIN_TERRAIN_MARK = 68719476736L,
     // Phase 2 solutions (effects drawn in Ckp 4).
     DAMAGE_HEART_CRACK = 137438953472L,
-    DAMAGE_SCREEN_SHAKE = 274877906944L
+    DAMAGE_SCREEN_SHAKE = 274877906944L,
+    // Phase 3 solutions for the impostor gelatins and rocks (effects in Ckp 10).
+    IMPOSTOR_DIFFERENTIATE = 549755813888L,
+    IMPOSTOR_RESTORE = 1099511627776L,
+    IMPOSTOR_NEUTRALIZE = 2199023255552L
 }
 
 public sealed class InterventionSolutionDefinition
