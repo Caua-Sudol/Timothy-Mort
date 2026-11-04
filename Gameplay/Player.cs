@@ -213,7 +213,10 @@ public void Update(double deltaTime)
         if (_dashRequested)
         {
             _dashRequested = false;
-            if (CanDash)
+            // Dash only works in the air. On the ground it used to start and be cancelled
+            // at once, losing the run's speed; now the request is simply dropped.
+            // Jump + dash pressed together still works: the jump has already left the ground.
+            if (CanDash && !_isGrounded)
             {
                 StartDash(horizontalInput);
                 return;
