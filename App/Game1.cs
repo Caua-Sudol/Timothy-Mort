@@ -557,11 +557,11 @@ public class Game1 : Game
         if (_phaseRun.CanComplete)
         {
             string persistenceMessage;
-            // Phase 3 is locked in the demo, so the study ends after Feedback.
+            // The study ends after the last phase: Conceptual models (or Affordance in beta mode).
             bool completesStudy = _phaseRun.State.PhaseId ==
                 (ResearchStudyConfiguration.BetaAffordanceOnly
                     ? ScenarioCatalog.AffordanceVisibilityScenarioId
-                    : ScenarioCatalog.DamageFeedbackScenarioId);
+                    : ScenarioCatalog.ConceptualModelsConstraintsScenarioId);
             if (_studySession.TryRecordPhaseCompletion(
                 _phaseRun.State,
                 completesStudy))

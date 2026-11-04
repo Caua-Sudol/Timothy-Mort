@@ -7,8 +7,8 @@ namespace DontLikePoetry;
 public static class ResearchStudyConfiguration
 {
     // True: only Affordance is playable, and finishing it completes the study.
-    // False: Feedback unlocks after Affordance, and finishing Feedback completes the study
-    // (phase 3 stays locked in Release).
+    // False: each phase unlocks after the previous one (Affordance → Feedback → Conceptual
+    // models), and finishing Conceptual models completes the study.
     public const bool BetaAffordanceOnly = false;
 
     // Address shown on the final screen for sending the session file.

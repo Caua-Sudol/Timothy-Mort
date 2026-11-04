@@ -227,9 +227,8 @@ public sealed class PhaseSelectMenu
             Vector2 statusPosition = cardRectangle.Center.ToVector2() +
                 new Vector2(0.0f, StatusIconOffsetY);
 
-            // Phase 3 is always out of the demo; in Affordance-only mode Feedback is too.
-            if (isLocked && (PhaseIds[index] == ScenarioCatalog.ConceptualModelsConstraintsScenarioId ||
-                             ResearchStudyConfiguration.BetaAffordanceOnly && index > 0))
+            // In Affordance-only mode the other phases are out of the demo.
+            if (isLocked && ResearchStudyConfiguration.BetaAffordanceOnly && index > 0)
             {
                 DrawCenteredText(spriteBatch, "Indisponível na beta",
                     cardRectangle.Center.ToVector2() + new Vector2(0.0f, BetaNoticeOffsetY),
