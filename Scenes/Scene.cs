@@ -71,6 +71,9 @@ public class Scene
     private double _calloutTimer;
     private string _calloutText;
     private bool _room2CalloutChecked;
+    // Feedback: seconds off the hot rock still to wait before Mort comments the first hit.
+    private const double DamageCalloutDelaySeconds = 1.0;
+    private double _damageCalloutDelay;
     private static readonly Color HeartCrackColor = new Color(214, 52, 62);
     private static readonly Color DamageBorderColor = new Color(190, 20, 30);
     private Rectangle _fadeRectangle;
@@ -156,6 +159,9 @@ private Vector2 _checkpoint;
     private bool _controlsSignActivated;
     // FalaMort areas already spoken in this session (LDtk entity iids).
     private static readonly HashSet<string> ShownMortCallouts = new();
+    // "Dash only in the air" balloon: once per session, like the FalaMort areas.
+    private static bool _dashOnlyInAirShown;
+    private bool _calloutFreezes = true;
     private static readonly Color TutorialBackgroundColor = new Color(0x15, 0x19, 0x1F);
     private static readonly Color TutorialSignColor = new Color(0xD8, 0xD0, 0xBB);
 
@@ -466,11 +472,18 @@ private void UpdatePlaying(Camera camera, double deltaTime)
     _map.UpdateVisualEffects(deltaTime);
     TryStartRoom2Callout();
     TryStartAreaCallout();
+    TryStartDelayedDamageCallout(deltaTime);
     if (UpdateMortCallout(camera, deltaTime)) return;
     _respawnEffectTime = Math.Max(0, _respawnEffectTime - (float)deltaTime);
     _map.UpdateDynamicPlatforms(_player, deltaTime);
     _phaseState?.UpdateDamageInvulnerability(deltaTime);
         _player.Update(deltaTime);
+        // First dash on the ground in the session: light balloon (no pause, no zoom).
+        if (_player.TryTakeDashRefusedOnGround() && !_dashOnlyInAirShown && _calloutTimer <= 0)
+        {
+            _dashOnlyInAirShown = true;
+            StartMortCallout(MortDialogueCatalog.DashOnlyInAir, freezes: false);
+        }
         ApplyGelatinFallSpeed();
         bool dashWasAvailableBeforePhysics = _player.CanDash;
         UpdatePlayerPhysics(deltaTime);
@@ -739,8 +752,10 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             return false;
         }
 
+        // Mort's line waits until the player is off the hot rock for a moment, so the
+        // first hit really goes unsignalled (see TryStartDelayedDamageCallout).
         if (IsFeedback && !IsInterventionRoom && _phaseState.TryTakeDamageCallout())
-            StartMortCallout(MortDialogueCatalog.FeedbackFirstDamageCallout);
+            _damageCalloutDelay = DamageCalloutDelaySeconds;
 
         SolutionVisualModule visualModules = GetAppliedVisualModules();
         if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_KNOCKBACK))
@@ -799,6 +814,18 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
     private bool IsFeedback => _phaseState?.PhaseId == ScenarioCatalog.DamageFeedbackScenarioId;
 
+    // The time only counts while the player is off every hot rock.
+    private void TryStartDelayedDamageCallout(double deltaTime)
+    {
+        if (_damageCalloutDelay <= 0) return;
+        if (_map.HotSurfaces.Any(rock => RectanglesTouchOrIntersect(_player.HitBox, rock))) return;
+        _damageCalloutDelay -= deltaTime;
+        if (_damageCalloutDelay <= 0 && _calloutTimer <= 0)
+            StartMortCallout(MortDialogueCatalog.FeedbackFirstDamageCallout);
+        else if (_damageCalloutDelay <= 0)
+            _damageCalloutDelay = deltaTime; // another balloon is showing: try again next frame
+    }
+
     // Reaching room 2 without a hit: Mort points to the intervention instead.
     private void TryStartRoom2Callout()
     {
@@ -809,10 +836,12 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             StartMortCallout(MortDialogueCatalog.FeedbackRoom2Callout);
     }
 
-    private void StartMortCallout(string text)
+    // freezes = false: a light balloon, the game keeps running and the camera does not zoom.
+    private void StartMortCallout(string text, bool freezes = true)
     {
         _calloutText = text;
         _calloutTimer = CalloutSeconds;
+        _calloutFreezes = freezes;
     }
 
     // While the balloon shows, the game stands still and the camera eases in on the player.
@@ -820,6 +849,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
     {
         if (_calloutTimer <= 0) return false;
         _calloutTimer = Math.Max(0, _calloutTimer - deltaTime);
+        if (!_calloutFreezes) return false;
         UpdatePlayingCamera(camera);
         float ease = CalloutEase;
         camera.Zoom *= 1f + (CalloutZoom - 1f) * ease;

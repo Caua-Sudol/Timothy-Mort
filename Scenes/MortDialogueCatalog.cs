@@ -5,7 +5,7 @@ public static class MortDialogueCatalog
     public const double PageDurationSeconds = 7.0;
 
     public const string Passage =
-        "Está vendo os símbolos flutuando? Aproxime-se e pressione E. " +
+        "Está vendo os símbolos flutuando? Aproxime-se e pressione [E]. " +
         "Vou te levar a um lugar onde podemos facilitar a travessia.";
 
     // Short: shown in the balloon when the player tries the blocked passage.
@@ -14,6 +14,9 @@ public static class MortDialogueCatalog
 
     // Intervention room exit touched before any solution was applied.
     public const string InterventionExitBlocked = "Antes de sair, use a espada.";
+
+    // First dash pressed on the ground in the session (balloon without pause or zoom).
+    public const string DashOnlyInAir = "O impulso só funciona no ar. Pule primeiro!";
 
     // The dash tip moved to the tutorial and to the gelatin balloon below.
     public static readonly string[] Introduction =

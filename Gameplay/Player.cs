@@ -51,6 +51,15 @@ public class Player
     private const float ReleasedJumpUpwardSpeed = GameScaleConfig.PlayerReleasedJumpSpeed;
     private bool _jumpCanBeCut;
     private bool _dashRequested;
+    // Set when a dash was pressed on the ground (and dropped); read once by the Scene.
+    private bool _dashRefusedOnGround;
+
+    public bool TryTakeDashRefusedOnGround()
+    {
+        if (!_dashRefusedOnGround) return false;
+        _dashRefusedOnGround = false;
+        return true;
+    }
     private double _coyoteTime = GameScaleConfig.PlayerCoyoteTime;
     private double _coyoteTimer;
     private double _jumpBufferTime = GameScaleConfig.PlayerJumpBufferTime;
@@ -216,6 +225,8 @@ public void Update(double deltaTime)
             // Dash only works in the air. On the ground it used to start and be cancelled
             // at once, losing the run's speed; now the request is simply dropped.
             // Jump + dash pressed together still works: the jump has already left the ground.
+            if (CanDash && _isGrounded)
+                _dashRefusedOnGround = true;
             if (CanDash && !_isGrounded)
             {
                 StartDash(horizontalInput);

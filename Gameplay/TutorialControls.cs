@@ -30,15 +30,16 @@ public static class TutorialControls
         return $"{keys.Walk} anda   ·   {keys.Jump} pula   ·   {keys.Dash} impulso";
     }
 
+    // Keys come out in brackets ("[Shift]") so they stand out in the tutorial texts.
     public static string Fill(string text)
     {
         var keys = Keys(Current);
         return text
-            .Replace("{andar}", keys.Walk)
-            .Replace("{pular}", keys.Jump)
-            .Replace("{dash}", keys.Dash)
-            .Replace("{cima}", keys.Up)
-            .Replace("{direita}", keys.Right)
-            .Replace("{esquerda}", keys.Left);
+            .Replace("{andar}", $"[{keys.Walk}]")
+            .Replace("{pular}", $"[{keys.Jump}]")
+            .Replace("{dash}", $"[{keys.Dash}]")
+            .Replace("{cima}", $"[{keys.Up}]")
+            .Replace("{direita}", $"[{keys.Right}]")
+            .Replace("{esquerda}", $"[{keys.Left}]");
     }
 }

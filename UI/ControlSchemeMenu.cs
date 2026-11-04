@@ -25,7 +25,7 @@ public sealed class ControlSchemeMenu
 
     private static readonly ControlScheme[] Schemes =
         { ControlScheme.SHIFT, ControlScheme.ARROWS, ControlScheme.RIGHT_HAND };
-    private static readonly string[] ConfirmOptions = { "Sim, seguir", "Testar mais" };
+    private static readonly string[] ConfirmOptions = { "Sim, seguir", "Treinar mais" };
 
     private readonly SpriteFont _titleFont;
     private readonly SpriteFont _font;
@@ -87,9 +87,10 @@ public sealed class ControlSchemeMenu
         spriteBatch.Draw(fadeTexture, new Rectangle(0, 0, (int)(_center.X * 2), (int)(_center.Y * 2)),
             Color.Black * 0.7f);
 
-        string title = _confirmingExit ? "Seguir com este controle?" : "Como você prefere jogar?";
+        // Leaving the tutorial does not change controls here: "Treinar mais" goes back to the room.
+        string title = _confirmingExit ? "Pronto para começar?" : "Como você prefere jogar?";
         string subtitle = _confirmingExit
-            ? TutorialControls.Describe(TutorialControls.Current)
+            ? TutorialControls.Describe(TutorialControls.Current) + "   ·   Dá para trocar na placa Controles."
             : "Todas as teclas funcionam. Dá para trocar depois na placa Controles.";
         DrawCentered(spriteBatch, _titleFont, title, _center - new Vector2(0, 380), PrimaryColor);
         DrawCentered(spriteBatch, _font, subtitle, _center - new Vector2(0, 270), SecondaryColor, 0.8f);

@@ -160,9 +160,10 @@ public sealed class PhaseSelectMenu
         if (testRoomClicked || _testRoomSelected && confirmed)
             return PhaseSelectOption.SCALE_TEST;
 
-        if (!_testRoomSelected && (confirmed || cardClicked) && IsLocked(_selectedPhaseIndex))
+        if (!_testRoomSelected && (confirmed || cardClicked) && !IsUnlocked(_selectedPhaseIndex))
         {
-            // Shake the grey card so the player sees it cannot be opened yet.
+            // Shake the card so the player sees it cannot be opened: locked (not yet)
+            // or completed (no longer).
             _shakeIndex = _selectedPhaseIndex;
             _shakeTimer = ShakeSeconds;
         }
