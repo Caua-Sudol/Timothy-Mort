@@ -38,6 +38,13 @@ public sealed class PhaseRun : IDisposable
     private bool _sceneUpdatedLastFrame;
     private string _mapReloadErrorMessage;
 
+    // Session telemetry (rooms, deaths, controls, intervention); set by Game1.
+    public Func<SessionActivityRecorder> ActivityProvider { get; set; }
+    private SessionActivityRecorder Activity => ActivityProvider?.Invoke();
+    // Death counts already credited to the current room.
+    private int _recordedPhaseDeaths;
+    private int _recordedTutorialFalls;
+
     public PhaseState State => _phaseState;
     public bool IsInTutorial => _currentScenarioId == ScenarioCatalog.TutorialScenarioId;
     public bool ExitRequested { get; private set; }
@@ -131,6 +138,7 @@ public sealed class PhaseRun : IDisposable
         bool isActive)
     {
         _previousKeyboardState = previousKeyboardState;
+        RecordNewDeaths();
         ExitRequested = false;
         ReturnToSelectionRequested = false;
         ReturnToMenuRequested = false;
@@ -199,6 +207,7 @@ public sealed class PhaseRun : IDisposable
             if (isActive)
             {
                 _phaseState?.AccumulateActiveTime(deltaTime);
+                Activity?.AddActiveTime(deltaTime);
             }
 
             _interventionChoiceMenu.Update(keyboardState, _previousKeyboardState);
@@ -206,7 +215,11 @@ public sealed class PhaseRun : IDisposable
             if (_interventionChoiceMenu.TryTakeCompletedSolution(
                 out InterventionSolutionDefinition solution))
             {
-                ApplyChoiceWithBlink(() => _phaseState.ApplySolution(solution), solution.Id);
+                ApplyChoiceWithBlink(() =>
+                {
+                    _phaseState.ApplySolution(solution);
+                    Activity?.RecordIntervention(_phaseState.PhaseId, "solucao", solution.Id);
+                }, solution.Id);
             }
             else if (_interventionChoiceMenu.TryTakeCompletedRevision(
                 out InterventionSolutionDefinition revisionSolution))
@@ -218,11 +231,13 @@ public sealed class PhaseRun : IDisposable
             {
                 // The scene leaves through the exit on its next update.
                 _phaseState.SetJustification(justification);
+                Activity?.RecordIntervention(_phaseState.PhaseId, "justificativa", justification.Id);
                 _overlayState = OverlayState.NONE;
             }
             else if (_interventionChoiceMenu.TryTakeContinueTesting())
             {
                 _scene.CancelInterventionExit();
+                Activity?.RecordIntervention(_phaseState.PhaseId, "continuar_testando", null);
                 _overlayState = OverlayState.NONE;
             }
 
@@ -255,6 +270,7 @@ public sealed class PhaseRun : IDisposable
             }
 
             _phaseState?.AccumulateActiveTime(deltaTime);
+            Activity?.AddActiveTime(deltaTime);
             _mortSubtitle.Update(deltaTime);
         }
 
@@ -356,6 +372,20 @@ public sealed class PhaseRun : IDisposable
             _phaseState?.RegisterDeath();
             OpenDeathMenu();
         }
+    }
+
+    // Credits new deaths (phase deaths, tutorial falls) to the current room.
+    private void RecordNewDeaths()
+    {
+        int phaseDeaths = _phaseState?.TotalDeathCount ?? 0;
+        if (phaseDeaths > _recordedPhaseDeaths)
+            Activity?.AddDeaths(phaseDeaths - _recordedPhaseDeaths);
+        _recordedPhaseDeaths = phaseDeaths;
+
+        int tutorialFalls = _scene?.TutorialFallCount ?? 0;
+        if (tutorialFalls > _recordedTutorialFalls)
+            Activity?.AddDeaths(tutorialFalls - _recordedTutorialFalls);
+        _recordedTutorialFalls = tutorialFalls;
     }
 
     private bool AppliedBestSolution =>
@@ -477,6 +507,8 @@ public sealed class PhaseRun : IDisposable
     public void ChangeScenario(string scenarioId, string spawnId)
     {
         using var loading = new LoadDiagnostics($"cenario {scenarioId}");
+        // Deaths still uncounted belong to the room being left.
+        RecordNewDeaths();
         PhaseDefinition destinationPhase =
             PhaseCatalog.GetForScenario(scenarioId);
         bool changesPhase = _phaseState?.PhaseId != destinationPhase?.Id;
@@ -521,6 +553,9 @@ public sealed class PhaseRun : IDisposable
         _scene.UseLdtkTextureCache(_ldtkTextureCache);
         _scene.LoadContent(_graphicsDevice, _content);
         loading.Mark("criar e carregar Scene");
+        _recordedPhaseDeaths = _phaseState?.TotalDeathCount ?? 0;
+        _recordedTutorialFalls = 0;
+        Activity?.EnterRoom(_phaseState?.PhaseId, scenarioId);
         _scene.AlignCamera(_camera);
         if (scenarioId == _phaseState?.Definition.LastRoomScenarioId && _mortCombinationSpoken &&
             AppliedBestSolution)
@@ -550,9 +585,11 @@ public sealed class PhaseRun : IDisposable
         switch (_controlSchemeMenu.Update(keyboardState, _previousKeyboardState))
         {
             case ControlSchemeMenuResult.CLOSED:
+                Activity?.RecordControlScheme(TutorialControls.Current);
                 _overlayState = OverlayState.NONE;
                 break;
             case ControlSchemeMenuResult.CONTINUE:
+                Activity?.RecordTutorialCompleted();
                 _overlayState = OverlayState.NONE;
                 ReturnToSelectionRequested = true;
                 break;

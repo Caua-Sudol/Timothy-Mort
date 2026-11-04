@@ -209,7 +209,50 @@ public sealed class SessionStore
         using var connection = OpenConnection();
         SessionCompletionData session = LoadSessionHeader(connection, sessionId);
         LoadPhaseCompletions(connection, session);
+        session.Activity = LoadActivity(connection, sessionId);
+        session.GameVersion = session.Activity?.GameVersion ?? ResearchStudyConfiguration.GameVersion;
         return session;
+    }
+
+    // Activity is saved during play (room changes, choices), not only at phase completion.
+    public void SaveActivity(string sessionId, SessionActivityData activity)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId) || activity == null) return;
+
+        using var connection = OpenConnection();
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText =
+            """
+            INSERT INTO session_activity (session_id, payload_json, updated_utc)
+            VALUES ($sessionId, $payload, $updatedUtc)
+            ON CONFLICT(session_id) DO UPDATE SET
+                payload_json = excluded.payload_json,
+                updated_utc = excluded.updated_utc;
+            """;
+        command.Parameters.AddWithValue("$sessionId", sessionId);
+        command.Parameters.AddWithValue("$payload", JsonSerializer.Serialize(activity));
+        command.Parameters.AddWithValue(
+            "$updatedUtc",
+            DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+        command.ExecuteNonQuery();
+    }
+
+    public SessionActivityData LoadActivity(string sessionId)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId)) return null;
+        using var connection = OpenConnection();
+        return LoadActivity(connection, sessionId);
+    }
+
+    private static SessionActivityData LoadActivity(SqliteConnection connection, string sessionId)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText =
+            "SELECT payload_json FROM session_activity WHERE session_id = $sessionId;";
+        command.Parameters.AddWithValue("$sessionId", sessionId);
+        return command.ExecuteScalar() is string payload
+            ? JsonSerializer.Deserialize<SessionActivityData>(payload)
+            : null;
     }
 
     public string ExportSession(string sessionId)
@@ -761,6 +804,15 @@ public sealed class SessionStore
                 PRIMARY KEY (session_id, phase_id, position),
                 FOREIGN KEY (session_id, phase_id)
                     REFERENCES phase_telemetry(session_id, phase_id)
+                    ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS session_activity (
+                session_id TEXT PRIMARY KEY,
+                payload_json TEXT NOT NULL,
+                updated_utc TEXT NOT NULL,
+                FOREIGN KEY (session_id)
+                    REFERENCES sessions(session_id)
                     ON DELETE CASCADE
             );
             """;

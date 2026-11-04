@@ -8,6 +8,8 @@ public sealed class StudySessionFlow
     private LocalSessionInfo _activeSession;
 
     public SessionCompletionData CompletionData { get; private set; }
+    // Play activity of the active session (rooms, deaths, controls, intervention choices).
+    public SessionActivityRecorder Activity { get; private set; }
     public bool ShowCompletionAfterPhaseResult { get; set; }
     public LocalSessionInfo PendingSession => _pendingSession;
     public LocalSessionInfo ActiveSession => _activeSession;
@@ -72,6 +74,8 @@ public sealed class StudySessionFlow
     {
         try
         {
+            // Room times and deaths up to this moment go with the phase data.
+            Activity?.Save();
             SolutionVisualModule finalVisualModules =
                 string.IsNullOrEmpty(phaseState.AppliedSolutionId)
                     ? SolutionVisualModule.NONE
@@ -151,6 +155,7 @@ public sealed class StudySessionFlow
         _phaseProgress.Clear();
         _pendingSession = null;
         _activeSession = null;
+        Activity = null;
         CompletionData = null;
         ShowCompletionAfterPhaseResult = false;
     }
@@ -161,5 +166,24 @@ public sealed class StudySessionFlow
         _pendingSession = null;
         CompletionData = null;
         ShowCompletionAfterPhaseResult = false;
+        SessionActivityData saved = null;
+        try
+        {
+            saved = _sessionStore.LoadActivity(session.SessionId);
+        }
+        catch
+        {
+            // A missing or unreadable activity starts fresh.
+        }
+        Activity = new SessionActivityRecorder(saved, SaveActivity);
+    }
+
+    // Saves the activity and refreshes the exported file, so an abandoned session
+    // still leaves its latest state on disk.
+    private void SaveActivity(SessionActivityData activity)
+    {
+        if (_activeSession == null) return;
+        _sessionStore.SaveActivity(_activeSession.SessionId, activity);
+        _sessionStore.ExportSession(_activeSession.SessionId);
     }
 }

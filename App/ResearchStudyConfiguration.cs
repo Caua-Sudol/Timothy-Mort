@@ -11,6 +11,9 @@ public static class ResearchStudyConfiguration
     // models), and finishing Conceptual models completes the study.
     public const bool BetaAffordanceOnly = false;
 
+    // Written in every session file, to compare results between builds. Update before each build.
+    public const string GameVersion = "2026.11.04-estudantes";
+
     // Address shown on the final screen for sending the session file.
     public const string ResearchEmail = "timothy.mort.game@gmail.com";
 

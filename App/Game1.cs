@@ -83,6 +83,8 @@ public class Game1 : Game
         _phaseRun = new PhaseRun(
             GraphicsDevice, Content, _viewport.LogicalSize, _phaseProgress,
             font, titleFont, bodyFont, selector, _mortSubtitle);
+        // Telemetry of the active session (changes when a new session starts).
+        _phaseRun.ActivityProvider = () => _studySession.Activity;
 
         base.Initialize();
     }
@@ -521,6 +523,8 @@ public class Game1 : Game
 
     protected override void UnloadContent()
     {
+        // Closing the game (menu or window) keeps the latest room times and deaths.
+        _studySession.Activity?.Save();
         _phaseRun?.Dispose();
         base.UnloadContent();
     }
@@ -536,6 +540,7 @@ public class Game1 : Game
 
         if (_phaseRun.ReturnToMenuRequested)
         {
+            _studySession.Activity?.Save();
             ReturnToPhaseSelect();
             return;
         }

@@ -159,6 +159,8 @@ private Vector2 _checkpoint;
     private bool _controlsSignActivated;
     // FalaMort areas already spoken in this session (LDtk entity iids).
     private static readonly HashSet<string> ShownMortCallouts = new();
+    // Tutorial falls (the tutorial has no hearts); read by PhaseRun for telemetry.
+    public int TutorialFallCount { get; private set; }
     // "Dash only in the air" balloon: once per session, like the FalaMort areas.
     private static bool _dashOnlyInAirShown;
     private bool _calloutFreezes = true;
@@ -556,6 +558,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             if (UsesRoomFormat) RespawnInRoom(camera, true);
             else if (_isTutorial)
             {
+                TutorialFallCount++;
                 RespawnPlayer(camera);
                 _respawnEffectTime = 0.22f;
             }
