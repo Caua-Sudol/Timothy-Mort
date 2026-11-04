@@ -60,14 +60,6 @@ public sealed class PhaseProgress
             : null;
     }
 
-    public SolutionVisualModule GetTransferredVisualModules()
-    {
-        return GetFinalSolutionVisualModules(
-                   ScenarioCatalog.AffordanceVisibilityScenarioId) |
-               GetFinalSolutionVisualModules(
-                   ScenarioCatalog.DamageFeedbackScenarioId);
-    }
-
     public bool TryCompletePhase(
         string phaseId,
         string finalSolutionId,

@@ -675,22 +675,16 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             return false;
         }
 
-        // The heavier hit always gets the stronger signal: heart crack and screen shake.
-        if (impostorHit)
-        {
-            _heartCrackTimer = DamageFeedbackSettings.HeartCrackSeconds;
-            _screenShakeTimer = DamageFeedbackSettings.ScreenShakeSeconds;
-        }
-
         if (IsFeedback && !IsInterventionRoom && _phaseState.TryTakeDamageCallout())
             StartMortCallout(MortDialogueCatalog.FeedbackFirstDamageCallout);
 
         SolutionVisualModule visualModules = GetAppliedVisualModules();
         if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_KNOCKBACK))
             _player.ApplySurfaceKnockback(GetAwayFromSurface(playerBounds, touchedSurface.Value, _player.FacingDirection));
-        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_HEART_CRACK))
+        // Phase 3 impostor rock: screen shake instead of the heart crack.
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_HEART_CRACK) && !impostorHit)
             _heartCrackTimer = DamageFeedbackSettings.HeartCrackSeconds;
-        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_SCREEN_SHAKE))
+        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_SCREEN_SHAKE) || impostorHit)
             _screenShakeTimer = DamageFeedbackSettings.ScreenShakeSeconds;
 
         if (_phaseState.CurrentHealth <= 0)

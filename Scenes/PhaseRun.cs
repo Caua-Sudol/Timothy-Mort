@@ -469,16 +469,10 @@ public sealed class PhaseRun : IDisposable
         else if (_phaseState == null ||
                  _phaseState.PhaseId != destinationPhase.Id)
         {
-            SolutionVisualModule? baseVisualModulesOverride =
-                destinationPhase.Id ==
-                    ScenarioCatalog.ConceptualModelsConstraintsScenarioId
-                    ? _phaseProgress.GetTransferredVisualModules()
-                    : null;
-
+            // Phase 3 uses its own fixed damage feedback; nothing is inherited.
             _phaseState = new PhaseState(
                 destinationPhase,
-                scenarioId,
-                baseVisualModulesOverride);
+                scenarioId);
             _mortCombinationSpoken = false;
             _mortPassageSpoken = false;
             _mortSubtitle.Clear();

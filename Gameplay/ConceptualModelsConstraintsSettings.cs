@@ -8,9 +8,9 @@ public static class ConceptualModelsConstraintsSettings
     public const float TrampolineVerticalSpeed = 880f;
     public const float TrampolineDashEquivalentVerticalSpeed = Player.DashSpeed;
 
+    // Fixed damage feedback from the start: recuo + coração rachando on hot rocks;
+    // the impostor rock swaps the heart for screen shake (see Scene).
     public const SolutionVisualModule BaseVisualModules =
-        SolutionVisualModule.GELATIN_TEXTURE |
-        SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR |
         SolutionVisualModule.DAMAGE_KNOCKBACK |
-        SolutionVisualModule.INVULNERABILITY_BLINK;
+        SolutionVisualModule.DAMAGE_HEART_CRACK;
 }
