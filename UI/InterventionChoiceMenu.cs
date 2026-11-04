@@ -35,13 +35,18 @@ public sealed class InterventionChoiceMenu
     private IReadOnlyList<InterventionSolutionDefinition> _solutions;
     private IReadOnlyList<InterventionJustificationDefinition> _justifications;
     private int _selectedIndex;
-    private InterventionSolutionDefinition _pendingSolution;
     private InterventionSolutionDefinition _completedSolution;
     private InterventionJustificationDefinition _completedJustification;
+    private bool _continueTestingRequested;
     private string _justificationQuestion;
     private string _solutionQuestion;
     private ChoiceStep _choiceStep;
-    private bool _requiresJustification;
+    private bool _isRevision;
+
+    // Extra card after the justifications when leaving the intervention room.
+    // Tinted red like the sword's smoke, so it reads as "go back to the sword".
+    private const string ContinueTestingText = "Continuar testando soluções";
+    private static readonly Color ContinueTestingTint = new Color(255, 150, 140);
 
     private enum ChoiceStep
     {
@@ -64,48 +69,60 @@ public sealed class InterventionChoiceMenu
         _selectedJustificationCard = content.Load<Texture2D>("ui/card_intervention_selected");
     }
 
-    public void OpenInitial(
-        IReadOnlyList<InterventionSolutionDefinition> solutions,
-        IReadOnlyList<InterventionJustificationDefinition> justifications,
-        string justificationQuestion,
+    // Sword in the intervention room: pick a solution to try (no justification here).
+    public void OpenSolutions(IReadOnlyList<InterventionSolutionDefinition> solutions,
         string solutionQuestion = null)
     {
-        _solutionQuestion = solutionQuestion;
-        Open(solutions, justifications, justificationQuestion, true);
+        Open(solutions, Array.Empty<InterventionJustificationDefinition>(),
+            solutionQuestion, null, ChoiceStep.SOLUTION, false);
     }
 
     public void OpenRevision(IReadOnlyList<InterventionSolutionDefinition> solutions,
         string solutionQuestion = null)
     {
-        _solutionQuestion = solutionQuestion;
-        Open(
-            solutions,
-            Array.Empty<InterventionJustificationDefinition>(),
-            null,
-            false);
+        Open(solutions, Array.Empty<InterventionJustificationDefinition>(),
+            solutionQuestion, null, ChoiceStep.SOLUTION, true);
+    }
+
+    // Leaving the intervention room: the justifications plus "keep testing".
+    public void OpenExitJustification(
+        IReadOnlyList<InterventionJustificationDefinition> justifications,
+        string justificationQuestion)
+    {
+        Open(Array.Empty<InterventionSolutionDefinition>(), justifications,
+            null, justificationQuestion, ChoiceStep.JUSTIFICATION, false);
     }
 
     private void Open(
         IReadOnlyList<InterventionSolutionDefinition> solutions,
         IReadOnlyList<InterventionJustificationDefinition> justifications,
+        string solutionQuestion,
         string justificationQuestion,
-        bool requiresJustification)
+        ChoiceStep step,
+        bool isRevision)
     {
         _solutions = solutions;
         _justifications = justifications;
         _selectedIndex = 0;
-        _pendingSolution = null;
         _completedSolution = null;
         _completedJustification = null;
+        _continueTestingRequested = false;
+        _solutionQuestion = solutionQuestion;
         _justificationQuestion = justificationQuestion;
-        _choiceStep = ChoiceStep.SOLUTION;
-        _requiresJustification = requiresJustification;
+        _choiceStep = step;
+        _isRevision = isRevision;
     }
+
+    private bool IsOpen => _choiceStep == ChoiceStep.SOLUTION
+        ? _solutions is { Count: > 0 }
+        : _justifications is { Count: > 0 };
+
+    private int JustificationOptionCount => _justifications.Count + 1;
 
     public void Update(KeyboardState keyboardState, KeyboardState previousKeyboardState)
     {
-        if (_solutions == null || _solutions.Count == 0 ||
-            _completedSolution != null)
+        if (!IsOpen || _completedSolution != null || _completedJustification != null ||
+            _continueTestingRequested)
         {
             return;
         }
@@ -119,33 +136,34 @@ public sealed class InterventionChoiceMenu
         UpdateJustificationSelection(keyboardState, previousKeyboardState);
     }
 
-    public bool TryTakeCompletedFirstChoice(
-        out InterventionSolutionDefinition solution,
-        out InterventionJustificationDefinition justification)
+    public bool TryTakeCompletedSolution(out InterventionSolutionDefinition solution)
     {
         solution = _completedSolution;
-        justification = _completedJustification;
-
-        if (solution == null || justification == null || !_requiresJustification)
-        {
-            return false;
-        }
-
+        if (solution == null || _isRevision) return false;
         _completedSolution = null;
-        _completedJustification = null;
         return true;
     }
 
     public bool TryTakeCompletedRevision(out InterventionSolutionDefinition solution)
     {
         solution = _completedSolution;
-
-        if (solution == null || _requiresJustification || _completedJustification != null)
-        {
-            return false;
-        }
-
+        if (solution == null || !_isRevision) return false;
         _completedSolution = null;
+        return true;
+    }
+
+    public bool TryTakeExitJustification(out InterventionJustificationDefinition justification)
+    {
+        justification = _completedJustification;
+        if (justification == null) return false;
+        _completedJustification = null;
+        return true;
+    }
+
+    public bool TryTakeContinueTesting()
+    {
+        if (!_continueTestingRequested) return false;
+        _continueTestingRequested = false;
         return true;
     }
 
@@ -175,17 +193,7 @@ public sealed class InterventionChoiceMenu
 
         if (clicked || MenuInput.Confirm(keyboardState, previousKeyboardState))
         {
-            _pendingSolution = _solutions[_selectedIndex];
-
-            if (_requiresJustification)
-            {
-                _choiceStep = ChoiceStep.JUSTIFICATION;
-                _selectedIndex = 0;
-            }
-            else
-            {
-                _completedSolution = _pendingSolution;
-            }
+            _completedSolution = _solutions[_selectedIndex];
         }
     }
 
@@ -194,9 +202,10 @@ public sealed class InterventionChoiceMenu
         KeyboardState previousKeyboardState)
     {
         const int columns = 2;
+        int optionCount = JustificationOptionCount;
         int row = _selectedIndex / columns;
         int column = _selectedIndex % columns;
-        int rowCount = (_justifications.Count + columns - 1) / columns;
+        int rowCount = (optionCount + columns - 1) / columns;
 
         if (MenuInput.Left(keyboardState, previousKeyboardState))
         {
@@ -216,15 +225,15 @@ public sealed class InterventionChoiceMenu
         }
 
         int candidateIndex = row * columns + column;
-        if (candidateIndex < _justifications.Count)
+        if (candidateIndex < optionCount)
         {
             _selectedIndex = candidateIndex;
         }
 
         bool clicked = false;
-        for (int index = 0; index < _justifications.Count && !clicked; index++)
+        for (int index = 0; index < optionCount && !clicked; index++)
         {
-            Vector2 position = GetJustificationCardPosition(index);
+            Vector2 position = GetJustificationCardPosition(index, optionCount);
             clicked = UiPointer.UpdateOption(
                 new Rectangle((int)position.X, (int)position.Y,
                     JustificationCardWidth, JustificationCardHeight),
@@ -233,14 +242,17 @@ public sealed class InterventionChoiceMenu
 
         if (clicked || MenuInput.Confirm(keyboardState, previousKeyboardState))
         {
-            _completedSolution = _pendingSolution;
-            _completedJustification = _justifications[_selectedIndex];
+            // The last card is "keep testing": close without a justification.
+            if (_selectedIndex == _justifications.Count)
+                _continueTestingRequested = true;
+            else
+                _completedJustification = _justifications[_selectedIndex];
         }
     }
 
     public void Draw(SpriteBatch spriteBatch)
     {
-        if (_solutions == null || _solutions.Count == 0)
+        if (!IsOpen)
         {
             return;
         }
@@ -284,9 +296,9 @@ public sealed class InterventionChoiceMenu
 
     private void DrawSolutionStep(SpriteBatch spriteBatch)
     {
-        string question = _solutionQuestion ?? (_requiresJustification
-            ? "Que intervenção você aplicaria para resolver esse problema?"
-            : "Como você revisaria a intervenção para resolver o problema?");
+        string question = _solutionQuestion ?? (_isRevision
+            ? "Como você revisaria a intervenção para resolver o problema?"
+            : "Que intervenção você aplicaria para resolver esse problema?");
         DrawFittedSolutionText(spriteBatch, _solutionTitleFont, question,
             new Vector2(248.7f, 185.3f), new Vector2(1456.0f, 82.7f),
             PaperTextColor, 0.55f, true);
@@ -307,10 +319,15 @@ public sealed class InterventionChoiceMenu
         return new Vector2(x, CardTop);
     }
 
-    private static Vector2 GetJustificationCardPosition(int index)
+    private static Vector2 GetJustificationCardPosition(int index, int optionCount)
     {
         const int columns = 2;
-        return new Vector2(JustificationColumns[index % columns], JustificationRows[index / columns]);
+        // Up to four cards use two rows, centred on the three-row layout.
+        float rowOffset = optionCount <= 4
+            ? (JustificationRows[1] - JustificationRows[0]) / 2.0f
+            : 0.0f;
+        return new Vector2(JustificationColumns[index % columns],
+            JustificationRows[index / columns] + rowOffset);
     }
 
     private void DrawJustificationStep(SpriteBatch spriteBatch)
@@ -319,8 +336,12 @@ public sealed class InterventionChoiceMenu
             new Vector2(249.3f, 172.0f), new Vector2(1456.0f, 72.0f),
             PaperTextColor, 0.55f, true);
 
+        int optionCount = JustificationOptionCount;
         for (int index = 0; index < _justifications.Count; index++)
-            DrawJustificationCard(spriteBatch, GetJustificationCardPosition(index), _justifications[index], index);
+            DrawJustificationCard(spriteBatch, GetJustificationCardPosition(index, optionCount),
+                _justifications[index].Text, index, Color.White);
+        DrawJustificationCard(spriteBatch, GetJustificationCardPosition(_justifications.Count, optionCount),
+            ContinueTestingText, _justifications.Count, ContinueTestingTint);
     }
 
     private void DrawSolutionCard(
@@ -398,15 +419,16 @@ public sealed class InterventionChoiceMenu
     private void DrawJustificationCard(
         SpriteBatch spriteBatch,
         Vector2 position,
-        InterventionJustificationDefinition justification,
-        int index)
+        string text,
+        int index,
+        Color tint)
     {
         Texture2D texture = index == _selectedIndex ? _selectedJustificationCard : _justificationCard;
-        spriteBatch.Draw(texture, position, null, Color.White, 0.0f, Vector2.Zero,
+        spriteBatch.Draw(texture, position, null, tint, 0.0f, Vector2.Zero,
             new Vector2((float)JustificationCardWidth / texture.Width,
                 (float)JustificationCardHeight / texture.Height),
             SpriteEffects.None, 0.0f);
-        DrawFittedSolutionText(spriteBatch, _solutionBodyFont, justification.Text,
+        DrawFittedSolutionText(spriteBatch, _solutionBodyFont, text,
             position + new Vector2(TextPadding),
             new Vector2(JustificationCardWidth - TextPadding * 2,
                 JustificationCardHeight - TextPadding * 2),

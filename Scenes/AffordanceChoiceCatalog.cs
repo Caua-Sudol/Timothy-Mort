@@ -49,18 +49,13 @@ public static class AffordanceChoiceCatalog
     public static IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
         Array.AsReadOnly(new[]
         {
-            new InterventionJustificationDefinition(
-                "terrain_identification", "Reconhecer quais terrenos possuem um comportamento diferente"),
+            // Three options (expert test): one per kind of cue the solutions give.
             new InterventionJustificationDefinition(
                 "terrain_prediction", "Prever o comportamento do terreno antes de entrar em contato"),
             new InterventionJustificationDefinition(
-                "terrain_attention", "Chamar atenção para os terrenos que merecem ser observados"),
+                "terrain_identification", "Reconhecer quais terrenos possuem um comportamento diferente"),
             new InterventionJustificationDefinition(
-                "terrain_consistency", "Reconhecer em outros terrenos uma propriedade já experimentada"),
-            new InterventionJustificationDefinition(
-                "terrain_material", "Associar o material aparente ao comportamento do terreno"),
-            new InterventionJustificationDefinition(
-                "terrain_motion", "Usar o movimento do terreno como pista sobre seu comportamento")
+                "terrain_attention", "Chamar atenção para os terrenos que merecem ser observados")
         });
 
     public static IReadOnlyList<PresentedSolutionDefinition> CreateInitialSolutionPresentation(

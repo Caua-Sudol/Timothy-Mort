@@ -40,7 +40,7 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             new InterventionSolutionDefinition(
                 AnimateSolutionId,
                 "Animar",
-                "Dar às plataformas um movimento que mostre o que cada uma faz",
+                "Dar às plataformas que agem diferente um movimento que mostre o que elas fazem",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.IMPOSTOR_ANIMATE)
@@ -53,18 +53,13 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
     public IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
         Array.AsReadOnly(new[]
         {
+            // Three options (expert test): one per kind of answer the solutions give.
             new InterventionJustificationDefinition(
                 "concept_predict", "Prever o que cada plataforma faz antes de tocá-la"),
             new InterventionJustificationDefinition(
                 "concept_same_look", "Fazer plataformas iguais se comportarem do mesmo jeito"),
             new InterventionJustificationDefinition(
-                "concept_keep_new", "Manter os novos comportamentos disponíveis na travessia"),
-            new InterventionJustificationDefinition(
-                "concept_learned", "Aproveitar o que já foi aprendido nas fases anteriores"),
-            new InterventionJustificationDefinition(
-                "concept_surprise", "Evitar surpresas ao pisar nas plataformas"),
-            new InterventionJustificationDefinition(
-                "concept_fewer_rules", "Reduzir a quantidade de regras para lembrar")
+                "concept_keep_new", "Manter os novos comportamentos disponíveis na travessia")
         });
 
     private ConceptualModelsConstraintsChoiceCatalog()
@@ -132,9 +127,9 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             "então nada surpreende. Mas os novos comportamentos deixam de existir, " +
             "e a travessia perde as possibilidades que eles traziam.",
         AnimateSolutionId =>
-            "Animar mostra o comportamento pelo movimento: a gelatina balança, a que impulsiona estica " +
-            "para cima e as rochas soltam faíscas, azuis nas que ferem mais. Ajuda a prever o efeito, " +
-            "mas o aviso depende de observar o movimento: parada, a plataforma continua igual à já conhecida.",
+            "Animar mostra o comportamento pelo movimento: a gelatina que impulsiona estica para cima " +
+            "e a rocha que fere mais solta faíscas. Ajuda a prever o efeito, mas o aviso depende de " +
+            "observar o movimento: parada, a plataforma continua igual à já conhecida.",
         _ => "Nenhuma mudança foi escolhida para alinhar a aparência ao comportamento das plataformas."
     };
 

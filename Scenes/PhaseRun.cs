@@ -203,16 +203,27 @@ public sealed class PhaseRun : IDisposable
 
             _interventionChoiceMenu.Update(keyboardState, _previousKeyboardState);
 
-            if (_interventionChoiceMenu.TryTakeCompletedFirstChoice(
-                out InterventionSolutionDefinition solution,
-                out InterventionJustificationDefinition justification))
+            if (_interventionChoiceMenu.TryTakeCompletedSolution(
+                out InterventionSolutionDefinition solution))
             {
-                ApplyChoiceWithBlink(() => _phaseState.ApplyFirstChoice(solution, justification), solution.Id);
+                ApplyChoiceWithBlink(() => _phaseState.ApplySolution(solution), solution.Id);
             }
             else if (_interventionChoiceMenu.TryTakeCompletedRevision(
                 out InterventionSolutionDefinition revisionSolution))
             {
                 ApplyChoiceWithBlink(() => _phaseState.ApplyRevision(revisionSolution), revisionSolution.Id);
+            }
+            else if (_interventionChoiceMenu.TryTakeExitJustification(
+                out InterventionJustificationDefinition justification))
+            {
+                // The scene leaves through the exit on its next update.
+                _phaseState.SetJustification(justification);
+                _overlayState = OverlayState.NONE;
+            }
+            else if (_interventionChoiceMenu.TryTakeContinueTesting())
+            {
+                _scene.CancelInterventionExit();
+                _overlayState = OverlayState.NONE;
             }
 
             return;
@@ -288,14 +299,13 @@ public sealed class PhaseRun : IDisposable
                 return;
             }
 
-            // Room format: the choice can be changed until the player leaves the intervention.
+            // Room format: the sword tries solutions until the player leaves the intervention;
+            // the justification is asked at the exit.
             if (!_phaseState.HasFirstChoice ||
                 _phaseState.Definition.UsesRoomFormat && !_phaseState.ChoiceLocked)
             {
-                _interventionChoiceMenu.OpenInitial(
+                _interventionChoiceMenu.OpenSolutions(
                     GetOrCreateInitialSolutions(),
-                    GetOrCreateInitialJustifications(),
-                    _phaseState.ChoiceCatalog.JustificationQuestion,
                     _phaseState.ChoiceCatalog.SolutionQuestion);
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
@@ -314,6 +324,16 @@ public sealed class PhaseRun : IDisposable
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
+        }
+
+        // E at the intervention exit: justification, or "keep testing" to stay.
+        if (_scene.TryTakeInterventionExitRequest() && _phaseState != null)
+        {
+            _interventionChoiceMenu.OpenExitJustification(
+                GetOrCreateInitialJustifications(),
+                _phaseState.ChoiceCatalog.JustificationQuestion);
+            _overlayState = OverlayState.INTERVENTION_CHOICES;
+            return;
         }
 
         if (_scene.TryTakeScenarioTransition(

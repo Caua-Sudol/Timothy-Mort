@@ -258,6 +258,7 @@ public sealed class PhaseState
         Demonstration = null;
         SolutionSelectionCount = 0;
         HasRevision = false;
+        _triedSolutionIds.Clear();
         ChoiceLocked = false;
         _damageCalloutShown = false;
         _gelatinCalloutShown = false;
@@ -458,18 +459,18 @@ public sealed class PhaseState
         DamageInvulnerabilityRemainingSeconds = 0.0;
     }
 
-    public void ApplyFirstChoice(
-        InterventionSolutionDefinition solution,
-        InterventionJustificationDefinition justification)
+    // Solutions tried in the intervention room (distinct ids, in order of first use).
+    private readonly List<string> _triedSolutionIds = new();
+    public IReadOnlyList<string> TriedSolutionIds => _triedSolutionIds;
+    public bool HasJustification => !string.IsNullOrEmpty(FirstJustificationId);
+
+    // Room format: applying a solution at the sword is a test; it can be swapped freely
+    // until the player leaves the room. The justification is asked on leaving.
+    public void ApplySolution(InterventionSolutionDefinition solution)
     {
         if (solution == null)
         {
             throw new ArgumentNullException(nameof(solution));
-        }
-
-        if (justification == null)
-        {
-            throw new ArgumentNullException(nameof(justification));
         }
 
         bool canChangeChoice = _definition.UsesRoomFormat && !ChoiceLocked;
@@ -481,6 +482,31 @@ public sealed class PhaseState
         if (solution.ChoiceRound != SolutionChoiceRound.INITIAL)
         {
             throw new InvalidOperationException("A primeira escolha deve usar uma solucao inicial.");
+        }
+
+        // A change inside the intervention replaces the choice; the count keeps every pick.
+        SolutionSelectionCount = HasFirstChoice ? SolutionSelectionCount + 1 : 1;
+        if (HasFirstChoice && solution.Id != AppliedSolutionId)
+            HasRevision = true;
+        if (!_triedSolutionIds.Contains(solution.Id))
+            _triedSolutionIds.Add(solution.Id);
+        FirstSolutionId = solution.Id;
+        AppliedSolutionId = solution.Id;
+        VerticalRouteRevealed = true;
+        _appliedSolutionAllowsExit = solution.OpensExitDoor;
+    }
+
+    // Asked when the player leaves the intervention room with a solution applied.
+    public void SetJustification(InterventionJustificationDefinition justification)
+    {
+        if (justification == null)
+        {
+            throw new ArgumentNullException(nameof(justification));
+        }
+
+        if (!HasFirstChoice)
+        {
+            throw new InvalidOperationException("A justificativa exige uma solucao aplicada.");
         }
 
         if (!HasInitialJustificationPresentation)
@@ -495,13 +521,7 @@ public sealed class PhaseState
                 $"A justificativa {justification.Id} nao pertence a apresentacao inicial da fase.");
         }
 
-        // A change inside the intervention replaces the choice; the count keeps every pick.
-        SolutionSelectionCount = HasFirstChoice ? SolutionSelectionCount + 1 : 1;
-        FirstSolutionId = solution.Id;
         FirstJustificationId = justification.Id;
-        AppliedSolutionId = solution.Id;
-        VerticalRouteRevealed = true;
-        _appliedSolutionAllowsExit = solution.OpensExitDoor;
     }
 
     private bool InitialJustificationPresentationContains(string justificationId)

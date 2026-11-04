@@ -44,7 +44,9 @@ public sealed class GameViewport
     public void BeginDraw(GraphicsDevice graphicsDevice)
     {
         graphicsDevice.SetRenderTarget(_renderTarget);
-        graphicsDevice.Clear(Color.CornflowerBlue);
+        // Charcoal blue (#15191F, as in the menus): areas without art, such as outside the
+        // room during Mort's zoom, stay dark instead of showing a bright default blue.
+        graphicsDevice.Clear(new Color(21, 25, 31));
     }
 
     public void Present(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch)

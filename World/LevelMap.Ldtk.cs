@@ -595,8 +595,7 @@ public partial class LevelMap
         return hidden;
     }
 
-    private static readonly Color HotEmberColor = new Color(255, 140, 50);
-    private static readonly Color ImpostorEmberColor = new Color(90, 170, 255);
+    private static readonly Color ImpostorEmberColor = new Color(230, 50, 40);
 
     private bool IsInsideImpostor(Point point) =>
         _trampolineGelatins.Any(g => g.Contains(point)) ||
@@ -618,16 +617,15 @@ public partial class LevelMap
                 ? _trampolineGelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center))
                 : Rectangle.Empty;
             Rectangle destination = tile.Bounds;
-            // Animar (phase 3): the mini-jump stretches up, the known gelatin wobbles.
+            // Animar (phase 3): only the mini-jump moves (stretches up); the known gelatin stays still.
             if (miniJump.Width > 0)
                 destination = MapIntoAnimatedVolume(tile.Bounds, miniJump, GetMiniJumpVisualBounds(miniJump));
-            else if (gelatin.Width > 0 && (animate || modules.HasFlag(SolutionVisualModule.GELATIN_JELLY_MOTION)))
-                destination = MapIntoAnimatedVolume(tile.Bounds, gelatin,
-                    GetGelatinVisualBounds(gelatin, modules | SolutionVisualModule.GELATIN_JELLY_MOTION));
+            else if (gelatin.Width > 0 && modules.HasFlag(SolutionVisualModule.GELATIN_JELLY_MOTION))
+                destination = MapIntoAnimatedVolume(tile.Bounds, gelatin, GetGelatinVisualBounds(gelatin, modules));
             batch.Draw(_ldtkTextures[tile.TilesetUid], destination, tile.Source, Color.White * tile.Alpha,
                 0, Vector2.Zero, tile.Flip, 0);
         }
-        if (animate && !background) DrawHotRockEmbers(batch);
+        if (animate && !background) DrawImpostorRockEmbers(batch);
     }
 
     // Transform shared edges relative to the whole volume so adjacent tiles
@@ -654,12 +652,12 @@ public partial class LevelMap
             volume.Width - squeeze * 2, volume.Height + stretch);
     }
 
-    // Embers rising from hot rocks; blue on the impostor rocks.
-    private void DrawHotRockEmbers(SpriteBatch batch)
+    // Animar: red embers rising from the impostor rocks only (the known hot rock stays still).
+    private void DrawImpostorRockEmbers(SpriteBatch batch)
     {
-        foreach (Rectangle rock in _hotSurfaces)
+        foreach (Rectangle rock in _impostorRocks)
         {
-            Color color = _impostorRocks.Contains(rock) ? ImpostorEmberColor : HotEmberColor;
+            Color color = ImpostorEmberColor;
             int count = Math.Max(1, rock.Width / 32);
             for (int i = 0; i < count; i++)
             {

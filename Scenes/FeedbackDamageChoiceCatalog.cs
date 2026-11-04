@@ -53,18 +53,13 @@ public sealed class FeedbackDamageChoiceCatalog : IInterventionChoiceCatalog
     public IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
         Array.AsReadOnly(new[]
         {
-            new InterventionJustificationDefinition(
-                "damage_moment", "Perceber o instante em que o personagem se fere"),
+            // Three options (expert test): one per kind of cue the solutions give.
             new InterventionJustificationDefinition(
                 "damage_source", "Relacionar o dano à superfície que o causou"),
             new InterventionJustificationDefinition(
                 "damage_amount", "Saber quanta vida foi perdida"),
             new InterventionJustificationDefinition(
-                "damage_escape", "Afastar o personagem do perigo depois do contato"),
-            new InterventionJustificationDefinition(
-                "damage_attention", "Chamar atenção para o dano, mesmo olhando para outro ponto da tela"),
-            new InterventionJustificationDefinition(
-                "damage_next_action", "Entender o que fazer depois de se ferir")
+                "damage_attention", "Chamar atenção para o dano, mesmo olhando para outro ponto da tela")
         });
 
     private FeedbackDamageChoiceCatalog()

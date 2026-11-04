@@ -62,7 +62,7 @@ public enum SolutionVisualModule : long
     // Phase 3 solutions for the impostor gelatins and rocks.
     IMPOSTOR_DIFFERENTIATE = 549755813888L,
     IMPOSTOR_RESTORE = 1099511627776L,
-    // Animar: gelatins wobble, mini-jumps stretch up, hot rocks give off embers (blue on impostors).
+    // Animar: only the impostors move (the mini-jump stretches up, the impostor rock gives off red embers).
     IMPOSTOR_ANIMATE = 2199023255552L
 }
 

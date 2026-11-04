@@ -38,7 +38,8 @@ public class Scene
         get
         {
             Rectangle reach = _player.HitBox;
-            reach.Inflate(64, 24);
+            // Taller reach (was 24) so E works from a slightly higher or lower step.
+            reach.Inflate(64, 64);
             return reach;
         }
     }
@@ -232,6 +233,8 @@ private Vector2 _checkpoint;
         _requestedScenarioId = null;
         _requestedSpawnId = null;
         _interventionTrigger.Reset();
+        _pendingInterventionExit = null;
+        _interventionExitRequested = false;
         SyncInterventionState();
         _usedGelatins.Clear();
         _playerWasTouchingSolidSurface = false;
@@ -392,6 +395,8 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
         _requestedScenarioId = null;
         _requestedSpawnId = null;
         _interventionTrigger.Reset();
+        _pendingInterventionExit = null;
+        _interventionExitRequested = false;
         SyncInterventionState();
         ConfigureExitDoor();
 
@@ -416,6 +421,20 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
 
     public bool TryTakeInterventionButtonActivation() => _interventionTrigger.TryTakeActivation();
 
+    // E at the intervention exit with a solution applied: PhaseRun asks the justification.
+    private SceneExit _pendingInterventionExit;
+    private bool _interventionExitRequested;
+
+    public bool TryTakeInterventionExitRequest()
+    {
+        if (!_interventionExitRequested) return false;
+        _interventionExitRequested = false;
+        return true;
+    }
+
+    // "Continuar testando soluções": stay in the intervention room.
+    public void CancelInterventionExit() => _pendingInterventionExit = null;
+
     public void ResyncPlayerInput() => _player.ResyncInput();
 
     // Room 2's way to room 3 stays blocked until a first solution is chosen in the intervention:
@@ -432,7 +451,10 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
     // RoomBack exits lead to "retorno_tela" and stay unmarked.
     private IEnumerable<SceneExit> GetLitExits()
     {
-        if (!(UsesRoomFormat || _isTutorial) || IsInterventionRoom) return Enumerable.Empty<SceneExit>();
+        if (!(UsesRoomFormat || _isTutorial)) return Enumerable.Empty<SceneExit>();
+        // Intervention exit: lit once a solution is applied (drawn dark before that).
+        if (IsInterventionRoom)
+            return _phaseState.HasFirstChoice ? _map.SceneExits : Enumerable.Empty<SceneExit>();
         var barriers = GetRoom3Barriers().ToList();
         return _map.SceneExits.Where(exit =>
             exit.DestinationSpawnId != "retorno_tela" && !barriers.Contains(exit) &&
@@ -481,6 +503,12 @@ private void UpdatePlaying(Camera camera, double deltaTime)
                 _player.HitBox.Bottom + 8));
         }
 
+        // Sword: a simple effect, stronger after the first solution (inviting a second test),
+        // back to simple once a second solution has been tried.
+        _interventionTrigger.Emphasis =
+            !IsInterventionRoom || _phaseState.ChoiceLocked ? SwordEmphasis.NONE
+            : _phaseState.TriedSolutionIds.Count == 1 ? SwordEmphasis.STRONG
+            : SwordEmphasis.SIMPLE;
         _interventionTrigger.Update(
             _map.InterventionButtons, _player.HitBox, _player.IsGrounded,
             UsesRoomFormat, _interactPressed, deltaTime);
@@ -546,8 +574,33 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             StartMortCallout(MortDialogueCatalog.Room3Barrier);
             return;
         }
-        if (sceneExit != null && (!IsInterventionRoom || _interactPressed))
+        // Intervention exit touched before any solution: back to the start, Mort points to the sword.
+        if (IsInterventionRoom && !_phaseState.HasFirstChoice &&
+            _map.SceneExits.Any(exit => exit.Bounds.Intersects(_player.HitBox)))
         {
+            RespawnPlayer(camera);
+            _respawnEffectTime = 0.22f;
+            StartMortCallout(MortDialogueCatalog.InterventionExitBlocked);
+            return;
+        }
+        // The justification was given in PhaseRun's menu: leave through the exit used.
+        bool leavesAfterJustification = false;
+        if (_pendingInterventionExit != null && _phaseState?.HasJustification == true)
+        {
+            sceneExit = _pendingInterventionExit;
+            _pendingInterventionExit = null;
+            leavesAfterJustification = true;
+        }
+        if (sceneExit != null && (!IsInterventionRoom || _interactPressed || leavesAfterJustification) &&
+            (!IsInterventionRoom || _phaseState.HasFirstChoice))
+        {
+            if (IsInterventionRoom && !_phaseState.HasJustification)
+            {
+                // Leaving asks the justification first ("keep testing" stays in the room).
+                _pendingInterventionExit = sceneExit;
+                _interventionExitRequested = true;
+                return;
+            }
             // Leaving the intervention with a solution makes the choice final.
             if (IsInterventionRoom) _phaseState.LockChoice();
             _requestedScenarioId = sceneExit.DestinationScenarioId;
@@ -580,6 +633,17 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             _player,
             GetSolidColliders(),
             deltaTime);
+
+        // Invisible side walls in every LDtk room: no walking out through the left or right edge.
+        if (_map.IsLdtk && !_useAdditionalCollidersOnly)
+        {
+            Rectangle body = _player.HitBox;
+            int shift = body.Left < 0 ? -body.Left
+                : body.Right > _map.WidthInPixels ? _map.WidthInPixels - body.Right
+                : 0;
+            if (shift != 0)
+                _player.Position += new Vector2(shift, 0);
+        }
     }
 
     private IEnumerable<Rectangle> GetSolidColliders()
@@ -1536,7 +1600,11 @@ private static bool RectanglesTouchOrIntersect(
             spriteBatch.End();
         }
 
-        var blockedExits = GetRoom3Barriers().ToList();
+        // Blocked passages and the intervention exit before any solution show a dark light.
+        var blockedExits = GetRoom3Barriers()
+            .Concat(IsInterventionRoom && !_phaseState.HasFirstChoice
+                ? _map.SceneExits : Enumerable.Empty<SceneExit>())
+            .ToList();
         if (blockedExits.Count > 0)
         {
             spriteBatch.Begin(samplerState: SamplerState.LinearClamp, transformMatrix: cameraTransform);
@@ -1651,7 +1719,8 @@ private static bool RectanglesTouchOrIntersect(
                 FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols, entrance.Bounds, _passageTime);
                 DrawInteractionPrompt(spriteBatch, entrance.Bounds);
             }
-        if (IsInterventionRoom)
+        // The exit only invites interaction once a solution is applied.
+        if (IsInterventionRoom && _phaseState.HasFirstChoice)
             foreach (SceneExit exit in _map.SceneExits)
             {
                 FloatingPassageSymbols.Draw(spriteBatch, _passageSymbols, exit.Bounds, _passageTime);

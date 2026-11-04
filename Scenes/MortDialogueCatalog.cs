@@ -12,6 +12,9 @@ public static class MortDialogueCatalog
     public const string Room3Barrier =
         "Ainda não dá para seguir. Precisamos passar na sala da intervenção!";
 
+    // Intervention room exit touched before any solution was applied.
+    public const string InterventionExitBlocked = "Antes de sair, use a espada.";
+
     // The dash tip moved to the tutorial and to the gelatin balloon below.
     public static readonly string[] Introduction =
     {
@@ -52,7 +55,7 @@ public static class MortDialogueCatalog
         ConceptualModelsConstraintsChoiceCatalog.RestoreSolutionId =>
             "Agora todas fazem o que você já conhecia. Nada de surpresas... mas o que perdemos?",
         ConceptualModelsConstraintsChoiceCatalog.AnimateSolutionId =>
-            "Agora elas se mexem do jeito que agem. Repare no movimento antes de pisar.",
+            "Agora as diferentes se mexem do jeito que agem. Repare no movimento antes de pisar.",
         _ => "Experimente e veja se ajuda."
     };
 
