@@ -522,11 +522,10 @@ public partial class LevelMap
             return SolutionVisualModule.GELATIN_COLOR;
         if (string.Equals(name, "solucao_mark", StringComparison.OrdinalIgnoreCase))
             return SolutionVisualModule.GELATIN_TERRAIN_MARK;
-        // Phase 3: new art for the impostors (Diferenciar) or plain solid art (Neutralizar).
-        if (string.Equals(name, "solucao_diferenciar", StringComparison.OrdinalIgnoreCase))
+        // Phase 3 (Diferenciar): mini-jump and blue fire art cover the impostors' normal art.
+        if (name.StartsWith("mini_jump", StringComparison.OrdinalIgnoreCase) ||
+            name.StartsWith("blue_fire", StringComparison.OrdinalIgnoreCase))
             return SolutionVisualModule.IMPOSTOR_DIFFERENTIATE;
-        if (string.Equals(name, "solucao_neutralizar", StringComparison.OrdinalIgnoreCase))
-            return SolutionVisualModule.IMPOSTOR_NEUTRALIZE;
         return SolutionVisualModule.NONE;
     }
 
@@ -596,8 +595,8 @@ public partial class LevelMap
         return hidden;
     }
 
-    private static readonly Color DifferentiatePlaceholderTint = new Color(170, 120, 255);
-    private static readonly Color NeutralizePlaceholderTint = new Color(140, 140, 140);
+    private static readonly Color HotEmberColor = new Color(255, 140, 50);
+    private static readonly Color ImpostorEmberColor = new Color(90, 170, 255);
 
     private bool IsInsideImpostor(Point point) =>
         _trampolineGelatins.Any(g => g.Contains(point)) ||
@@ -606,6 +605,7 @@ public partial class LevelMap
     private void DrawLdtk(SpriteBatch batch, SolutionVisualModule modules, bool background = false)
     {
         HashSet<int> hidden = GetHiddenLdtkTiles(modules, background);
+        bool animate = modules.HasFlag(SolutionVisualModule.IMPOSTOR_ANIMATE);
         for (int index = 0; index < _ldtkTiles.Count; index++)
         {
             var tile = _ldtkTiles[index];
@@ -614,33 +614,65 @@ public partial class LevelMap
                 continue;
             if (hidden.Contains(index)) continue;
             var gelatin = _gelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center));
-            Color tint = Color.White;
-            // Placeholder until the phase 3 art exists: base tiles of impostors get a tint.
-            // Where solution art covers them they are hidden above, so the tint goes away.
-            if (tile.Solution == SolutionVisualModule.NONE && IsInsideImpostor(tile.Bounds.Center))
-            {
-                if (modules.HasFlag(SolutionVisualModule.IMPOSTOR_DIFFERENTIATE))
-                    tint = DifferentiatePlaceholderTint;
-                else if (modules.HasFlag(SolutionVisualModule.IMPOSTOR_NEUTRALIZE))
-                    tint = NeutralizePlaceholderTint;
-            }
+            var miniJump = animate
+                ? _trampolineGelatins.FirstOrDefault(g => g.Contains(tile.Bounds.Center))
+                : Rectangle.Empty;
             Rectangle destination = tile.Bounds;
-            if (gelatin.Width > 0 && modules.HasFlag(SolutionVisualModule.GELATIN_JELLY_MOTION))
-            {
-                Rectangle animated = GetGelatinVisualBounds(gelatin, modules);
-                // Transform shared edges relative to the whole volume so adjacent tiles
-                // and correction layers deform together instead of opening seams.
-                int MapX(int x) => animated.X + (int)Math.Round(
-                    (x - gelatin.X) * (double)animated.Width / gelatin.Width);
-                int MapY(int y) => animated.Y + (int)Math.Round(
-                    (y - gelatin.Y) * (double)animated.Height / gelatin.Height);
-                int left = MapX(tile.Bounds.Left);
-                int top = MapY(tile.Bounds.Top);
-                destination = new Rectangle(left, top,
-                    MapX(tile.Bounds.Right) - left, MapY(tile.Bounds.Bottom) - top);
-            }
-            batch.Draw(_ldtkTextures[tile.TilesetUid], destination, tile.Source, tint * tile.Alpha,
+            // Animar (phase 3): the mini-jump stretches up, the known gelatin wobbles.
+            if (miniJump.Width > 0)
+                destination = MapIntoAnimatedVolume(tile.Bounds, miniJump, GetMiniJumpVisualBounds(miniJump));
+            else if (gelatin.Width > 0 && (animate || modules.HasFlag(SolutionVisualModule.GELATIN_JELLY_MOTION)))
+                destination = MapIntoAnimatedVolume(tile.Bounds, gelatin,
+                    GetGelatinVisualBounds(gelatin, modules | SolutionVisualModule.GELATIN_JELLY_MOTION));
+            batch.Draw(_ldtkTextures[tile.TilesetUid], destination, tile.Source, Color.White * tile.Alpha,
                 0, Vector2.Zero, tile.Flip, 0);
+        }
+        if (animate && !background) DrawHotRockEmbers(batch);
+    }
+
+    // Transform shared edges relative to the whole volume so adjacent tiles
+    // and correction layers deform together instead of opening seams.
+    private static Rectangle MapIntoAnimatedVolume(Rectangle bounds, Rectangle volume, Rectangle animated)
+    {
+        int MapX(int x) => animated.X + (int)Math.Round(
+            (x - volume.X) * (double)animated.Width / volume.Width);
+        int MapY(int y) => animated.Y + (int)Math.Round(
+            (y - volume.Y) * (double)animated.Height / volume.Height);
+        int left = MapX(bounds.Left);
+        int top = MapY(bounds.Top);
+        return new Rectangle(left, top, MapX(bounds.Right) - left, MapY(bounds.Bottom) - top);
+    }
+
+    // Like a spring: stretches up from its base, then a short squash, hinting at the jump.
+    private Rectangle GetMiniJumpVisualBounds(Rectangle volume)
+    {
+        double wave = Math.Sin(_visualEffectTime * 3.0 + volume.X * 0.01);
+        double amount = wave > 0 ? wave : wave * 0.35;
+        int stretch = (int)Math.Round(amount * Math.Min(18, volume.Height / 4));
+        int squeeze = stretch / 3;
+        return new Rectangle(volume.X + squeeze, volume.Y - stretch,
+            volume.Width - squeeze * 2, volume.Height + stretch);
+    }
+
+    // Embers rising from hot rocks; blue on the impostor rocks.
+    private void DrawHotRockEmbers(SpriteBatch batch)
+    {
+        foreach (Rectangle rock in _hotSurfaces)
+        {
+            Color color = _impostorRocks.Contains(rock) ? ImpostorEmberColor : HotEmberColor;
+            int count = Math.Max(1, rock.Width / 32);
+            for (int i = 0; i < count; i++)
+            {
+                // Each ember has its own cycle offset so they rise out of step.
+                double cycle = (_visualEffectTime * 0.7 + i * 0.37 + rock.X * 0.013) % 1.0;
+                float x = rock.X + (i + 0.5f) * rock.Width / count +
+                          (float)Math.Sin((_visualEffectTime + i) * 3.0) * 4f;
+                float y = rock.Y - (float)cycle * 40f;
+                int size = cycle < 0.5 ? 6 : 4;
+                batch.Draw(_platformTexture,
+                    new Rectangle((int)x - size / 2, (int)y - size / 2, size, size),
+                    color * (float)(1.0 - cycle));
+            }
         }
     }
 }

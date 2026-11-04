@@ -210,16 +210,11 @@ private Vector2 _checkpoint;
     private IEnumerable<Rectangle> GetGelatinVolumes(bool verticalRouteRevealed)
     {
         if (_useAdditionalCollidersOnly) return _additionalGelatinVolumes;
-        bool neutralized = ImpostorsNeutralized;
         return _map.GetGelatinVolumes(verticalRouteRevealed)
-            // Neutralizar: the trampoline impostors stop being gelatin (they turn solid).
-            .Where(gelatin => !neutralized || !_map.IsTrampolineGelatin(gelatin))
             .Concat(_additionalGelatinVolumes);
     }
 
-    // Phase 3 solutions for the impostor gelatins and rocks.
-    private bool ImpostorsNeutralized =>
-        GetAppliedVisualModules().HasFlag(SolutionVisualModule.IMPOSTOR_NEUTRALIZE);
+    // Phase 3: Restaurar makes the impostors act like the known gelatin and hot rock.
     private bool ImpostorsRestored =>
         GetAppliedVisualModules().HasFlag(SolutionVisualModule.IMPOSTOR_RESTORE);
 
@@ -598,8 +593,6 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             .Concat(_exitDoor.Collider.HasValue
                 ? new[] { _exitDoor.Collider.Value }
                 : Enumerable.Empty<Rectangle>())
-            // Neutralizar: the trampoline impostors become plain solid platforms.
-            .Concat(ImpostorsNeutralized ? _map.TrampolineGelatins : Enumerable.Empty<Rectangle>())
             .Concat(_additionalSolidColliders);
     }
 
@@ -667,8 +660,6 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         Rectangle? touchedSurface = null;
         foreach (Rectangle surface in _map.HotSurfaces)
         {
-            // Neutralizar: the impostor rock is plain solid ground and does not hurt.
-            if (ImpostorsNeutralized && _map.IsImpostorRock(surface)) continue;
             if (RectanglesTouchOrIntersect(playerBounds, surface))
             {
                 touchedSurface = surface;

@@ -59,10 +59,11 @@ public enum SolutionVisualModule : long
     // Phase 2 solutions (effects drawn in Ckp 4).
     DAMAGE_HEART_CRACK = 137438953472L,
     DAMAGE_SCREEN_SHAKE = 274877906944L,
-    // Phase 3 solutions for the impostor gelatins and rocks (effects in Ckp 10).
+    // Phase 3 solutions for the impostor gelatins and rocks.
     IMPOSTOR_DIFFERENTIATE = 549755813888L,
     IMPOSTOR_RESTORE = 1099511627776L,
-    IMPOSTOR_NEUTRALIZE = 2199023255552L
+    // Animar: gelatins wobble, mini-jumps stretch up, hot rocks give off embers (blue on impostors).
+    IMPOSTOR_ANIMATE = 2199023255552L
 }
 
 public sealed class InterventionSolutionDefinition

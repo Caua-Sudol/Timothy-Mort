@@ -51,8 +51,8 @@ public static class MortDialogueCatalog
             "Pronto, as diferentes ganharam outra cor. Agora dá para saber o que esperar antes de pisar.",
         ConceptualModelsConstraintsChoiceCatalog.RestoreSolutionId =>
             "Agora todas fazem o que você já conhecia. Nada de surpresas... mas o que perdemos?",
-        ConceptualModelsConstraintsChoiceCatalog.NeutralizeSolutionId =>
-            "Agora as diferentes viraram chão comum. O engano sumiu... e o efeito delas também.",
+        ConceptualModelsConstraintsChoiceCatalog.AnimateSolutionId =>
+            "Agora elas se mexem do jeito que agem. Repare no movimento antes de pisar.",
         _ => "Experimente e veja se ajuda."
     };
 

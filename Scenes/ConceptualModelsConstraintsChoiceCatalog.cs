@@ -9,7 +9,7 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
 {
     public const string DifferentiateSolutionId = "concept_differentiate";
     public const string RestoreSolutionId = "concept_restore";
-    public const string NeutralizeSolutionId = "concept_neutralize";
+    public const string AnimateSolutionId = "concept_animate";
 
     public static ConceptualModelsConstraintsChoiceCatalog Instance { get; } =
         new ConceptualModelsConstraintsChoiceCatalog();
@@ -38,12 +38,12 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
                 SolutionChoiceRound.INITIAL,
                 SolutionVisualModule.IMPOSTOR_RESTORE),
             new InterventionSolutionDefinition(
-                NeutralizeSolutionId,
-                "Neutralizar",
-                "Transformar as plataformas que agem diferente em plataformas sólidas comuns",
+                AnimateSolutionId,
+                "Animar",
+                "Dar às plataformas um movimento que mostre o que cada uma faz",
                 SolutionQuality.PARTIAL,
                 SolutionChoiceRound.INITIAL,
-                SolutionVisualModule.IMPOSTOR_NEUTRALIZE)
+                SolutionVisualModule.IMPOSTOR_ANIMATE)
         });
 
     // The choice can be changed inside the intervention room; there is no revision round.
@@ -117,7 +117,7 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
     {
         DifferentiateSolutionId => "Pista de aparência",
         RestoreSolutionId => "Consistência com o já conhecido",
-        NeutralizeSolutionId => "Remoção do comportamento",
+        AnimateSolutionId => "Pista de movimento",
         _ => "Sem escolha"
     };
 
@@ -131,10 +131,10 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
             "Restaurar faz a aparência voltar a corresponder ao comportamento já conhecido, " +
             "então nada surpreende. Mas os novos comportamentos deixam de existir, " +
             "e a travessia perde as possibilidades que eles traziam.",
-        NeutralizeSolutionId =>
-            "Neutralizar troca as plataformas que enganavam por plataformas sólidas comuns. " +
-            "O engano desaparece, mas junto com ele somem tanto os efeitos novos quanto os conhecidos " +
-            "nesses pontos: o problema é evitado, e não comunicado.",
+        AnimateSolutionId =>
+            "Animar mostra o comportamento pelo movimento: a gelatina balança, a que impulsiona estica " +
+            "para cima e as rochas soltam faíscas, azuis nas que ferem mais. Ajuda a prever o efeito, " +
+            "mas o aviso depende de observar o movimento: parada, a plataforma continua igual à já conhecida.",
         _ => "Nenhuma mudança foi escolhida para alinhar a aparência ao comportamento das plataformas."
     };
 

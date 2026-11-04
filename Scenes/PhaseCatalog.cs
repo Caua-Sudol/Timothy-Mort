@@ -73,7 +73,6 @@ public static class PhaseCatalog
             ConceptualModelsConstraintsSettings.MaximumHealth,
             ConceptualModelsConstraintsSettings.InvulnerabilityDurationSeconds,
             ConceptualModelsConstraintsSettings.BaseVisualModules,
-            ConceptualModelsConstraintsSettings.ExitHealthThreshold,
             roomScenarioIds: new[]
             {
                 ScenarioCatalog.ConceptualModelsConstraintsScenarioId,
