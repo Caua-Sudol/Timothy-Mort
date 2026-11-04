@@ -21,11 +21,13 @@ public sealed class PhaseResultScreen
     // Affinity layout, measured from the top-left of a 1920 x 1080 document.
     private float SummaryX => _dimensions.X * (321.3f / 1920.0f);
     private float SummaryWidth => _dimensions.X * (480.0f / 1920.0f);
-    private float SummaryHeight => _dimensions.Y * (477.3f / 1080.0f);
+    // Headings sit closer to the title and both columns use the space down to the footer,
+    // so the explanation keeps a readable size (it used to fit in 239 px only).
+    private float SummaryHeight => _dimensions.Y * (560.0f / 1080.0f);
     private float ExplanationX => _dimensions.X * (960.0f / 1920.0f);
     private float ExplanationWidth => _dimensions.X * (722.5f / 1920.0f);
-    private float ExplanationHeight => _dimensions.Y * (238.7f / 1080.0f);
-    private float HeadingY => _dimensions.Y * (409.3f / 1080.0f);
+    private float ExplanationHeight => _dimensions.Y * (560.0f / 1080.0f);
+    private float HeadingY => _dimensions.Y * (310.0f / 1080.0f);
     private float BodyY => HeadingY + (_font.LineSpacing + 24.0f) * _columnScale;
     private float FooterY => _dimensions.Y * 0.83f;
 

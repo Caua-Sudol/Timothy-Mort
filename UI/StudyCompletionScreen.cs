@@ -34,9 +34,11 @@ public sealed class StudyCompletionScreen
     public StudyCompletionScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions, Texture2D symbols)
     {
         _presentation = new PhaseIntroductionScreen(titleFont, font, dimensions, symbols);
-        // Wider and taller than the introduction so the text keeps a readable size;
-        // the height stops just above the navigation line.
-        _presentation.SetBodyArea(0.10f, 0.80f, 0.47f);
+        // Two blocks so each keeps a readable size: summary on the left, how to send on
+        // the right. The height stops just above the navigation line; short blocks may grow.
+        _presentation.SetBodyArea(0.08f, 0.38f, 0.47f);
+        _presentation.SetSecondColumn(0.52f, 0.42f);
+        _presentation.SetMaximumBodyScale(1.2f);
     }
 
     public void Open(
@@ -121,30 +123,35 @@ public sealed class StudyCompletionScreen
 
     private void RefreshPresentation()
     {
-        var text = new StringBuilder();
-        text.AppendLine($"Sessão: {_session.PublicCode}");
-        text.AppendLine();
-
+        // Left block: what was played.
+        var summary = new StringBuilder();
+        summary.AppendLine("RESUMO");
+        summary.AppendLine($"Sessão: {_session.PublicCode}");
         foreach (PhaseCompletionData phase in _session.Phases)
         {
             long totalSeconds = (long)Math.Floor(phase.ActiveSeconds);
             string title = PhaseIntroductionCatalog.Get(phase.PhaseId).Title;
-            text.AppendLine(title);
-            text.AppendLine(
-                $"  Escolha: {GetSolutionTitle(phase)} | " +
-                $"Tempo: {totalSeconds / 60:00}:{totalSeconds % 60:00} | " +
-                $"Mortes: {phase.TotalDeaths}");
+            summary.AppendLine();
+            summary.AppendLine(title);
+            summary.AppendLine(
+                $"{GetSolutionTitle(phase)} · {totalSeconds / 60:00}:{totalSeconds % 60:00} · " +
+                $"{phase.TotalDeaths} mortes");
         }
 
-        text.AppendLine();
+        // Right block: how to send the data.
+        var text = new StringBuilder();
+        text.AppendLine("COMO ENVIAR");
         if (!string.IsNullOrEmpty(_exportPath))
         {
-            // Folder and file name on separate lines, so the long path does not shrink the text.
-            text.AppendLine("1. Seus dados foram salvos neste arquivo:");
-            text.AppendLine("   Pasta: " + Path.GetDirectoryName(_exportPath));
-            text.AppendLine("   Arquivo: " + Path.GetFileName(_exportPath));
+            text.AppendLine("1. Seus dados foram salvos em:");
+            // The folder path is broken at its separators so it does not shrink the block.
+            text.AppendLine(BreakPath(Path.GetDirectoryName(_exportPath)));
+            text.AppendLine(Path.GetFileName(_exportPath));
+            text.AppendLine();
             text.AppendLine("2. Aperte O para abrir a pasta.");
-            text.AppendLine($"3. Envie o arquivo para {ResearchStudyConfiguration.ResearchEmail}");
+            text.AppendLine();
+            text.AppendLine("3. Envie o arquivo para");
+            text.AppendLine(ResearchStudyConfiguration.ResearchEmail);
         }
         else
         {
@@ -162,9 +169,31 @@ public sealed class StudyCompletionScreen
             (!string.IsNullOrEmpty(_exportPath) ? "O: abrir pasta    " : "") +
             "R: exportar novamente" +
             (CanLeave ? "    Enter: voltar ao seletor" : "");
-        _presentation.Open("PESQUISA CONCLUÍDA", text.ToString(), navigation);
+        _presentation.Open("PESQUISA CONCLUÍDA", summary.ToString(), navigation, text.ToString());
         // Session data and export status are shown at once, without typing.
         _presentation.CompleteTyping();
+    }
+
+    // Splits a long folder path into lines of about 32 characters, always after a separator,
+    // so the path stays complete but does not force the whole block to a small size.
+    private static string BreakPath(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return string.Empty;
+        const int lineLength = 32;
+        var result = new StringBuilder();
+        int lineStart = 0;
+        for (int index = 0; index < path.Length; index++)
+        {
+            bool separator = path[index] == Path.DirectorySeparatorChar ||
+                             path[index] == Path.AltDirectorySeparatorChar;
+            if (separator && index - lineStart >= lineLength)
+            {
+                result.Append(path, lineStart, index + 1 - lineStart).Append('\n');
+                lineStart = index + 1;
+            }
+        }
+        result.Append(path, lineStart, path.Length - lineStart);
+        return result.ToString();
     }
 
     private static string GetSolutionTitle(PhaseCompletionData phase)

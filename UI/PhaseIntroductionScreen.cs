@@ -25,6 +25,13 @@ public sealed class PhaseIntroductionScreen
     private float _bodyX = 0.18f;
     private float _bodyWidth = 0.64f;
     private float _bodyHeight = 0.43f;
+    // Largest body scale; the final screen lets short blocks grow a little.
+    private float _maximumBodyScale = BodyScale;
+    // Optional second column (final screen), drawn beside the body; off by default.
+    private string _secondBody = string.Empty;
+    private float _secondBodyScale = BodyScale;
+    private float _secondX;
+    private float _secondWidth;
 
     public PhaseIntroductionScreen(SpriteFont titleFont, SpriteFont font, Vector2 dimensions, Texture2D symbols)
     {
@@ -41,18 +48,39 @@ public sealed class PhaseIntroductionScreen
         _bodyHeight = height;
     }
 
-    public void Open(string title, string text, string navigationText = DefaultNavigationText)
+    public void SetMaximumBodyScale(float scale) => _maximumBodyScale = scale;
+
+    // A second text block to the right of the body (x and width as screen fractions).
+    public void SetSecondColumn(float x, float width)
+    {
+        _secondX = x;
+        _secondWidth = width;
+    }
+
+    public void Open(string title, string text, string navigationText = DefaultNavigationText,
+        string secondText = null)
     {
         _title = title;
         _navigationText = navigationText;
-        _body = WrapText(text.Replace("\r\n", "\n"), _dimensions.X * _bodyWidth / BodyScale);
-        Vector2 bodySize = _font.MeasureString(_body);
-        _bodyScale = Math.Min(BodyScale, Math.Min(
-            _dimensions.Y * _bodyHeight / Math.Max(1.0f, bodySize.Y),
-            _dimensions.X * _bodyWidth / Math.Max(1.0f, bodySize.X)));
+        _body = FitText(text, _bodyWidth, out _bodyScale);
+        _secondBody = string.IsNullOrEmpty(secondText) || _secondWidth <= 0
+            ? string.Empty
+            : FitText(secondText, _secondWidth, out _secondBodyScale);
 
         _visibleCharacters = 0;
         _symbols.Reset();
+    }
+
+    // Wraps the text to the column and returns the scale that makes it fit the body area.
+    private string FitText(string text, float widthFraction, out float scale)
+    {
+        float width = _dimensions.X * widthFraction;
+        string wrapped = WrapText(text.Replace("\r\n", "\n"), width / _maximumBodyScale);
+        Vector2 size = _font.MeasureString(wrapped);
+        scale = Math.Min(_maximumBodyScale, Math.Min(
+            _dimensions.Y * _bodyHeight / Math.Max(1.0f, size.Y),
+            width / Math.Max(1.0f, size.X)));
+        return wrapped;
     }
 
     public bool IsTyping => _visibleCharacters < _body.Length;
@@ -78,6 +106,12 @@ public sealed class PhaseIntroductionScreen
         spriteBatch.DrawString(
             _font, _body.Substring(0, Math.Min(_body.Length, (int)_visibleCharacters)), bodyPosition, new Color(216, 208, 187),
             0.0f, Vector2.Zero, _bodyScale, SpriteEffects.None, 0.0f);
+
+        // The second column appears once the body has finished typing.
+        if (_secondBody.Length > 0 && !IsTyping)
+            spriteBatch.DrawString(
+                _font, _secondBody, new Vector2(_dimensions.X * _secondX, _dimensions.Y * 0.37f),
+                new Color(216, 208, 187), 0.0f, Vector2.Zero, _secondBodyScale, SpriteEffects.None, 0.0f);
 
         DrawCenteredText(spriteBatch, _navigationText, _dimensions.Y * 0.86f, new Color(181, 173, 161), 0.75f, _font);
         spriteBatch.End();
