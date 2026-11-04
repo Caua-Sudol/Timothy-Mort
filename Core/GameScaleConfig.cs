@@ -37,11 +37,13 @@ internal static class GameScaleConfig
     public const float PlayerReleasedJumpSpeed = 240f;
     public const float PlayerDashReferenceSpeed = 960f;
     public const float PlayerDashSpeed = PlayerDashReferenceSpeed * 0.80f;
-    public const float PlayerDashDuration = 0.18f;
+    // Longer dash after the expert test (was 0.18 s, about 138 units; now about 190).
+    public const float PlayerDashDuration = 0.25f;
     // Test: player holds still in the anticipation pose before the dash moves.
     public const double PlayerDashStartupDuration = 0.06;
-    public const double PlayerCoyoteTime = 0.10;
-    public const double PlayerJumpBufferTime = 0.10;
+    // More tolerance for late or early jumps (both were 0.10 s).
+    public const double PlayerCoyoteTime = 0.15;
+    public const double PlayerJumpBufferTime = 0.15;
     public const float PlayerGelatinMaximumFallSpeed = 96f;
 
     public static float GetPlayerScale(int preset) => preset switch
