@@ -1,87 +1,112 @@
 # Timothy & Mort
 
-Protótipo de um jogo sério de plataforma 2D sobre princípios de design.
+Jogo sério de plataforma 2D (MonoGame) sobre princípios de design de interação. É desenvolvido como TCC, e os testes são feitos com especialistas em IHC e com estudantes.
 
-## O projeto foca em testar o ciclo:
-   > Problema, intervenção, justificativa, consequência e revisão
+O jogo testa o ciclo:
 
-### Affordance e Visibilidade
+> Problema → intervenção → justificativa → consequência → reflexão
+
+Em cada fase, o jogador vive um problema de design no próprio percurso. Depois, testa três intervenções numa sala própria, justifica a escolha e vê a consequência no restante da fase.
+
+## Fluxo do estudo
 
 ```text
-  Cenário como seletor de mapas (entrada)
-  affordance_visibilidade (problema)
-  affordance_intervencao (escolha e teste)
-  affordance_visibilidade (aplicação da solução)
-  Volta ao seletor (conclusão e reset da fase)
+Identificação da sessão (código TM-XXXX)
+-> Seleção de fases (cada fase libera a próxima; fase concluída não reabre)
+-> Tutorial (só antes da primeira Affordance da sessão; fora da pesquisa)
+-> Fase 1: Affordance e visibilidade
+-> Fase 2: Feedback
+-> Fase 3: Modelos conceituais
+-> Tela final: resumo e passos para enviar o arquivo da sessão
 ```
-## Feedback
 
-A fase de feedback de dano isola o problema de comunicar o instante do impacto e a duração da invulnerabilidade. Ela é acessada por uma entrada própria em `SimpleCutscene`, usa os cenários `feedback_dano` e `feedback_intervencao` e não compartilha estado nem catálogo com as fases de affordance ou de teste de assets.
+Cada fase segue o mesmo formato:
 
-O problema-base mostra somente a perda de corações. Depois da escolha, a intervenção selecionada é aplicada tanto na sala intermediária quanto no mapa original. Soluções inadequadas mantêm a saída fechada e abrem uma revisão; soluções parciais ou adequadas liberam a continuação.
+```text
+Introdução -> Sala 1 -> Sala 2 (passagem para a sala 3 bloqueada até a escolha)
+-> Sala de intervenção (espada: testar soluções; saída: justificativa)
+-> Sala 3 (solução aplicada; demonstração combinada nas fases 1 e 2)
+-> Fase concluída
+```
 
-A implementação e as ressalvas aceitas para o protótipo estão registradas em [docs/checkpoints_feedback_dano.md](docs/checkpoints_feedback_dano.md).
+| Fase | Problema | Soluções (a melhor primeiro) | Documento LM-GM |
+|---|---|---|---|
+| Affordance e visibilidade | Gelatinas que recarregam o dash têm a mesma aparência da terra. | Aparência, Marcação, Deformação | [docs/lm_gm_affordance_visibilidade.md](docs/lm_gm_affordance_visibilidade.md) |
+| Feedback | Rochas quentes ferem sem nenhum sinal. | Recuo, Coração rachando, Tela tremendo | [docs/lm_gm_feedback.md](docs/lm_gm_feedback.md) |
+| Modelos conceituais | Impostoras com a aparência de plataformas conhecidas agem de outro jeito. | Diferenciar, Restaurar, Animar | [docs/lm_gm_modelos_conceituais_restricoes.md](docs/lm_gm_modelos_conceituais_restricoes.md) |
+
+A qualidade de cada solução é registrada na telemetria, mas não é mostrada ao jogador.
+
+## LM-GM
+
+O mapeamento pedagógico de cada fase segue o modelo Learning Mechanics–Game Mechanics:
+
+> Arnab, S. et al. (2015). *Mapping learning and game mechanics for serious games analysis*. BJET, 46(2), 391–411. DOI: [10.1111/bjet.12113](https://doi.org/10.1111/bjet.12113)
+
+Cada documento tem:
+
+- uma tabela com game mechanic, learning mechanic, implementação e uso;
+- um mapa do fluxo pelos níveis de Bloom;
+- a leitura das soluções;
+- as evidências disponíveis na telemetria.
+
+O modelo é descritivo: ele formaliza a hipótese de design, mas não substitui a avaliação com participantes.
 
 ## Controles
 
-| Controle            | Ação                                                     |
-|---------------------|----------------------------------------------------------|
-| `A` / `D` ou `←` / `→` | Mover e navegar horizontalmente nos menus.             |
-| `W` / `S` ou `↑` / `↓` | Cima mira o dash para cima; navegação vertical nos menus. |
-| `Space`, `C` ou `K`    | Pular.                                                 |
-| `Shift`, `X` ou `J`    | Impulso (Dash) para os lados, para cima e diagonais cima. A direção pode ser apertada logo depois do dash (0,06 s). |
-| `E`                    | Interagir (entrada da intervenção, espada, saídas).    |
-| `Enter` ou `Space`     | Confirmar uma escolha nos menus.                       |
-| `Escape`               | Abrir ou fechar pause.                                 |
-| `Ctrl esquerdo + P`    | Ativar ou desativar o debug visual (só em Debug).      |
-| `Ctrl esquerdo + R`    | Recarregar o mapa atual durante jogo ou pause (só em Debug). |
+Todas as teclas funcionam ao mesmo tempo. O "esquema" só muda os nomes de teclas mostrados no tutorial; o padrão é Espaço/Shift.
 
-Combinações sugeridas: setas + `C`/`X` (estilo Celeste), `WASD` + `K`/`J` (ações na mão direita) ou `WASD` + `Space`/`Shift`.
+| Controle | Ação |
+|---|---|
+| `A` / `D` ou `←` / `→` | Andar e navegar nos menus. |
+| `W` ou `↑` | Mirar o impulso para cima (não pula). |
+| `Espaço`, `C` ou `K` | Pular. |
+| `Shift`, `X` ou `J` | Impulso (dash), **só no ar**: para os lados, para cima e na diagonal para cima. A direção pode vir logo depois da tecla (0,06 s). |
+| `E` | Interagir: entrada da intervenção, espada, saída da intervenção, placa de controles. |
+| `Enter` | Confirmar nos menus. |
+| `Esc` | Pausa. |
+| `Ctrl + P` / `Ctrl + R` | Debug visual / recarregar o mapa (só em builds Debug). |
 
-## Mapas e edição no Tiled
+## Mapas (LDtk)
 
-Abra [Timothy-Mort.tiled-project](Timothy-Mort.tiled-project) no Tiled. Ele aponta para a pasta `Content` e fornece classes/propriedades para spawns, entradas de intervenção e saídas.
+As salas das três fases, as salas de intervenção e o tutorial estão num único projeto: `Content/Maps/Affordance.ldtk`. As camadas, os valores de colisão e as entidades estão documentados em [Content/Maps/README.md](Content/Maps/README.md).
 
-Os cenários atuais são:
+Restam alguns mapas TMX (Tiled): a cena inicial, o protótipo visual e a sala de escala. Os TMX das versões antigas das fases não são mais carregados.
 
-| ID                        | TMX                                  | Papel                                      |
-|---------------------------|--------------------------------------|--------------------------------------------|
-| `simple_cutscene`         | `Content/SimpleCutsceneMap.tmx`      | Entrada e retorno de conclusão da fase.    |
-| `affordance_visibilidade` | `Content/AffordanceVisibilidade.tmx` | Percurso com o problema de affordance.     |
-| `affordance_intervencao`  | `Content/AffordanceIntervencao.tmx`  | Seleção, teste e revisão das intervenções. |
+## Dados da pesquisa
 
-O contrato completo de layers, objetos, propriedades e reload está em [docs/convencoes_cenarios.md](docs/convencoes_cenarios.md). As medidas de movimento e os marcadores de alcance estão em [docs/metricas_mov.md](docs/metricas_mov.md).
+- **Banco local:** a sessão fica num SQLite local (`timothy-mort.db`, na pasta de dados do usuário).
+- **Arquivo exportado:** também é exportada como JSON em `Documentos/TimothyMort`.
+- **Quando o arquivo é atualizado:** ao entrar em cada sala, a cada escolha na intervenção, ao concluir uma fase e ao fechar o jogo. Uma sessão abandonada também deixa o arquivo.
+- **O que o arquivo registra:**
+  - versão do jogo;
+  - por fase: solução, justificativa, posições apresentadas, trocas, tempo e mortes;
+  - por sala: tempo, entradas e mortes;
+  - tutorial, esquema de controle e eventos da intervenção.
+- **Versão:** a constante `ResearchStudyConfiguration.GameVersion` deve ser atualizada antes de cada build.
 
-## LM-GM das fases
+Configurações em `App/ResearchStudyConfiguration.cs`:
 
-O mapeamento pedagógico da fase de affordance está em [docs/lm_gm_affordance_visibilidade.md](docs/lm_gm_affordance_visibilidade.md).
-
-O mapeamento pedagógico da fase de feedback de dano está em [docs/lm_gm_feedback_dano.md](docs/lm_gm_feedback_dano.md).
-
-Ele adapta o modelo Learning-Game Mechanics de (Arnab et al., 2015) 
-
-> DOI: [10.1111/bjet.12113](https://doi.org/10.1111/bjet.12113)
-
-Embora os próprios autores comentem sobre as limitações do modelo, a ideia é ter uma base estruturada
-para formalizar uma documentação relacionando mecânicas de jogo e atividades de apoio a compreensão
-para facilitar a replicação por outros profissionais e pesquisadores, caso tenham interesse.
+- **`BetaAffordanceOnly`:** só a Affordance fica jogável.
+- **`ResearchEmail`:** o e-mail mostrado na tela final.
+- **MEEGA+:** link do formulário, ainda não configurado.
 
 ## Estrutura de código
 
-| Pasta      | Responsabilidade                                         |
-|------------|----------------------------------------------------------|
-| `App`      | Loop principal, transições, telas e overlays.            |
-| `Core`     | Câmera e debug visual.                                   |
-| `Gameplay` | Player, input e colisão.                                 |
-| `Scenes`   | Estado da fase, cenários, escolhas e fluxo de jogo.      |
-| `UI`       | Menus e interface de escolhas.                           |
-| `World`    | Leitura e desenho dos TMX, objetos e validação de mapa.  |
-| `docs`     | Contratos de cenário, métricas e documentação de design. |
-
-`Game1` controla telas, overlays e transições. `PhaseState` preserva as decisões e apresentações sorteadas da fase. `Scene` coordena o cenário jogável. `LevelMap` lê os objetos TMX e fornece geometria, entradas, saídas, gelatinas e marcadores de medição.
+| Pasta | Responsabilidade |
+|---|---|
+| `App` | Loop principal (`Game1`), sessão de estudo, telemetria em andamento, configuração. |
+| `Core` | Câmera, escala e debug visual. |
+| `Gameplay` | Player, input, colisão, espada da intervenção e constantes de cada fase. |
+| `Scenes` | Estado e fluxo da fase (`PhaseRun`, `PhaseState`, `Scene`), catálogos de soluções e de falas do Mort. |
+| `UI` | Menus, tela de escolhas, telas de introdução, resultado e conclusão. |
+| `World` | Leitura e desenho dos mapas LDtk e TMX. |
+| `Persistence` | SQLite e exportação JSON da sessão. |
+| `docs` | Documentação de design. Os documentos de checkpoint antigos estão marcados como históricos. |
 
 ## Executar
 
 ```bash
-dotnet run
+dotnet run                 # Debug: todas as fases abertas e ferramentas de desenvolvimento
+dotnet publish -c Release  # build do estudo: ferramentas ocultas e fases em sequência
 ```

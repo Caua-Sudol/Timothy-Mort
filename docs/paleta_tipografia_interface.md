@@ -150,3 +150,15 @@ preservando suas cores e transparência.
 Aplicação apenas em `Content/AffordanceVisibilidade.tmx`, nos objetos da camada
 `mapaGeral` nomeados `wood` seguido de número (atualmente `wood1` a `wood4`).
 A arte substitui o retângulo visual de blockout; a colisão mantém as medidas do mapa.
+
+> A seção acima é histórica: as plataformas de tronco eram do mapa TMX antigo da Affordance.
+
+## Cores desenhadas por código (novembro/2026)
+
+| Uso | Hex | RGB | Onde |
+| --- | --- | --- | --- |
+| Fundo padrão da tela (áreas sem arte) | `#15191F` | 21, 25, 31 | `App/GameViewport.cs`: limpeza da tela; aparece fora da sala durante o zoom do Mort. |
+| Fumaça da espada da intervenção | `#D22D2D` | 210, 45, 45 | `Gameplay/InterventionTrigger.cs` |
+| Faíscas da rocha impostora (Animar) | `#E63228` | 230, 50, 40 | `World/LevelMap.Ldtk.cs` |
+| Tom do card "Continuar testando soluções" | `#FF968C` | 255, 150, 140 | `UI/InterventionChoiceMenu.cs` (multiplica a arte do card) |
+| Luz da sala de intervenção | `#2850AA` | 40, 80, 170 | `World/LevelMap.Ldtk.cs`: brilho que sobe do chão, até 28% de opacidade |

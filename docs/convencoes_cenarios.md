@@ -1,5 +1,7 @@
 # Convenções de cenários
 
+> **Documento histórico.** Contrato dos mapas TMX (Tiled). As fases usam LDtk; o contrato atual está em [Content/Maps/README.md](../Content/Maps/README.md). Os TMX restantes são a cena inicial, o protótipo visual e a sala de escala.
+
 Este documento define o contrato entre os mapas TMX do Tiled e o jogo. Cada cenário é um arquivo independente: o mapa descreve geometria e pontos de fluxo; o código decide qual cenário abrir e qual estado da fase está ativo.
 
 ## Registro de cenários

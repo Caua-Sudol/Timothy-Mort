@@ -1,5 +1,7 @@
 # Protótipo visual e shaders
 
+> **Documento histórico.** Guia do protótipo visual de agosto/2026, anterior à arte e ao LDtk atuais. As medidas do jogador e da física mudaram; ver [docs/metricas_mov.md](../docs/metricas_mov.md).
+
 Este documento organiza um protótipo visual isolado, anterior ao layout definitivo
 da fase de affordance. Ele serve para testar escala, leitura, integração entre
 personagem e cenário, camadas de profundidade e shaders simples. Não define a arte

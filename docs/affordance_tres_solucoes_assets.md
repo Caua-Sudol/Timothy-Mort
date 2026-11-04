@@ -1,5 +1,7 @@
 # Affordance — três soluções e preparação de arte
 
+> **Documento histórico.** Registro da preparação de arte de outubro/2026. O fluxo atual da sala de intervenção (testar na espada, justificar na saída) está em [lm_gm_affordance_visibilidade.md](lm_gm_affordance_visibilidade.md).
+
 ## Ciclo atual
 
 - Aparência: usa os assets da camada Solucao_gelatina do LDtk.

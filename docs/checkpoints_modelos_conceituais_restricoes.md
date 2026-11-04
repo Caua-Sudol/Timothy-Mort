@@ -1,5 +1,7 @@
 # Checkpoints: modelos conceituais e restrições
 
+> **Documento histórico.** Descreve o protótipo de agosto/2026 (espinhos inofensivos, saída com dois corações, revisão). A fase atual (impostoras, Diferenciar/Restaurar/Animar) está em [lm_gm_modelos_conceituais_restricoes.md](lm_gm_modelos_conceituais_restricoes.md).
+
 Este documento registra o protótipo validado da fase `modelos_conceituais_restricoes`. A fase é independente das de affordance, feedback e teste de assets: possui dois cenários, catálogo, estado e efeitos próprios. A única integração compartilhada é a entrada correspondente em `SimpleCutscene`.
 
 ## Estado atual

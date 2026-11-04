@@ -1,5 +1,7 @@
 # Checkpoints: feedback
 
+> **Documento histórico.** Descreve o protótipo da fase de feedback de agosto/2026 (mapas TMX, onze soluções com nota I/P/A e revisão). A fase atual (rochas quentes, três soluções, formato de salas) está em [lm_gm_feedback.md](lm_gm_feedback.md).
+
 Este documento registra o protótipo validado da fase de feedback de dano. A fase foi implementada em três checkpoints isolados e é conectada às demais somente por uma entrada própria no mapa `SimpleCutscene`.
 
 ## Estado atual
@@ -133,4 +135,4 @@ Estas observações não impedem o fechamento funcional e devem ser tratadas jun
 - `World/DamageVolume.cs` e `LevelMap.cs`: volumes perigosos, layers e desenho procedural.
 - `Content/FeedbackDano.tmx`, `FeedbackIntervencao.tmx` e `SimpleCutsceneMap.tmx`: mapas e entrada da fase.
 
-O mapeamento pedagógico correspondente está em [lm_gm_feedback_dano.md](lm_gm_feedback_dano.md).
+O mapeamento pedagógico correspondente está em [lm_gm_feedback.md](lm_gm_feedback.md).

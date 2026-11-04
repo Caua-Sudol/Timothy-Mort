@@ -1,83 +1,109 @@
-# Modelos conceituais e restrições (LM-GM)
+# Modelos conceituais (LM-GM)
 
-Este documento descreve o mapeamento entre Learning Mechanics (LM) e Game Mechanics (GM) da fase `modelos_conceituais_restricoes`. Ele registra uma hipótese de design: a relação esperada entre o que o jogador deve analisar e as regras jogáveis do protótipo. Não demonstra, por si só, que aprendizagem ocorreu; essa conclusão depende de testes com participantes.
+Este documento mapeia a fase 3, `modelos_conceituais_restricoes` (título no jogo: "Modelos conceituais"), pelo modelo Learning Mechanics–Game Mechanics (LM-GM). Ele registra uma **hipótese de design**: como as mecânicas de jogo devem sustentar as atividades de aprendizagem da fase. Não demonstra, por si só, que a aprendizagem ocorreu.
 
-## Referência
+## Referência e uso do modelo
 
-Arnab, S. et al. (2012). *Pedagogy-driven design of Serious Games: An overall view on learning and game mechanics mapping, and cognition-based models*.
+Arnab, S. et al. (2015). *Mapping learning and game mechanics for serious games analysis*. British Journal of Educational Technology, 46(2), 391–411. DOI: [10.1111/bjet.12113](https://doi.org/10.1111/bjet.12113)
 
-Neste documento, LM designa a atividade cognitiva solicitada ao jogador — observar, comparar, prever, justificar, testar e revisar. GM designa a regra, o estado, a interface ou a resposta jogável que torna essa atividade observável.
+Como nas outras fases, o mapeamento tem duas partes:
+
+- uma **tabela**: game mechanic, learning mechanic, implementação e uso pelo jogador;
+- um **mapa** do fluxo pelos níveis de Bloom do modelo.
+
+Os nomes das mecânicas seguem os nós do artigo.
 
 ## Escopo da fase
 
-O jogador encontra dois pares de elementos visualmente semelhantes, mas com propriedades diferentes:
+A fase usa o que o jogador **já aprendeu** nas fases 1 e 2:
 
-- gelatinas padrão restauram dash, enquanto gelatinas-trampolim aplicam impulso e não restauram dash;
-- espinhos de dano removem vida, enquanto espinhos inofensivos não têm consequência.
+- a gelatina recarrega o dash;
+- a rocha quente fere.
 
-O problema não é apenas descobrir uma regra escondida. Ele é avaliar se a aparência das plataformas permite formar um modelo conceitual confiável sobre o que elas fazem e quais restrições impõem ao percurso. A vida limitada, a invulnerabilidade temporária e a condição de saída com dois corações ou menos tornam o custo da interpretação incorreta observável durante a travessia.
+Ela também mistura **impostoras**, que têm a mesma aparência das conhecidas, mas agem de outro jeito:
 
-O ciclo pedagógico é:
+| Conhecida | Impostora (mesma aparência) |
+|---|---|
+| Gelatina: recarrega o dash e amortece a queda | **Mini-jump** (gelatina-trampolim): lança o jogador para cima, com cerca de 2× a altura do pulo, e **não** recarrega o dash |
+| Rocha quente: tira 1 coração | **Rocha impostora**: tira **2 corações** |
+
+O feedback de dano é fixo desde o começo, porque o tema já foi trabalhado na fase 2:
+
+- **Rocha comum:** recuo + coração rachando.
+- **Rocha impostora:** recuo + tela tremendo.
+- **Invencibilidade:** 0,6 s.
+
+O objetivo de aprendizagem é **reconhecer que um modelo conceitual se apoia na aparência e na experiência anterior, e avaliar como corrigir uma incoerência entre aparência e comportamento**. As opções são diferenciar, uniformizar ou sinalizar por movimento. O jogo ensina pela ação, sem explicação em diálogo.
+
+## Fluxo da fase
 
 ```text
-vivenciar inconsistência -> identificar consequências e restrições
--> comparar intervenções -> prever e justificar -> testar
--> progredir ou revisar -> reaplicar no percurso original
+Introdução da fase (texto curto: "Quando algo parece igual ao que já conhecemos...")
+-> Salas 1 e 2: gelatinas, mini-jumps, rochas quentes e impostoras, todas com
+   aparência de conhecidas; a passagem para a sala 3 fica bloqueada até a primeira escolha
+-> Sala de intervenção (entrada com E): espada para testar; exemplos de cada
+   plataforma na sala; saída com justificativa ou "Continuar testando soluções"
+-> Sala 3: percurso com a solução aplicada (sem demonstração combinada)
+-> Tela "Fase concluída" -> fim do estudo (tela final de envio dos dados)
 ```
 
-## Mapeamento
+## Tabela LM-GM
 
-| Objetivo de aprendizagem | Learning Mechanic (LM) | Game Mechanic (GM) | Relação esperada |
-|--------------------------|------------------------|--------------------|------------------|
-| Perceber que aparência semelhante não garante comportamento semelhante. | Observação e experimentação. | Movimento, dash, volumes de gelatina, espinhos e colisão. | O jogador experimenta efeitos opostos em elementos que inicialmente compartilham a mesma apresentação visual. |
-| Relacionar propriedades de plataforma às restrições do percurso. | Identificação de restrições e antecipação de consequências. | Cinco corações, dano, invulnerabilidade, salto, dash e limiar de dois corações. | A escolha de tocar, evitar ou usar cada elemento tem custo observável e altera as possibilidades de progressão. |
-| Distinguir saliência, explicação e orientação de uma correção do modelo conceitual. | Comparação de hipóteses concorrentes. | Cartas I1–I3, efeitos visuais e porta bloqueada. | Realçar, rotular ou indicar a rota pode melhorar a leitura local sem fazer aparência e comportamento concordarem. |
-| Explicitar a hipótese usada para avaliar uma intervenção. | Previsão, decisão e justificativa. | Seleção de solução, escolha embaralhada de J1–J6 e registro no estado da fase. | O jogador torna observável se espera atenção, explicação, rota, consistência, diferenciação ou alinhamento completo. |
-| Reconhecer uma correção parcial. | Classificação de evidências e comparação. | P1–P4 corrigem somente gelatinas ou espinhos. | Cada parcial elimina uma inconsistência, mas preserva a outra; a porta abre para permitir comparar o resultado sem tratá-lo como resolução completa. |
-| Reconhecer duas formas adequadas de alinhamento. | Generalização e avaliação de alternativas. | A1 normaliza propriedades; A2–A4 diferenciam variantes e ajustam suas regras. | O jogador pode comparar retorno ao estado original com diferenciação visual acompanhada de comportamento compatível. |
-| Revisar uma hipótese após falha observável. | Reflexão e revisão. | Inadequadas mantêm a porta fechada; P4 e A4 aparecem no retorno ao botão. | A revisão ocorre depois de testar a consequência da primeira escolha e substitui a solução aplicada, sem acumular efeitos. |
-| Verificar a intervenção no contexto em que o problema surgiu. | Aplicação e avaliação. | Retorno ao mapa principal com módulos da solução ativos. | A sala intermediária não é a única evidência: o jogador reaplica a interpretação no percurso original, com seus custos e restrições. |
+| Game mechanic | Learning mechanic | Implementação | Uso pelo jogador |
+|---|---|---|---|
+| Movement; Simulate/Response | Explore; Experimentation | Impostoras com a arte das plataformas conhecidas. O mini-jump lança para cima; a rocha impostora tira 2 corações. | Aplicar o modelo aprendido e ser surpreendido pelo comportamento diferente. |
+| Feedback; Status | Observation; Identify | Recuo e coração na rocha comum; recuo e tremor na impostora. O mini-jump não recarrega o dash. | Perceber que a mesma aparência produziu consequências diferentes. |
+| Rewards/Penalties; Levels | Hypothesis | O custo maior da impostora e a passagem para a sala 3 bloqueada até a escolha. | Atribuir o erro à aparência enganosa, e não ao próprio descuido. |
+| Selecting/Collecting; Simulate/Response | Experimentation; Analyse; Generalisation/Discrimination | A espada abre **Diferenciar**, **Restaurar** e **Animar**, que podem ser trocadas e testadas nos exemplos da sala. | Comparar três formas de alinhar aparência e comportamento. |
+| Feedback | Feedback; Reflect/Discuss | A espada pulsa forte depois da primeira escolha. O Mort comenta cada solução ("Nada de surpresas... mas o que perdemos?"). | Ser convidado a testar outra opção e pensar no custo de cada uma. |
+| Questions and Answers | Reflect/Discuss; Hypothesis | Na saída: 3 justificativas e "Continuar testando soluções". | Explicitar o critério: prever, uniformizar ou manter a variedade. |
+| Levels; Movement | Action/Task | Sala 3 com a solução aplicada. | Verificar se a solução permite prever cada plataforma antes de pisar. |
+| Assessment; Feedback | Assessment; Reflect/Discuss | Tela "Fase concluída" ("Pista de aparência", "Consistência com o já conhecido", "Pista de movimento") e explicação. Em seguida, a tela final do estudo. | Comparar a hipótese com uma leitura de design e encerrar a sessão. |
 
-## Leitura das escolhas
+## Mapa do fluxo (níveis de Bloom)
 
-### Inadequadas
+| Momento | Nível | Learning mechanics | Game mechanics |
+|---|---|---|---|
+| Salas 1–2 (modelo já aprendido) | Retention → Applying | Repetition, Experimentation, Observation | Movement, Simulate/Response |
+| Surpresa e bloqueio | Analysing | Identify, Generalisation/Discrimination, Hypothesis | Feedback, Rewards/Penalties |
+| Espada (testar soluções) | Analysing → Evaluating | Experimentation, Analyse | Selecting/Collecting, Simulate/Response |
+| Saída com justificativa | Evaluating | Reflect/Discuss, Hypothesis | Questions and Answers |
+| Sala 3 | Applying → Evaluating | Action/Task | Levels, Movement |
+| Fase concluída | Evaluating | Assessment, Reflect/Discuss | Assessment, Feedback |
 
-- I1 destaca todas as plataformas especiais do mesmo modo; aumenta saliência, mas preserva a ambiguidade entre variantes.
-- I2 apresenta `DANO` e `DASH` como lembretes; explica uma regra pretendida, mas ainda a aplica também às variantes que a contradizem.
-- I3 indica uma rota; orienta a travessia sem corrigir o significado das plataformas.
+## Leitura das soluções
 
-### Parciais
+A qualidade fica registrada na telemetria e **não é mostrada ao jogador**. Todas as soluções liberam a sala 3. Não há demonstração combinada: Restaurar e Animar anulariam ou repetiriam o Diferenciar.
 
-- P1 e P3 tornam os espinhos consistentes, mas deixam a gelatina-trampolim com aparência ambígua.
-- P2 e P4 restauram as gelatinas, mas deixam espinhos visualmente iguais com consequências diferentes.
+| Solução | Efeito | Qualidade registrada | Leitura |
+|---|---|---|---|
+| Diferenciar (`concept_differentiate`) | As impostoras ganham arte própria: mini-jump e fogo azul (camadas `Mini_jump_*` e `Blue_fire_*`). | ADEQUATE (melhor) | Cada comportamento ganha a sua aparência: o que foi aprendido continua valendo e a novidade é anunciada. |
+| Restaurar (`concept_restore`) | As impostoras passam a agir como as conhecidas: o trampolim vira gelatina e a rocha tira 1 coração. | PARTIAL | Elimina a surpresa, mas também a variedade que os novos comportamentos traziam. |
+| Animar (`concept_animate`) | Só as impostoras se mexem: o mini-jump estica para cima e a rocha impostora solta faíscas vermelhas. | PARTIAL | Sinaliza pelo movimento, mas depende de o jogador observá-lo. Parada, a plataforma continua igual à conhecida. |
 
-### Adequadas
+As três justificativas são:
 
-- A1 normaliza ambas as famílias: gelatinas padrão e espinhos de um dano.
-- A2 diferencia as duas variantes alteradas e associa cor a propriedades distintas: verde para o trampolim com impulso equivalente ao dash e magenta para o espinho de dois danos.
-- A3 normaliza as gelatinas e diferencia os espinhos alterados.
-- A4 diferencia a gelatina-trampolim e normaliza os espinhos.
+- `concept_predict`: "Prever o que cada plataforma faz antes de tocá-la";
+- `concept_same_look`: "Fazer plataformas iguais se comportarem do mesmo jeito";
+- `concept_keep_new`: "Manter os novos comportamentos disponíveis na travessia".
 
-As soluções adequadas não dependem de uma única linguagem visual: tanto restabelecer uma convenção quanto sinalizar uma variante pode ser adequado quando aparência, comportamento e restrições voltam a formar uma relação previsível.
+## Evidências na telemetria
 
-## Evidências disponíveis
+Os campos são os mesmos das outras fases:
 
-O estado da fase mantém a primeira solução, a primeira justificativa, a solução efetivamente aplicada, a quantidade de escolhas e a ocorrência de revisão. Durante a validação manual, é possível observar:
+- **por fase:** solução, justificativa, posições, `hadRevision`, tempo e mortes;
+- **por sala:** tempo, entradas e mortes;
+- **na intervenção:** os eventos em ordem.
 
-- se o jogador identifica os dois pares de inconsistência;
-- se a justificativa escolhida corresponde à hipótese declarada;
-- se uma solução parcial é reconhecida como correção de apenas uma família;
-- se a solução adequada permite prever comportamento e custo antes do contato;
-- se a revisão substitui a intervenção inadequada e se a leitura se mantém no mapa principal.
+Perguntas que esses dados permitem investigar:
 
-Não há telemetria neste protótipo. Esses estados sustentam o fluxo de jogo, mas ainda não constituem coleta de dados de pesquisa.
+- se as mortes nas salas 1–2 se concentram em rochas impostoras. Hoje isso aparece só por sala, não por plataforma;
+- se Restaurar é escolhido por quem justifica com `concept_same_look`;
+- se Animar e Diferenciar produzem desempenho parecido na sala 3.
 
-## Limites e avaliação futura
+## Limites
 
-- A classificação inadequada, parcial e adequada é uma hipótese de design e deve ser confrontada com participantes.
-- As cores, textos e ícones são provisórios; sua legibilidade pode alterar a interpretação das variantes.
-- O impulso vertical iguala a velocidade inicial do dash, mas seu deslocamento final depende da física vertical e do layout.
-- A saída por dois corações ou menos é uma restrição deliberada do protótipo; testes futuros devem verificar se ela é percebida como condição significativa e não como regra arbitrária.
-- Áudio, assets finais, telemetria e balanceamento definitivo não fazem parte deste mapeamento.
-
-Os detalhes operacionais e os checkpoints validados estão em [checkpoints_modelos_conceituais_restricoes.md](checkpoints_modelos_conceituais_restricoes.md).
+- **Animar × Diferenciar:** como o Animar passou a marcar só as impostoras, a diferença entre as duas soluções ficou em movimento contra cor. A distinção de qualidade entre elas deve ser observada com cuidado.
+- **Fase nova no estudo:** a fase 3 entrou no estudo depois do teste com especialistas. Não há dados de comparação anteriores.
+- **Fase anterior:** a versão anterior desta fase, com espinhos inofensivos, revisão e condição de saída por vida, foi descontinuada. O código remanescente está listado para limpeza depois do TCC.
+- **Ideia para depois do TCC:** transformar a solução num poder que alterna o estado das impostoras, criando um puzzle de plataforma.

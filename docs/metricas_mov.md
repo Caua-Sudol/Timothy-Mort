@@ -1,88 +1,47 @@
 # Métricas de movimento
 
-Este documento serve como régua inicial para desenhar mapas no Tiled. Os valores foram pensados para o estado atual de `Gameplay/Player.cs` e para mapas com tiles de `32 x 32` pixels.
+Régua para desenhar salas no LDtk (`Content/Maps/Affordance.ldtk`, grade de 96). Os valores vêm de `Core/GameScaleConfig.cs` (estado de 04/11/2026) com o jogador na escala 1, usada em todas as salas. São limites **teóricos**: o caminho obrigatório deve ficar com folga.
 
-## Unidade base
+> A versão anterior deste documento usava tiles de 32 px do Tiled. Ela foi substituída; os mapas TMX das fases não são mais carregados.
 
-| Medida    | Pixels | Tiles |
-|-----------|-------:|------:|
-| Meio tile |   16px |   0.5 |
-| 1 tile    |   32px |     1 |
-| 2 tiles   |   64px |     2 |
-| 3 tiles   |   96px |     3 |
-| 5 tiles   |  160px |     5 |
-| 10 tiles  |  320px |    10 |
+## Constantes
 
-O player atual tem `16 x 16px`, então ocupa meio tile de largura e altura. Para desenhar no Tiled, pense primeiro em tiles inteiros e use meio tile apenas para ajuste fino.
+| Constante | Valor | Observação |
+|---|---:|---|
+| Velocidade horizontal máxima | 528 /s | `PlayerHorizontalSpeed` |
+| Aceleração no chão / no ar | 3300 / 1800 /s² | — |
+| Gravidade | 1800 /s² | — |
+| Velocidade inicial do pulo | 620 /s | soltar o pulo corta a subida (240 /s) |
+| Dash | 768 /s por 0,25 s | `PlayerDashSpeed` × `PlayerDashDuration`; antes, uma pausa parada de 0,06 s |
+| Coyote time / buffer de pulo | 0,15 s / 0,15 s | tolerância para pular tarde ou cedo |
+| Mini-jump (fase 3) | 880 /s para cima | `TrampolineVerticalSpeed` |
 
-## Valores atuais do player
+O dash **só funciona no ar**. Ele vai para os lados, para cima e na diagonal para cima (nunca para baixo), e é recarregado ao tocar o chão ou uma gelatina.
 
-| Metrica                              |      Valor |       Em tiles | Leitura pratica                    |
-|--------------------------------------|-----------:|---------------:|------------------------------------|
-| Tile do mapa                         |       32px |         1 tile | Unidade principal no Tiled         |
-| Player                               |    16x16px | 0.5 x 0.5 tile | Hitbox pequena para tile de 32px   |
-| Velocidade X maxima                  |   528 px/s |   16.5 tiles/s | Movimento horizontal rapido        |
-| Aceleracao no chao                   | 3300 px/s² |   103 tiles/s² | Chega rapido na velocidade maxima  |
-| Aceleracao no ar                     | 1800 px/s² | 56.25 tiles/s² | Controle aereo forte               |
-| Gravidade                            | 1800 px/s² | 56.25 tiles/s² | Pulo/queda arcade                  |
-| Velocidade inicial do pulo           |   600 px/s |  18.75 tiles/s | Pulo forte                         |
-| Tempo ate o topo do pulo             |     ~0.33s |              - | Tempo subindo antes de cair        |
-| Altura maxima teorica                |     ~100px |     ~3.1 tiles | Limite vertical aproximado         |
-| Tempo total no ar                    |     ~0.66s |              - | Subir e cair ate a mesma altura    |
-| Distancia horizontal partindo parado |     ~274px |     ~8.5 tiles | Pulo horizontal mais realista      |
-| Distancia horizontal com embalo      |     ~352px |      ~11 tiles | Limite teorico com velocidade alta |
-| Dash horizontal                      |     ~173px |     ~5.4 tiles | `960 px/s * 0.18s`                 |
+## Alcances teóricos
 
-## Regua para desenhar fases
+| Movimento | Unidades | Tiles de 96 |
+|---|---:|---:|
+| Altura máxima do pulo | ≈ 107 | ≈ 1,1 |
+| Tempo no ar (mesma altura) | ≈ 0,69 s | — |
+| Distância de pulo com embalo | ≈ 364 | ≈ 3,8 |
+| Dash (qualquer direção) | ≈ 192 | 2 |
+| Pulo + dash para cima | ≈ 300 | ≈ 3,1 |
+| Pulo + dash para o lado (com embalo) | ≈ 550 | ≈ 5,7 |
+| Mini-jump | ≈ 215 de altura | ≈ 2,2 |
 
-| Situacao                         |    Confortavel |       Dificil | Evitar como caminho obrigatorio |
-|----------------------------------|---------------:|--------------:|--------------------------------:|
-| Pulo vertical                    |    1 a 2 tiles |       3 tiles |                 mais de 3 tiles |
-| Buraco sem dash, partindo parado |    3 a 5 tiles |   6 a 8 tiles |                 mais de 8 tiles |
-| Buraco sem dash, com embalo      |    5 a 7 tiles |  8 a 10 tiles |                mais de 10 tiles |
-| Dash horizontal puro             |    3 a 4 tiles |       5 tiles |               mais de 5.5 tiles |
-| Pulo + dash                      |   8 a 11 tiles | 12 a 14 tiles |                15 ou mais tiles |
-| Plataforma de pouso              |    3 a 4 tiles |   1 a 2 tiles |           1 tile em rota normal |
-| Corredor/passagem                | 1 tile ou mais |             - |               menos de 0.5 tile |
+## Régua para o caminho obrigatório
 
-## Como usar no Tiled
+| Situação | Confortável | Difícil | Evitar |
+|---|---|---|---|
+| Degrau só com pulo | até 0,75 tile | 1 tile | mais de 1 tile |
+| Subida com pulo + dash para cima | até 2,5 tiles | 3 tiles | mais de 3 tiles |
+| Buraco só com pulo | até 3 tiles | 3,5 tiles | mais de 3,75 tiles |
+| Buraco com pulo + dash | até 4,5 tiles | 5 a 5,5 tiles | mais de 5,5 tiles |
+| Plataforma de pouso | 2 tiles ou mais | 1 tile | menos de 1 tile |
 
-No Tiled, use a grid como regua principal.
-Se o tile tem `32px`, uma plataforma 2 tiles acima esta `64px` acima.
-Uma plataforma 3 tiles acima esta `96px` acima.
-Um buraco de 5 tiles tem `160px`.
+Combinar direções no dash (diagonal = lado + cima + dash) foi o ponto mais citado pelos especialistas. Prefira introduzir a diagonal depois do tutorial, e não como primeira exigência da Affordance.
 
-Uma forma simples de trabalhar:
+## Medir no jogo
 
-1. Desenhe a rota principal usando desafios confortaveis.
-2. Use desafios dificeis apenas quando quiser testar precisao.
-3. Evite colocar o caminho obrigatorio no limite teorico do movimento.
-4. Para testar a metrica, crie plataformas com diferenca de altura entre 1 e 2 tiles.
-5. Para testar dash, use buracos de 4 a 5 tiles.
-
-## Guia visual opcional
-
-Se quiser facilitar no Tiled, crie uma object layer que nao sera usada pelo jogo, por exemplo:
-
-```text
-metricas_guia
-```
-
-Nessa layer, desenhe retangulos de referencia:
-
-| Guia               | Tamanho sugerido                          |
-|--------------------|-------------------------------------------|
-| `jump_confortavel` | 5 tiles de largura por 2 tiles de altura  |
-| `jump_dificil`     | 8 tiles de largura por 3 tiles de altura  |
-| `dash`             | 5 tiles de largura                        |
-| `jump_dash`        | 11 tiles de largura por 3 tiles de altura |
-
-Essa layer serve apenas como régua visual dentro do editor. O jogo continua lendo somente as layers declaradas em [convencoes_cenarios.md](convencoes_cenarios.md).
-
-## Medir uma travessia no mapa
-
-Ative o debug com `Ctrl esquerdo + P`. O HUD mostra cenário, posição em pixels e tiles, velocidade, estado, contato com o chão e disponibilidade de dash.
-
-Para medir uma travessia declarada no TMX, use a layer opcional `medicaoDebug` e crie dois pontos com as propriedades `parId`, `papel` e `acao`. O contrato completo está em [convencoes_cenarios.md](convencoes_cenarios.md).
-
-Depois de salvar o mapa, use `Ctrl esquerdo + R` para recarregá-lo sem reiniciar o jogo. A linha de debug deve acompanhar os marcadores e informar ΔX, ΔY, pixels e tiles.
+Em Debug, `Ctrl + P` mostra a posição, a velocidade, o estado, o contato com o chão e o dash disponível. `Ctrl + R` recarrega o mapa salvo no LDtk sem reiniciar.

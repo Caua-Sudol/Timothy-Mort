@@ -1,5 +1,7 @@
 # Checkpoint 4 — sala de escala
 
+> **Documento histórico.** Registro de outubro/2026. A sala de teste do menu passou a usar `Content/Maps/EurekaTeste.ldtk` (ver [EurekaTeste.md](../Content/Maps/EurekaTeste.md)); valores de escala podem ter mudado.
+
 Na seleção de fases, o botão “Sala de teste / composição” fica abaixo das três fases.
 Use S ou seta para baixo para selecioná-lo e Enter para abrir. W ou seta para cima
 retorna aos cartões principais. Esc sai da sala e volta à seleção.

@@ -1,5 +1,7 @@
 # Affordance — blockout de três telas
 
+> **Documento histórico.** Descreve o blockout em TMX de outubro/2026. As salas atuais estão no LDtk; ver [Content/Maps/README.md](../Content/Maps/README.md) e [lm_gm_affordance_visibilidade.md](lm_gm_affordance_visibilidade.md).
+
 Cada TMX usa 60 × 34 tiles de 32 px; a câmera enquadra 1920 × 1080.
 A margem inferior de 8 px do TMX fica fora da área visível.
 

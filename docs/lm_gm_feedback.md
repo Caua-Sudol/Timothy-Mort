@@ -1,79 +1,112 @@
-# Feedback
+# Feedback (LM-GM)
 
-Este documento descreve o mapeamento conceitual entre Learning Mechanics (LM) e Game Mechanics (GM) usado no protótipo da fase de feedback de dano. Ele registra a intenção pedagógica da fase; não substitui validação com participantes nem demonstra, por si só, eficácia de aprendizagem.
+Este documento mapeia a fase 2, `feedback_dano`, pelo modelo Learning Mechanics–Game Mechanics (LM-GM). Ele registra uma **hipótese de design**: como as mecânicas de jogo devem sustentar as atividades de aprendizagem da fase. Não demonstra, por si só, que a aprendizagem ocorreu; isso depende dos testes com participantes e da telemetria.
 
-## Referência
+## Referência e uso do modelo
 
-Neste documento, LM designa a ação cognitiva solicitada ao jogador — observar, comparar, justificar, testar e revisar uma intervenção. GM designa a regra, o estado ou a resposta jogável que sustenta essa ação. A relação esperada descreve por que a mecânica de jogo pode tornar a distinção conceitual observável.
+Arnab, S. et al. (2015). *Mapping learning and game mechanics for serious games analysis*. British Journal of Educational Technology, 46(2), 391–411. DOI: [10.1111/bjet.12113](https://doi.org/10.1111/bjet.12113)
 
-A classificação das soluções adota como problema-alvo a comunicação de duas dimensões complementares:
+Como nas outras fases, o mapeamento tem duas partes:
 
-- evento: tornar perceptíveis o instante, o local e a direção do dano;
-- estado temporário: indicar durante quanto tempo novos danos estão bloqueados.
+- uma **tabela**: game mechanic, learning mechanic, implementação e uso pelo jogador;
+- um **mapa** do fluxo, organizado pelos níveis de Bloom do modelo: Retention, Understanding, Applying, Analysing, Evaluating e Creating.
+
+Os nomes das mecânicas seguem os nós do artigo.
 
 ## Escopo da fase
 
-O cenário-base retira um dos cinco corações ao contato com um volume perigoso e ativa internamente 1,5 segundo de invulnerabilidade. Antes de qualquer intervenção, somente o HUD muda. Essa ausência deliberada de resposta localizada cria o problema que o jogador deve analisar.
+As salas têm **rochas quentes**, com a mesma aparência das plataformas comuns. Ficar em contato com elas, no chão, na parede ou no teto, tira **um coração a cada 0,6 s**. Não há nenhum sinal: nem recuo, nem piscar, nem som. Só o HUD de corações muda. O jogador perde vida sem perceber de onde ela veio.
 
-A fase não ensina a evitar todo perigo nem a calcular intensidade de dano. Sinalização antecipada, leitura da vida restante e rotas seguras podem melhorar a travessia, mas não resolvem sozinhas a comunicação do evento de dano e da proteção temporária.
+O objetivo de aprendizagem é **reconhecer que uma consequência sem resposta perceptível é um problema de feedback, e avaliar se uma intervenção comunica o evento (quando e onde), a perda (quanto) ou só um alerta genérico**.
 
-O ciclo pedagógico é:
+## Fluxo da fase
 
-1. Vivenciar o problema-base.
-2. Comparar três intervenções de qualidades distintas.
-3. Escolher uma intervenção e justificar o resultado esperado.
-4. Testar a solução aplicada na sala intermediária e no mapa original.
-5. Revisar a escolha quando a intervenção inicial não resolve o problema-alvo.
+```text
+Introdução da fase (texto curto)
+-> Sala 1: rochas quentes ferem sem sinal
+   (o Mort comenta o primeiro dano, 1 s depois de o jogador sair da rocha)
+-> Sala 2: se o jogador chegar sem se ferir, o Mort avisa que as rochas ferem;
+   a passagem para a sala 3 fica bloqueada até a primeira escolha
+-> Sala de intervenção (entrada com E na sala 2, ou na sala 1 após duas mortes):
+     espada: testar soluções; plataformas quentes de exemplo na sala;
+     saída: justificativa (3 opções) ou "Continuar testando soluções"
+-> Sala 3: percurso com a solução aplicada; com a melhor solução,
+   o Mort demonstra a combinação recuo + coração rachando
+-> Tela "Fase concluída"
+```
 
-## Mapeamento
+Regras de suporte:
 
-| Objetivo de aprendizagem                                                 | Learning Mechanic (LM)             | Game Mechanic (GM)                                                                           | Relação esperada                                                                                               |
-|--------------------------------------------------------------------------|------------------------------------|----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| Perceber a insuficiência do HUD como único feedback                      | Observar e identificar ambiguidade | Dano retira um coração, mas o personagem não reage e a invulnerabilidade permanece invisível | O jogador experimenta a diferença entre consequência acumulada e comunicação do evento/estado.                 |
-| Distinguir intervenção inadequada, parcial e adequada                    | Comparar hipóteses concorrentes    | O menu apresenta uma solução de cada qualidade em ordem aleatória                            | A comparação reduz a dependência da posição e exige considerar o efeito esperado de cada proposta.             |
-| Explicitar o critério usado na escolha                                   | Justificar uma previsão            | J1–J6 representam consequência, antecipação, desvio, evento, estado e evento + estado        | A justificativa torna observável qual dimensão o jogador associou à intervenção.                               |
-| Relacionar proposta e efeito jogável                                     | Aplicar e testar                   | Módulos visuais e físicos da solução escolhida são ativados nos dois cenários da fase        | O resultado pode ser confrontado com a previsão feita no menu.                                                 |
-| Reconhecer que evitar ou antecipar o perigo não resolve feedback de dano | Detectar inadequação e revisar     | I1–I3 mantêm a porta fechada; a revisão oferece somente P4 e A4                              | O bloqueio conduz a uma nova comparação centrada no evento e no estado temporário.                             |
-| Diferenciar uma dimensão isolada da combinação completa                  | Classificar evidências             | P1, P3 e P4 comunicam evento; P2 comunica estado; A1–A4 combinam evento e estado             | Os efeitos permitem observar por que uma resposta parcial não cobre as duas dimensões do problema.             |
-| Transferir a análise para o contexto original                            | Reaplicar e verificar              | A solução também atua no mapa do problema depois do retorno                                  | A intervenção deixa de ser apenas uma demonstração na sala de escolha e pode ser avaliada durante a travessia. |
+- **Vida:** cinco corações. Sem corações, abre-se o menu de morte; no Release, "Tentar novamente" recomeça da sala 1.
+- **Saída da intervenção:** os corações são restaurados ao sair da sala de intervenção.
+- **Paredes:** as bordas laterais das salas são paredes invisíveis.
 
-## Leitura das escolhas
+## Tabela LM-GM
 
-### Inadequadas
+| Game mechanic | Learning mechanic | Implementação | Uso pelo jogador |
+|---|---|---|---|
+| Movement; Simulate/Response | Explore; Experimentation | Rochas quentes iguais às plataformas comuns, com dano contínuo de 1 coração / 0,6 s e invulnerabilidade escondida. | Viver o problema: perder vida sem entender por quê. |
+| Feedback (ausente); Status | Observation; Identify | Só o HUD de corações muda. O Mort comenta o primeiro dano ("Você se feriu e nada mostrou isso!") depois de um pequeno atraso, para o dano passar despercebido antes. | Notar que a informação existia, mas não foi comunicada no momento nem no lugar do evento. |
+| Rewards/Penalties; Levels | Hypothesis | Perda de corações, menu de morte e passagem para a sala 3 bloqueada até a escolha. | Relacionar o custo à falta de feedback, e não à própria habilidade. |
+| Selecting/Collecting; Simulate/Response | Experimentation; Analyse | A espada abre três soluções, **Recuo**, **Coração rachando** e **Tela tremendo**, que podem ser trocadas à vontade e testadas nas rochas da sala. | Comparar o que cada resposta comunica sobre o mesmo dano. |
+| Feedback | Feedback; Reflect/Discuss | A espada pulsa forte depois da primeira escolha. O Mort comenta cada solução com uma pergunta ("mostra a perda... mas mostra de onde ela veio?"). | Ser convidado a testar outra solução. |
+| Questions and Answers | Reflect/Discuss; Hypothesis | Na saída: "Que resultado você espera obter com essa intervenção?", com 3 justificativas e "Continuar testando soluções". | Explicitar o que a intervenção deveria comunicar. |
+| Levels; Movement | Action/Task; Imitation | Sala 3 com a solução aplicada. Com o Recuo, o Mort demonstra o Recuo + Coração rachando. | Verificar o efeito no percurso e ver uma combinação de feedbacks. |
+| Assessment; Feedback | Assessment; Reflect/Discuss | Tela "Fase concluída", com avaliação curta ("Pista de contato e direção", "Pista de perda de vida", "Pista de alerta geral") e explicação. | Comparar a hipótese com uma leitura de design. |
 
-- I1 e J1 concentram-se na consequência acumulada: tornam a vida restante mais legível, mas não explicam quando o dano ocorreu nem quando a proteção termina.
-- I2 e J2 concentram-se na antecipação: ajudam a reconhecer o risco antes do contato, mas não comunicam a resposta ao dano.
-- I3 e J3 desviam do problema: a rota segura pode evitar os espinhos, porém elimina a oportunidade de observar o feedback sem resolver sua ausência.
+## Mapa do fluxo (níveis de Bloom)
 
-### Parciais
+| Momento | Nível | Learning mechanics | Game mechanics |
+|---|---|---|---|
+| Salas 1–2 | Understanding → Applying | Explore, Experimentation, Observation | Movement, Simulate/Response, Status |
+| Fala do Mort e bloqueio | Analysing | Identify, Hypothesis | Cut scenes/Story, Rewards/Penalties |
+| Espada (testar soluções) | Analysing → Evaluating | Experimentation, Analyse, Feedback | Selecting/Collecting, Simulate/Response, Feedback |
+| Saída com justificativa | Evaluating | Reflect/Discuss, Hypothesis | Questions and Answers |
+| Sala 3 e demonstração | Applying → Evaluating | Action/Task, Imitation | Levels, Movement |
+| Fase concluída | Evaluating | Assessment, Reflect/Discuss | Assessment, Feedback |
 
-- P1, P3 e P4, alinhadas a J4, tornam o evento de dano perceptível, mas não representam toda a duração da invulnerabilidade.
-- P2, alinhada a J5, representa o estado temporário, mas não fornece uma reação física localizada para o instante do impacto.
+## Leitura das soluções
 
-### Adequadas
+A qualidade fica registrada na telemetria e **não é mostrada ao jogador**. Todas as soluções liberam a sala 3.
 
-- A1, A2, A3 e A4 combinam uma reação de impacto com um sinal que permanece durante toda a proteção.
-- J6 explicita o alinhamento completo: relacionar o contato à perda de vida e indicar enquanto a invulnerabilidade continua ativa.
+| Solução | Efeito | Qualidade registrada | Leitura |
+|---|---|---|---|
+| Recuo (`damage_knockback`) | Empurra o personagem para longe da superfície, com um pequeno salto e 0,2 s sem controle. | ADEQUATE (melhor) | Liga o dano ao contato: mostra quando, onde e de que direção veio, e ainda afasta do perigo. |
+| Coração rachando (`damage_heart_crack`) | Um coração racha sobre o personagem. | PARTIAL | Mostra a perda perto do olhar, mas não a origem. |
+| Tela tremendo (`damage_screen_shake`) | A tela treme e as bordas ficam vermelhas. | PARTIAL | Alerta intenso, mas genérico. Não aponta a origem e cansa quando se repete. |
 
-A qualidade registrada no catálogo descreve alinhamento com o problema pedagógico desta fase. Ela não é uma avaliação universal da qualidade visual ou de usabilidade de cada intervenção.
+As três justificativas são:
 
-## Evidências disponíveis
+- `damage_source`: "Relacionar o dano à superfície que o causou";
+- `damage_amount`: "Saber quanta vida foi perdida";
+- `damage_attention`: "Chamar atenção para o dano, mesmo olhando para outro ponto da tela".
 
-O estado da fase mantém a primeira solução, a primeira justificativa, a solução efetivamente aplicada e a ocorrência de revisão. Durante o protótipo, a validação é manual e pode observar:
+Elas correspondem, de forma aproximada, a cada uma das soluções.
 
-- se a justificativa escolhida corresponde à dimensão da solução;
-- se o jogador reconhece a diferença entre evento e estado temporário;
-- se uma revisão troca a intervenção aplicada sem acumular efeitos;
-- se o comportamento percebido na sala intermediária é reconhecido no mapa original.
+## Evidências na telemetria
 
-Não há telemetria neste protótipo. Portanto, esses registros de estado sustentam o fluxo jogável, mas ainda não formam uma coleta de dados de pesquisa.
+Os campos são os mesmos das outras fases. Por fase:
 
-## Limites e ressalvas atuais
+- a solução final, a justificativa e as posições apresentadas;
+- `hadRevision` e o número de escolhas;
+- o tempo, as mortes e os dados da demonstração.
 
-- Os efeitos são procedurais e provisórios; acabamento visual pode alterar sua legibilidade.
-- I1 possui contraste sutil, I2 não colore toda a plataforma, I3 ainda não completa a rota até o portão e A4 apresenta a silhueta apenas à esquerda.
-- A atribuição das qualidades é uma hipótese de design a ser confrontada com validação empírica.
-- Áudio, assets finais, telemetria e variações de intensidade do dano não fazem parte deste mapeamento.
-- A fase de affordance e a fase de teste de assets permanecem isoladas e não devem ser usadas como evidência do comportamento desta fase.
+Na atividade da sessão:
 
-Os detalhes de implementação e a validação funcional dos checkpoints estão em [checkpoints_feedback_dano.md](checkpoints_feedback_dano.md).
+- tempo, entradas e mortes por sala;
+- a última sala alcançada;
+- os eventos da intervenção, em ordem.
+
+Perguntas que esses dados permitem investigar:
+
+- se as mortes da sala 1 caem depois da fala do Mort;
+- se quem testa várias soluções prefere o Recuo;
+- se a justificativa combina com a solução escolhida.
+
+## Limites
+
+- A qualidade das soluções é uma hipótese de design.
+- **Invencibilidade:** passou de 1,0 s para 0,6 s em 04/11/2026, porque dava para atravessar o fogo.
+- **Fala do Mort:** passou a esperar o jogador sair da rocha. Dados anteriores a essas mudanças não são diretamente comparáveis.
+- **Justificativas:** passaram a ser pedidas na saída da intervenção, e as opções caíram de 6 para 3.
+- O teste com especialistas mostrou que a dificuldade de plataforma pode competir com o problema de feedback.

@@ -1,55 +1,114 @@
 # Affordance e visibilidade (LM-GM)
 
-Este documento mapeia a primeira fase do protótipo, `affordance_visibilidade`, por uma adaptação do modelo Learning-Game Mechanics (LM-GM). Ele registra uma **hipótese de design**: a relação esperada entre objetivo de aprendizagem, atividade do jogador e mecânicas implementadas. Não demonstra, por si só, que a aprendizagem ocorreu; essa avaliação depende de testes com jogadores e, futuramente, de telemetria.
+Este documento mapeia a fase 1, `affordance_visibilidade`, pelo modelo Learning Mechanics–Game Mechanics (LM-GM). Ele registra uma **hipótese de design**: como as mecânicas de jogo devem sustentar as atividades de aprendizagem da fase. Não demonstra, por si só, que a aprendizagem ocorreu; isso depende dos testes com participantes e da telemetria.
 
-## Referência
+## Referência e uso do modelo
 
-Arnab, S. et al. (2012). *Pedagogy-driven design of Serious Games: An overall view on learning and game mechanics mapping, and cognition-based models*.
+Arnab, S. et al. (2015). *Mapping learning and game mechanics for serious games analysis*. British Journal of Educational Technology, 46(2), 391–411. DOI: [10.1111/bjet.12113](https://doi.org/10.1111/bjet.12113)
 
-O artigo propõe o LM-GM como uma forma de analisar ou apoiar o design de jogos sérios ao relacionar intenções pedagógicas a mecânicas de jogo e às ações do jogador. A coluna adicional `Relação esperada com o objetivo` adapta essa leitura ao projeto para tornar explícito o raciocínio de design.
+O LM-GM é descritivo, não prescritivo. Ele relaciona mecânicas de aprendizagem (LM) e mecânicas de jogo (GM) de duas formas:
+
+- uma **tabela** com as relações "estáticas": a game mechanic, a learning mechanic, a implementação concreta no jogo e o uso pelo jogador;
+- um **mapa** do fluxo de jogo, que mostra em que momento cada par aparece. O mapa segue os níveis de pensamento de Bloom usados pelo modelo: Retention, Understanding, Applying, Analysing, Evaluating e Creating.
+
+Os nomes das mecânicas seguem os nós do artigo (em inglês), para facilitar a comparação com outros trabalhos.
 
 ## Escopo da fase
 
-O jogador encontra plataformas sólidas e volumes de gelatina visualmente semelhantes. A gelatina restaura um dash gasto, mas não restaura o pulo e reduz a velocidade de queda enquanto o jogador está dentro dela. A falta de diferenciação visual torna o percurso pouco confiável.
+O jogador percorre três salas com terra comum e "terrenos estranhos": volumes de gelatina com a **mesma aparência da terra**. A gelatina restaura um dash gasto e limita a velocidade de queda, mas não restaura o pulo. Sem diferença visual, a possibilidade de ação existe, mas não é percebida.
 
-O ciclo da fase é:
+O objetivo de aprendizagem é **reconhecer uma possibilidade de ação pouco visível e avaliar se uma intervenção visual comunica só que há algo diferente ou também o que esse algo permite fazer**.
+
+## Fluxo da fase
 
 ```text
-exploração -> dificuldade de interpretação -> intervenção -> solução
--> justificativa -> aplicação -> teste -> progressão ou revisão
+Tutorial (só na primeira vez da sessão; fora da pesquisa)
+-> Introdução da fase (texto curto)
+-> Sala 1: terra comum e gelatinas iguais à terra
+   (Mort comenta no primeiro toque numa gelatina)
+-> Sala 2: a passagem para a sala 3 fica bloqueada até a primeira escolha
+-> Sala de intervenção (entrada com E na sala 2, ou na sala 1 após duas mortes):
+     espada: testar soluções quantas vezes quiser;
+     saída: justificativa (3 opções) ou "Continuar testando soluções"
+-> Sala 3: percurso com a solução aplicada; com a melhor solução, o Mort
+   demonstra uma combinação (aparência + pulsação)
+-> Tela "Fase concluída": resumo e explicação da escolha
 ```
 
-O objetivo de aprendizagem central é **analisar uma possibilidade de ação pouco perceptível e avaliar se uma intervenção visual comunica apenas saliência, uma diferença de superfície ou a função dessa superfície**.
+Regras de suporte:
 
-## Mapeamento
+- **Vida:** cinco corações. Quedas e espinhos tiram um coração e devolvem o jogador ao início da sala.
+- **Paredes:** as bordas laterais de todas as salas são paredes invisíveis.
+- **Transição:** a solução entra com uma piscada do personagem (fechar e abrir o olho). O Mort comenta cada escolha.
 
-| Objetivo de aprendizagem                                                      | Learning Mechanic                        | Game Mechanic                                              | Implementação no puzzle                                                                                                                                    | Relação esperada com o objetivo                                                                                                           |
-|-------------------------------------------------------------------------------|------------------------------------------|------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| Perceber que uma possibilidade de ação não está claramente representada.      | Observação e experimentação.             | Movimento, pulo, dash, colisão e queda.                    | O percurso mistura sólidos e gelatinas inicialmente ambíguas. Avançar de modo confiável exige recuperar um dash em gelatina.                               | A dificuldade deixa de ser apenas abstrata: o jogador encontra uma consequência prática de não reconhecer a propriedade da superfície.    |
-| Distinguir orientação de percurso de informação sobre uma propriedade.        | Análise e comparação.                    | Feedback visual e navegação.                               | Soluções inadequadas podem indicar caminho, destacar destino, adicionar decoração, rastro ou flash, mas não identificam a propriedade relevante.           | O jogador pode observar que chamar atenção para algo não garante que sua função seja compreendida.                                        |
-| Formular uma hipótese sobre o que uma intervenção visual deve resolver.       | Reflexão, decisão e explicitação.        | Ação/tarefa, seleção e interface de cartas.                | O jogador escolhe uma solução e uma justificativa entre seis intenções apresentadas em ordem embaralhada.                                                  | A escolha transforma uma interpretação implícita do problema em uma resposta observável para análise posterior.                           |
-| Comparar uma diferenciação parcial com uma representação que comunica função. | Observação, comparação e experimentação. | Mudança de estado, feedback e movimento.                   | Soluções parciais tornam a gelatina identificável; adequadas também relacionam a superfície à recuperação ou disponibilidade do dash.                      | O jogador testa a diferença entre reconhecer uma superfície especial e prever o que ela permite fazer.                                    |
-| Confrontar uma decisão com sua consequência no mundo.                         | Experimentação e feedback.               | Aplicação de módulos visuais, travessia, porta e objetivo. | A solução escolhida muda as gelatinas da sala intermediária e do mapa principal. Parciais e adequadas liberam a saída; inadequadas mantêm a porta fechada. | A consequência é jogável, não uma correção textual: a intervenção precisa sustentar a travessia.                                          |
-| Revisar uma solução após observar evidência de falha.                         | Reflexão e revisão.                      | Falha, retorno, nova escolha e progressão.                 | Depois de uma inadequada, o jogador retorna ao botão e escolhe entre P4 e A4, sem nova justificativa.                                                      | A revisão registra uma decisão posterior informada pela consequência; ela complementa, mas não substitui, a análise da primeira resposta. |
-| Verificar a intervenção no percurso de origem.                                | Aplicação e avaliação.                   | Retorno de cenário, objetivo e progressão.                 | Após sair da sala de intervenção, o jogador retorna ao mapa do problema com a representação visual aplicada.                                               | O teste no percurso original verifica se a mudança apoia a ação no contexto em que o problema apareceu.                                   |
+## Tabela LM-GM
+
+| Game mechanic | Learning mechanic | Implementação | Uso pelo jogador |
+|---|---|---|---|
+| Tutorial; Cascading information | Tutorial; Guidance | Sala de tutorial com textos de teclas no cenário (`[Shift]`, `[W] + [Shift]`) e o dash para cima obrigatório. O Mort avisa, sem pausar, que o dash só funciona no ar. | Aprender os controles antes da fase, sem misturar a dificuldade motora com o problema de design. |
+| Movement; Simulate/Response | Explore; Experimentation | Salas 1–3 com terra e gelatinas idênticas. A gelatina recarrega o dash e amortece a queda. | Descobrir pela ação que alguns terrenos se comportam de outro jeito. |
+| Feedback; Cut scenes/Story | Observation; Identify | O Mort fala no primeiro toque numa gelatina ("Que terreno estranho..."). O dash recarregado é a consequência visível. | Notar que a diferença existe, mas que a aparência não a comunicou. |
+| Rewards/Penalties; Levels | Hypothesis | Quedas custam corações. A passagem para a sala 3 fica bloqueada até a primeira escolha, com uma fala do Mort. | Relacionar a dificuldade da travessia à falta de informação visual. |
+| Selecting/Collecting; Simulate/Response | Experimentation; Analyse | Na sala de intervenção, a espada (E) abre três soluções: **Aparência**, **Marcação** e **Deformação**. Cada escolha entra com a piscada e pode ser trocada à vontade. Plataformas de exemplo na própria sala. | Comparar como cada intervenção muda a leitura do terreno antes de se comprometer. |
+| Feedback | Feedback; Reflect/Discuss | A espada pulsa forte depois da primeira escolha e volta ao normal ao testar uma segunda. O Mort comenta cada solução com uma pergunta ("mostra quais são diferentes... mas conta o que fazem?"). | Ser convidado, sem texto explicativo, a testar mais de uma opção. |
+| Questions and Answers | Reflect/Discuss; Hypothesis | E na saída da sala (escura até a primeira escolha): "Que resultado você espera obter com essa intervenção?", com 3 justificativas embaralhadas e "Continuar testando soluções". A escolha só fica definitiva depois da justificativa. | Explicitar o critério usado na escolha. Ou voltar a testar. |
+| Levels; Movement | Action/Task; Imitation | Sala 3 com a solução aplicada. Com a melhor solução, o Mort demonstra a combinação (aparência de gelatina + pulsação). | Verificar no percurso se a intervenção ajuda a prever o comportamento, e ver que ideias podem ser combinadas. |
+| Assessment; Feedback | Assessment; Reflect/Discuss | Tela "Fase concluída": a solução escolhida, uma avaliação curta (por exemplo, "Pista de identificação") e uma explicação, sem nota visível. | Comparar a própria hipótese com uma leitura de design da solução. |
+
+## Mapa do fluxo (níveis de Bloom)
+
+| Momento | Nível | Learning mechanics | Game mechanics |
+|---|---|---|---|
+| Tutorial | Retention | Tutorial, Guidance, Repetition | Tutorial, Cascading information |
+| Salas 1–2 | Understanding → Applying | Explore, Experimentation, Observation | Movement, Simulate/Response, Feedback |
+| Bloqueio da sala 3 | Analysing | Identify, Hypothesis | Rewards/Penalties, Cut scenes/Story |
+| Espada (testar soluções) | Analysing → Evaluating | Experimentation, Analyse, Feedback | Selecting/Collecting, Simulate/Response, Feedback |
+| Saída com justificativa | Evaluating | Reflect/Discuss, Hypothesis | Questions and Answers |
+| Sala 3 e demonstração | Applying → Evaluating | Action/Task, Imitation | Levels, Movement |
+| Fase concluída | Evaluating | Assessment, Reflect/Discuss | Assessment, Feedback |
 
 ## Leitura das soluções
 
-As soluções são classificadas internamente como inadequadas, parciais ou adequadas. A classificação não é mostrada ao jogador.
+A qualidade fica registrada na telemetria, mas **não é mostrada ao jogador**. Todas as soluções liberam a sala 3.
 
-- **Inadequada:** chama atenção para percurso, destino ou contato, mas não permite reconhecer de forma confiável quais superfícies têm a propriedade relevante. A porta permanece fechada.
-- **Parcial:** permite identificar uma diferença relevante, ou comunica parte do estado do movimento, sem comunicar completamente a função da superfície. A porta abre.
-- **Adequada:** diferencia a superfície e oferece uma pista sobre recuperação ou disponibilidade do dash. A porta abre.
+| Solução | Efeito | Qualidade registrada | Leitura |
+|---|---|---|---|
+| Aparência (`terrain_appearance`) | A gelatina ganha arte de gelatina (camada `Solucao_gelatina`). | ADEQUATE (melhor) | O material aparente sugere o que o terreno faz: comunica a função. |
+| Marcação (`terrain_mark`) | O terreno estranho ganha uma marca (camada `Solucao_mark`). | PARTIAL | Mostra onde há diferença, mas o significado da marca precisa ser aprendido. |
+| Deformação (`terrain_motion`) | O terreno pulsa continuamente, por código. | PARTIAL | Chama atenção para algo incomum, mas pode sugerir elasticidade ou instabilidade. |
 
-P4 e A4 pertencem somente à revisão. Como essa segunda escolha ocorre após uma consequência e com opções reduzidas, ela não deve ser interpretada com o mesmo peso da resposta inicial.
+As três justificativas são:
 
-## Limites e avaliação futura
+- `terrain_prediction`: "Prever o comportamento do terreno antes de entrar em contato";
+- `terrain_identification`: "Reconhecer quais terrenos possuem um comportamento diferente";
+- `terrain_attention`: "Chamar atenção para os terrenos que merecem ser observados".
 
-O LM-GM organiza a intenção do protótipo, não substitui avaliação empírica. Para verificar a hipótese, uma etapa posterior deve observar, entre outros pontos:
+Elas acompanham, de forma aproximada, a função, a identificação e a saliência.
 
-- se o jogador distingue superfície especial, função da superfície e orientação de caminho;
-- a primeira solução, justificativa, IDs e posições apresentadas;
-- a consequência observada, ocorrência de revisão e solução final;
-- diferenças entre intervenção adequada com justificativa inadequada, intervenção inadequada com justificativa adequada e demais combinações.
+## Evidências na telemetria
 
-A telemetria será definida depois que as três fases do jogo tiverem estrutura comum suficiente para comparação.
+O arquivo da sessão (JSON em Documentos/TimothyMort) registra, por fase:
+
+- **Solução e justificativa:** a solução final, a justificativa e as posições em que cada uma apareceu.
+- **Troca de solução:** `hadRevision` ("trocou para uma solução diferente") e o número de escolhas.
+- **Desempenho:** o tempo ativo e as mortes.
+- **Demonstração:** quando ela ocorreu, e o tempo e as mortes depois dela.
+
+Na atividade da sessão, registra:
+
+- tempo, entradas e mortes por sala;
+- a última sala alcançada;
+- o esquema de controle;
+- a sequência de eventos da intervenção: soluções testadas, "continuar testando" e justificativa.
+
+Perguntas que esses dados permitem investigar:
+
+- se quem testa mais de uma solução escolhe a Aparência com mais frequência;
+- se a justificativa escolhida combina com a solução (por exemplo, Marcação com identificação);
+- se as mortes na sala 3 diminuem com a melhor solução.
+
+## Limites
+
+- A qualidade das soluções é uma hipótese de design. A arte das soluções é própria do projeto e influencia a leitura.
+- **Mudança de método em 04/11/2026:** a justificativa passou a ser pedida **ao sair** da sala de intervenção, depois da experimentação, e as opções caíram de 6 para 3. Dados anteriores não são diretamente comparáveis.
+- A dificuldade de plataforma pode mascarar o problema de design. O teste com especialistas motivou o dash maior, mais tolerância no pulo e as paredes laterais.
