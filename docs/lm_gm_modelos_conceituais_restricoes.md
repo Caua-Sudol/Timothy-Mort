@@ -31,7 +31,7 @@ O feedback de dano é fixo desde o começo, porque o tema já foi trabalhado na 
 
 - **Rocha comum:** recuo + coração rachando.
 - **Rocha impostora:** recuo + tela tremendo.
-- **Invencibilidade:** 0,6 s.
+- **Invencibilidade:** 1 s.
 
 O objetivo de aprendizagem é **reconhecer que um modelo conceitual se apoia na aparência e na experiência anterior, e avaliar como corrigir uma incoerência entre aparência e comportamento**. As opções são diferenciar, uniformizar ou sinalizar por movimento. O jogo ensina pela ação, sem explicação em diálogo.
 

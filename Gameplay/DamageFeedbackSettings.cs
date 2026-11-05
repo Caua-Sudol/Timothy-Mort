@@ -12,9 +12,9 @@ public static class DamageFeedbackSettings
     public const double ImpactEffectDurationSeconds = 0.25;
     public const double CompressionDurationSeconds = 0.12;
 
-    // Phase 2 hot rocks: one heart every 0.6 s of contact (hidden invulnerability between hits).
-    // Was 1.0 s, which let the player walk across the fire.
-    public const double HotSurfaceDamageIntervalSeconds = 0.6;
+    // Phase 2 hot rocks: one heart every 1 s of contact (hidden invulnerability between hits).
+    // 0.6 s proved too short in the student build.
+    public const double HotSurfaceDamageIntervalSeconds = 1.0;
     // Recuo: the push plays without player input for a short moment.
     public const double KnockbackControlLockSeconds = 0.2;
     public const float HotSurfaceKnockbackHorizontalSpeed = 600f;

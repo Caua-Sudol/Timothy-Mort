@@ -15,7 +15,7 @@ Os nomes das mecânicas seguem os nós do artigo.
 
 ## Escopo da fase
 
-As salas têm **rochas quentes**, com a mesma aparência das plataformas comuns. Ficar em contato com elas, no chão, na parede ou no teto, tira **um coração a cada 0,6 s**. Não há nenhum sinal: nem recuo, nem piscar, nem som. Só o HUD de corações muda. O jogador perde vida sem perceber de onde ela veio.
+As salas têm **rochas quentes**, com a mesma aparência das plataformas comuns. Ficar em contato com elas, no chão, na parede ou no teto, tira **um coração a cada 1 s**. Não há nenhum sinal: nem recuo, nem piscar, nem som. Só o HUD de corações muda. O jogador perde vida sem perceber de onde ela veio.
 
 O objetivo de aprendizagem é **reconhecer que uma consequência sem resposta perceptível é um problema de feedback, e avaliar se uma intervenção comunica o evento (quando e onde), a perda (quanto) ou só um alerta genérico**.
 
@@ -45,7 +45,7 @@ Regras de suporte:
 
 | Game mechanic | Learning mechanic | Implementação | Uso pelo jogador |
 |---|---|---|---|
-| Movement; Simulate/Response | Explore; Experimentation | Rochas quentes iguais às plataformas comuns, com dano contínuo de 1 coração / 0,6 s e invulnerabilidade escondida. | Viver o problema: perder vida sem entender por quê. |
+| Movement; Simulate/Response | Explore; Experimentation | Rochas quentes iguais às plataformas comuns, com dano contínuo de 1 coração / 1 s e invulnerabilidade escondida. | Viver o problema: perder vida sem entender por quê. |
 | Feedback (ausente); Status | Observation; Identify | Só o HUD de corações muda. O Mort comenta o primeiro dano ("Você se feriu e nada mostrou isso!") depois de um pequeno atraso, para o dano passar despercebido antes. | Notar que a informação existia, mas não foi comunicada no momento nem no lugar do evento. |
 | Rewards/Penalties; Levels | Hypothesis | Perda de corações, menu de morte e passagem para a sala 3 bloqueada até a escolha. | Relacionar o custo à falta de feedback, e não à própria habilidade. |
 | Selecting/Collecting; Simulate/Response | Experimentation; Analyse | A espada abre três soluções, **Recuo**, **Coração rachando** e **Tela tremendo**, que podem ser trocadas à vontade e testadas nas rochas da sala. | Comparar o que cada resposta comunica sobre o mesmo dano. |
@@ -106,7 +106,7 @@ Perguntas que esses dados permitem investigar:
 ## Limites
 
 - A qualidade das soluções é uma hipótese de design.
-- **Invencibilidade:** passou de 1,0 s para 0,6 s em 04/11/2026, porque dava para atravessar o fogo.
+- **Invencibilidade:** passou de 1,0 s para 0,6 s em 04/11/2026, porque dava para atravessar o fogo, e voltou a 1 s em 05/11/2026, porque 0,6 s ficou curto demais no teste com o build dos estudantes.
 - **Fala do Mort:** passou a esperar o jogador sair da rocha. Dados anteriores a essas mudanças não são diretamente comparáveis.
 - **Justificativas:** passaram a ser pedidas na saída da intervenção, e as opções caíram de 6 para 3.
 - O teste com especialistas mostrou que a dificuldade de plataforma pode competir com o problema de feedback.

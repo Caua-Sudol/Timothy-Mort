@@ -617,14 +617,19 @@ public sealed class PhaseRun : IDisposable
     private void RestartAttempt()
     {
         _phaseState?.BeginAttempt();
-        // Room format: a new attempt starts again from the phase's first room.
+        // Room format: a new attempt starts from room 1, or from room 2 once the choice is
+        // made (justified), so the solution is not replayed through room 1.
         // The intervention room keeps restarting in place.
         // Debug keeps restarting in the current room to speed up testing.
         PhaseDefinition phase = _phaseState?.Definition;
+        int restartRoom = _phaseState?.HasJustification == true ? 1 : 0;
         if (!ResearchStudyConfiguration.DevToolsEnabled &&
-            phase != null && phase.UsesRoomFormat && phase.GetRoomIndex(_currentScenarioId) > 0)
+            phase != null && phase.UsesRoomFormat &&
+            phase.RoomScenarioIds.Count > restartRoom &&
+            phase.GetRoomIndex(_currentScenarioId) >= 0 &&
+            phase.GetRoomIndex(_currentScenarioId) != restartRoom)
         {
-            ChangeScenario(phase.RoomScenarioIds[0], null);
+            ChangeScenario(phase.RoomScenarioIds[restartRoom], null);
             return;
         }
         _scene.Restart(_camera);
