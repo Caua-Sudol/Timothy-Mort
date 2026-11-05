@@ -27,7 +27,7 @@ public sealed class AffordanceChoiceCatalogAdapter : IInterventionChoiceCatalog
     public string GetResultAssessment(string solutionId) => solutionId switch
     {
         null => "Sem escolha",
-        AffordanceChoiceCatalog.AppearanceSolutionId => "Pista de material (arte provisória)",
+        AffordanceChoiceCatalog.AppearanceSolutionId => "Pista de material",
         AffordanceChoiceCatalog.MarkSolutionId => "Pista de identificação",
         _ => "Pista de movimento"
     };

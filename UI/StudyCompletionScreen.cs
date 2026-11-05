@@ -50,10 +50,8 @@ public sealed class StudyCompletionScreen
         _exportPath = exportPath;
         _exportError = exportError;
         _folderOpenAttempted = false;
-        // While the MEEGA+ form is not configured (expert beta), the screen does not mention it.
-        _formStatus = ResearchStudyConfiguration.IsMeegaFormConfigured
-            ? "Questionário MEEGA+ pronto para abrir."
-            : null;
+        // The MEEGA+ step is part of the instructions; the status line starts empty.
+        _formStatus = null;
         RefreshPresentation();
     }
 
@@ -156,6 +154,15 @@ public sealed class StudyCompletionScreen
         else
         {
             text.AppendLine(_exportError ?? "A exportação local não foi concluída.");
+        }
+
+        // Only when the form is configured (student builds).
+        if (ResearchStudyConfiguration.IsMeegaFormConfigured)
+        {
+            text.AppendLine();
+            text.AppendLine(string.IsNullOrEmpty(_exportPath)
+                ? "Aperte F para responder o questionário."
+                : "4. Aperte F para responder o questionário.");
         }
 
         if (!string.IsNullOrEmpty(_formStatus))

@@ -89,7 +89,7 @@ Configurações em `App/ResearchStudyConfiguration.cs`:
 
 - **`BetaAffordanceOnly`:** só a Affordance fica jogável.
 - **`ResearchEmail`:** o e-mail mostrado na tela final.
-- **MEEGA+:** link do formulário, ainda não configurado.
+- **MEEGA+:** `MeegaFormUrl` e `SessionFieldName` (formulário dos estudantes; o código da sessão vai pré-preenchido). Com a URL vazia, a tela final não mostra o questionário.
 
 ## Estrutura de código
 

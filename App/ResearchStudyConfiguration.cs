@@ -25,10 +25,11 @@ public static class ResearchStudyConfiguration
     public static bool DevToolsEnabled => false;
 #endif
 
-    // Configure these values after creating the final Google Form.
-    // Example field: entry.123456789
-    private const string MeegaFormUrl = "";
-    private const string SessionFieldName = "";
+    // MEEGA+ Google Form (students). The session code is prefilled in the field below.
+    // Leave the URL empty to hide the questionnaire from the final screen (expert builds).
+    private const string MeegaFormUrl =
+        "https://docs.google.com/forms/d/e/1FAIpQLScC3rn0pEZjFI_aQtMroLuRvTXrY6QBYRdO4mDOVEL8lKaWuw/viewform";
+    private const string SessionFieldName = "entry.1347710777";
 
     public static bool IsMeegaFormConfigured
     {

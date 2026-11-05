@@ -446,8 +446,9 @@ public class Game1 : Game
 
         if (action == StudyCompletionAction.OPEN_FORM)
         {
+            // The visible code (TM-...) is sent, the same one shown on screen and in the file name.
             if (ResearchStudyConfiguration.TryOpenMeegaForm(
-                _studySession.CompletionData.SessionId,
+                _studySession.CompletionData.PublicCode,
                 out string errorMessage))
             {
                 _studyCompletionScreen.SetFormStatus(
