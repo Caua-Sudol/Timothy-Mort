@@ -24882,9 +24882,9 @@
 							"height": 112,
 							"defUid": 145,
 							"px": [1480,560],
-							"fieldInstances": [{ "__identifier": "Texto", "__type": "String", "__value": "{cima} + {dash}", "__tile": null, "defUid": 146, "realEditorValues": [{
+							"fieldInstances": [{ "__identifier": "Texto", "__type": "String", "__value": "{pular} duas vezes", "__tile": null, "defUid": 146, "realEditorValues": [{
 								"id": "V_String",
-								"params": ["{cima} + {dash}"]
+								"params": ["{pular} duas vezes"]
 							}] }],
 							"__worldX": 1480,
 							"__worldY": -2640
@@ -24920,9 +24920,9 @@
 							"height": 112,
 							"defUid": 145,
 							"px": [1720,200],
-							"fieldInstances": [{ "__identifier": "Texto", "__type": "String", "__value": "{pular}, depois {cima} + {dash}", "__tile": null, "defUid": 146, "realEditorValues": [{
+							"fieldInstances": [{ "__identifier": "Texto", "__type": "String", "__value": "{pular} no ar: impulso para cima", "__tile": null, "defUid": 146, "realEditorValues": [{
 								"id": "V_String",
-								"params": ["{pular}, depois {cima} + {dash}"]
+								"params": ["{pular} no ar: impulso para cima"]
 							}] }],
 							"__worldX": 1720,
 							"__worldY": -3000
@@ -24958,9 +24958,9 @@
 							"height": 112,
 							"defUid": 145,
 							"px": [2160,700],
-							"fieldInstances": [{ "__identifier": "Texto", "__type": "String", "__value": "{cima} + {direita} + {dash}", "__tile": null, "defUid": 146, "realEditorValues": [{
+							"fieldInstances": [{ "__identifier": "Texto", "__type": "String", "__value": "{direita} + {pular} duas vezes", "__tile": null, "defUid": 146, "realEditorValues": [{
 								"id": "V_String",
-								"params": ["{cima} + {direita} + {dash}"]
+								"params": ["{direita} + {pular} duas vezes"]
 							}] }],
 							"__worldX": 2160,
 							"__worldY": -2500

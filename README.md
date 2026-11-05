@@ -60,7 +60,7 @@ Todas as teclas funcionam ao mesmo tempo. O "esquema" só muda os nomes de tecla
 |---|---|
 | `A` / `D` ou `←` / `→` | Andar e navegar nos menus. |
 | `W` ou `↑` | Mirar o impulso para cima (não pula). |
-| `Espaço`, `C` ou `K` | Pular. |
+| `Espaço`, `C` ou `K` | Pular. **No ar**, apertar de novo faz o impulso para cima (na diagonal, com um lado segurado) e gasta o impulso. |
 | `Shift`, `X` ou `J` | Impulso (dash), **só no ar**: para os lados, para cima e na diagonal para cima. A direção pode vir logo depois da tecla (0,06 s). |
 | `E` | Interagir: entrada da intervenção, espada, saída da intervenção, placa de controles. |
 | `Enter` | Confirmar nos menus. |

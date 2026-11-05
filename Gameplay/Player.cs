@@ -65,6 +65,14 @@ public class Player
     private double _jumpBufferTime = GameScaleConfig.PlayerJumpBufferTime;
     private double _jumpBufferTimer;
 
+    // Jump pressed in the air = upward dash (diagonal when a side is held). It spends the
+    // dash charge, so it is an easier upward dash, not an extra jump.
+    // While falling it waits a moment: a jump pressed just before landing stays a normal
+    // jump (jump buffer) instead of spending the dash.
+    private const double AirJumpDashLandingGraceSeconds = 0.08;
+    private bool _airJumpDashPending;
+    private double _airJumpDashDelay;
+
     public bool CanDash { get; private set; } = true;
     public bool ShowsDashAsAvailable { get; private set; } = true;
     private Vector2 _dashDirection;
@@ -201,6 +209,8 @@ public void Update(double deltaTime)
 
         UpdateCoyoteTimer(deltaTime);
         UpdateJumpBufferTimer(deltaTime);
+        if (_airJumpDashDelay > 0)
+            _airJumpDashDelay -= deltaTime;
 
         if (horizontalInput != 0)
             _direction = horizontalInput > 0 ? Direction.Right : Direction.Left;
@@ -236,6 +246,28 @@ public void Update(double deltaTime)
 
         if (CanDash && _input.DashWasPressed)
             _dashRequested = true;
+
+        if (_input.JumpWasPressed && !CanJump() && CanDash && !_airJumpDashPending)
+        {
+            _airJumpDashPending = true;
+            _airJumpDashDelay = _velocity.Y < 0 ? 0 : AirJumpDashLandingGraceSeconds;
+        }
+
+        if (_airJumpDashPending)
+        {
+            // Landed (the buffered jump below takes over) or the dash was already used.
+            if (CanJump() || !CanDash)
+            {
+                _airJumpDashPending = false;
+            }
+            else if (_airJumpDashDelay <= 0)
+            {
+                _airJumpDashPending = false;
+                _jumpBufferTimer = 0;
+                StartAirJumpDash(horizontalInput);
+                return;
+            }
+        }
 
         if (HasBufferedJump() && CanJump())
         {
@@ -321,6 +353,17 @@ public void Update(double deltaTime)
     State = PlayerState.Dashing;
         CanDash = false;
         ShowsDashAsAvailable = false;
+    }
+
+    // Same dash as Shift, but always upward (diagonal with a side held) and without the
+    // still pause, so it reads as a second jump.
+    private void StartAirJumpDash(int horizontalInput)
+    {
+        StartDash(horizontalInput);
+        var direction = new Vector2(horizontalInput, -1);
+        direction.Normalize();
+        _dashDirection = direction;
+        _dashStartupTimer = 0;
     }
 
 private void UpdateDash(double deltaTime)

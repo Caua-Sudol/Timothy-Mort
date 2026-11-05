@@ -18,6 +18,13 @@ Régua para desenhar salas no LDtk (`Content/Maps/Affordance.ldtk`, grade de 96)
 
 O dash **só funciona no ar**. Ele vai para os lados, para cima e na diagonal para cima (nunca para baixo), e é recarregado ao tocar o chão ou uma gelatina.
 
+**Pulo no ar = impulso para cima** (05/11/2026, a partir do relatório dos especialistas, que apontaram a combinação de três teclas):
+
+- Apertar pulo no ar, com o impulso disponível, faz o mesmo impulso para cima, sem a pausa de 0,06 s. Com um lado segurado, sai na diagonal.
+- Ele gasta a mesma carga: não existe pulo duplo + impulso. Os alcances abaixo não mudam.
+- Caindo, o impulso espera até 0,08 s. Se o jogador tocar o chão nesse tempo, sai um pulo normal e a carga não é gasta.
+- O impulso reto para os lados continua no `Shift`, e o `W + Shift` continua funcionando.
+
 ## Alcances teóricos
 
 | Movimento | Unidades | Tiles de 96 |
