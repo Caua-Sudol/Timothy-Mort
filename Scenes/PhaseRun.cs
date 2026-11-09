@@ -32,6 +32,8 @@ public sealed class PhaseRun : IDisposable
     private OverlayState _overlayState = OverlayState.NONE;
     private KeyboardState _previousKeyboardState;
     private bool _mortCombinationSpoken;
+    // First solution applied: Mort's "try the others" balloon waits for the comment to end.
+    private bool _tryOthersCalloutPending;
     private bool _mortPassageSpoken;
     // The passage hint is only spoken the first time Affordance is played in the session.
     private bool _affordancePassageHintShown;
@@ -272,6 +274,13 @@ public sealed class PhaseRun : IDisposable
             _phaseState?.AccumulateActiveTime(deltaTime);
             Activity?.AddActiveTime(deltaTime);
             _mortSubtitle.Update(deltaTime);
+
+            // Dropped if the player already justified (left the intervention room).
+            if (_tryOthersCalloutPending && _phaseState?.HasJustification == true)
+                _tryOthersCalloutPending = false;
+            if (_tryOthersCalloutPending && !_mortSubtitle.IsShowing &&
+                _scene.TryStartMortCallout(MortDialogueCatalog.TryOtherSolutions))
+                _tryOthersCalloutPending = false;
         }
 
         _scene.SetInteractionPressed(KeyWasPressed(keyboardState, Keys.E));
@@ -410,7 +419,11 @@ public sealed class PhaseRun : IDisposable
     private void ShowMortChoiceComment(string solutionId)
     {
         if (_phaseState?.Definition.UsesRoomFormat == true)
+        {
             _mortSubtitle.Show(false, MortDialogueCatalog.AfterChoice(solutionId));
+            if (_phaseState.TryTakeTryOthersCallout())
+                _tryOthersCalloutPending = true;
+        }
     }
 
     private IReadOnlyList<InterventionSolutionDefinition> GetOrCreateInitialSolutions()
@@ -527,6 +540,7 @@ public sealed class PhaseRun : IDisposable
                 scenarioId);
             _mortCombinationSpoken = false;
             _mortPassageSpoken = false;
+            _tryOthersCalloutPending = false;
             _mortSubtitle.Clear();
             string[] introduction = MortDialogueCatalog.GetIntroduction(destinationPhase.Id);
             if (introduction != null)

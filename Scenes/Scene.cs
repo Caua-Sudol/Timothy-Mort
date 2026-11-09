@@ -443,6 +443,14 @@ public bool TryReloadMap(Camera camera, out string errorMessage)
     // "Continuar testando soluções": stay in the intervention room.
     public void CancelInterventionExit() => _pendingInterventionExit = null;
 
+    // Opens Mort's balloon from outside the scene; false while another balloon is showing.
+    public bool TryStartMortCallout(string text, bool freezes = true)
+    {
+        if (_calloutTimer > 0) return false;
+        StartMortCallout(text, freezes);
+        return true;
+    }
+
     public void ResyncPlayerInput() => _player.ResyncInput();
 
     // Room 2's way to room 3 stays blocked until a first solution is chosen in the intervention:
@@ -760,6 +768,11 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         if (IsFeedback && !IsInterventionRoom && _phaseState.TryTakeDamageCallout())
             _damageCalloutDelay = DamageCalloutDelaySeconds;
 
+        // Phase 3, before the choice: light balloon on the first impostor-rock hit.
+        if (impostorHit && !_phaseState.HasFirstChoice && _calloutTimer <= 0 &&
+            _phaseState.TryTakeImpostorRockCallout())
+            StartMortCallout(MortDialogueCatalog.ConceptImpostorRockCallout, freezes: false);
+
         SolutionVisualModule visualModules = GetAppliedVisualModules();
         if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_KNOCKBACK))
             _player.ApplySurfaceKnockback(GetAwayFromSurface(playerBounds, touchedSurface.Value, _player.FacingDirection));
@@ -1025,6 +1038,11 @@ private void UpdateGelatinContact()
                     : ConceptualModelsConstraintsSettings.TrampolineVerticalSpeed;
                 _player.ApplyUpwardImpulse(trampolineSpeed);
                 _usedGelatins.Add(gelatin);
+
+                // Before the choice: light balloon on the first launch.
+                if (_phaseState != null && !_phaseState.HasFirstChoice && _calloutTimer <= 0 &&
+                    _phaseState.TryTakeTrampolineCallout())
+                    StartMortCallout(MortDialogueCatalog.ConceptTrampolineCallout, freezes: false);
             }
 
             continue;

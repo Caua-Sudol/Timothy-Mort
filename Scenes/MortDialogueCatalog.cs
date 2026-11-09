@@ -18,6 +18,16 @@ public static class MortDialogueCatalog
     // First dash pressed on the ground in the session (balloon without pause or zoom).
     public const string DashOnlyInAir = "O impulso só funciona no ar. Pule primeiro!";
 
+    // Intervention room: once per phase, after the first solution's comment ends.
+    public const string TryOtherSolutions =
+        "Dá para testar as outras antes de sair. É só usar a espada de novo!";
+
+    // Conceptual models, before the choice: first touch of each impostor (light balloon).
+    // Neutral wording: no material names for the special platform.
+    public const string ConceptTrampolineCallout = "Estranho, não tem o mesmo efeito de antes!";
+    public const string ConceptImpostorRockCallout =
+        "Essa parecia igual às outras rochas... mas queimou bem mais!";
+
     // The dash tip moved to the tutorial and to the gelatin balloon below.
     public static readonly string[] Introduction =
     {

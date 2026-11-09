@@ -27,6 +27,8 @@ public sealed class MortSubtitle
         _font = font;
     }
 
+    public bool IsShowing => _text != null;
+
     public void Clear()
     {
         _pages.Clear();
