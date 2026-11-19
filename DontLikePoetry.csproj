@@ -39,6 +39,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="TimothyMort.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />
     <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.19" />
@@ -46,6 +49,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="ContentPipeline/**/*.cs" />
+    <!-- The test project lives inside this folder but builds on its own. -->
+    <Compile Remove="tests/**" />
+    <None Remove="tests/**" />
     <ProjectReference Include="ContentPipeline/TimothyMort.ContentPipeline.csproj"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>

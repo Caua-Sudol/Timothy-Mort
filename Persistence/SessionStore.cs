@@ -23,15 +23,27 @@ public sealed class SessionStore
 {
     private const string DatabaseFileName = "timothy-mort.db";
     private readonly string _dataDirectory;
+    private readonly string _visibleExportDirectory;
     private readonly string _connectionString;
 
     public string DatabasePath { get; }
 
     public SessionStore()
+        : this(
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "TimothyMort"),
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "TimothyMort"))
     {
-        _dataDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "TimothyMort");
+    }
+
+    // Tests pass temporary folders, so they never touch the player's database or Documents.
+    internal SessionStore(string dataDirectory, string visibleExportDirectory)
+    {
+        _dataDirectory = dataDirectory;
+        _visibleExportDirectory = visibleExportDirectory;
         Directory.CreateDirectory(_dataDirectory);
 
         DatabasePath = Path.Combine(_dataDirectory, DatabaseFileName);
@@ -274,9 +286,7 @@ public sealed class SessionStore
         // Also save a copy in a folder testers can find (Documents on Windows, home on Linux).
         try
         {
-            string visibleDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "TimothyMort");
+            string visibleDirectory = _visibleExportDirectory;
             Directory.CreateDirectory(visibleDirectory);
             string visiblePath = Path.Combine(visibleDirectory,
                 $"sessao_{session.PublicCode}_{session.SessionId}.json");
