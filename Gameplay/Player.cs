@@ -192,7 +192,6 @@ public class Player
 
 public void Update(double deltaTime)
 {
-        _presentation.UpdateEffects(deltaTime);
     _input.Update();
         if (_controlLockTimer > 0)
         {
@@ -405,14 +404,6 @@ public void EndDash()
     _velocity = _velocity * 0.5f;
 }
 
-    public void StartSurfaceContactFlash() => _presentation.StartSurfaceContactFlash();
-    public void ClearSurfaceContactFlash() => _presentation.ClearSurfaceContactFlash();
-    public void StartDashRechargeSymbol() => _presentation.StartDashRechargeSymbol();
-    public void ClearDashRechargeSymbol() => _presentation.ClearDashRechargeSymbol();
-    public void StartDashEnergyAbsorption(Vector2 source) =>
-        _presentation.StartDashEnergyAbsorption(source);
-    public void ClearDashEnergyAbsorption() => _presentation.ClearDashEnergyAbsorption();
-
     private void ApplyNormalMovement(int horizontalInput, double deltaTime)
     {
         float targetVelocityX = horizontalInput * _maxVelocity.X * RelativeScale;
@@ -588,10 +579,6 @@ public void EndDash()
         _controlLockTimer = DamageFeedbackSettings.KnockbackControlLockSeconds;
     }
 
-    public void StartDamageCompression() => _presentation.StartDamageCompression();
-
-    public void ClearDamageFeedback() => _presentation.ClearDamageFeedback();
-
     public void Draw(
         SpriteBatch spriteBatch,
         SolutionVisualModule visualModules,
@@ -601,16 +588,6 @@ public void EndDash()
             this,
             visualModules,
             damageInvulnerabilityRemainingSeconds);
-
-    public void DrawDashRechargeSymbol(
-        SpriteBatch spriteBatch,
-        SolutionVisualModule visualModules) =>
-        _presentation.DrawDashRechargeSymbol(spriteBatch, this, visualModules);
-
-    public void DrawDashEnergyAbsorption(
-        SpriteBatch spriteBatch,
-        SolutionVisualModule visualModules) =>
-        _presentation.DrawDashEnergyAbsorption(spriteBatch, this, visualModules);
 
     internal Direction FacingDirection => _direction;
     internal Vector2 DashDirectionForPresentation => _dashDirection;

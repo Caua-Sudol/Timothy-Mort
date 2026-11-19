@@ -47,9 +47,6 @@ public sealed class ConceptualModelsConstraintsChoiceCatalog : IInterventionChoi
         });
 
     // The choice can be changed inside the intervention room; there is no revision round.
-    public IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions =>
-        InitialSolutions;
-
     public IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
         Array.AsReadOnly(new[]
         {

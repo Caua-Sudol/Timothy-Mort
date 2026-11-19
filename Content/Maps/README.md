@@ -37,7 +37,7 @@ Cada fase tem a sua sala de intervenção, porque a colisão (IntGrid) não muda
 | 3 | `espinhos` | Dano: na Affordance, funciona como queda (perde um coração e volta ao início). |
 | 4 | `rochaQuente` | Sólida; fere enquanto há contato (Feedback e Modelos). |
 | 5 | `gelatinaTrampolim` | Fase 3, **mini-jump**: parece gelatina, lança para cima e não recarrega o dash. |
-| 6 | `espinhoInofensivo` | Versão antiga da fase 3. Não é mais usado em nenhum nível. |
+| 6 | `espinhoInofensivo` | Versão antiga da fase 3. O jogo ignora esse valor; um teste garante que nenhum nível o usa. |
 | 7 | `rochaImpostora` | Fase 3: parece rocha quente e tira 2 corações. |
 
 A física vem **só** da `Colisao`. As camadas de arte não criam colisão.

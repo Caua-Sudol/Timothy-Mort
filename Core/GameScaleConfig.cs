@@ -23,7 +23,6 @@ internal static class GameScaleConfig
     public const int PlayerReferenceColliderHeight = 152;
 
     public const string ScaleTestScenarioId = "scale_test";
-    public const string ScaleTestMapPath = "Content/ScaleTest.tmx";
     public const int ScaleTestHudMargin = 16;
 
     // Baseline at scale 1. Spatial rates scale with the player; times stay fixed.

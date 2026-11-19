@@ -18,17 +18,6 @@ $set PlayerTextureDivisor=2
 
 #---------------------------------- Content ---------------------------------#
 
-#begin ../assets/teste_ldtk/root_tileset.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyEnabled=False
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:../assets/teste_ldtk/root_tileset.png;visual/teste_ldtk_terrain.png
-
 #begin ../assets/mg/interactive/sword.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -109,50 +98,6 @@ $set PlayerTextureDivisor=2
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:../assets/bg_prot.png;visual/bg_prot.png
-
-#begin ../assets/mg_solid.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyEnabled=False
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:../assets/mg_solid.png;visual/mg_solid.png
-
-#begin ../assets/mg_gelatine.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyEnabled=False
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:../assets/mg_gelatine.png;visual/mg_gelatine.png
-
-#begin ../assets/foreground_prot.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyEnabled=False
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:../assets/foreground_prot.png;visual/foreground_prot.png
-
-#begin ../assets/Timothy&Mort.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyEnabled=False
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:../assets/Timothy&Mort.png;visual/timothy_mort.png
 
 #begin ../assets/icons/icons.png
 /importer:TextureImporter

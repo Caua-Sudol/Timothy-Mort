@@ -43,9 +43,6 @@ public static class AffordanceChoiceCatalog
         });
 
     // Reuse the same alternatives: revision is optional experimentation in this phase.
-    public static IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions =>
-        InitialSolutions;
-
     public static IReadOnlyList<InterventionJustificationDefinition> Justifications { get; } =
         Array.AsReadOnly(new[]
         {

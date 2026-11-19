@@ -41,7 +41,6 @@ public sealed class InterventionChoiceMenu
     private string _justificationQuestion;
     private string _solutionQuestion;
     private ChoiceStep _choiceStep;
-    private bool _isRevision;
 
     // Extra card after the justifications when leaving the intervention room.
     // Tinted red like the sword's smoke, so it reads as "go back to the sword".
@@ -74,14 +73,7 @@ public sealed class InterventionChoiceMenu
         string solutionQuestion = null)
     {
         Open(solutions, Array.Empty<InterventionJustificationDefinition>(),
-            solutionQuestion, null, ChoiceStep.SOLUTION, false);
-    }
-
-    public void OpenRevision(IReadOnlyList<InterventionSolutionDefinition> solutions,
-        string solutionQuestion = null)
-    {
-        Open(solutions, Array.Empty<InterventionJustificationDefinition>(),
-            solutionQuestion, null, ChoiceStep.SOLUTION, true);
+            solutionQuestion, null, ChoiceStep.SOLUTION);
     }
 
     // Leaving the intervention room: the justifications plus "keep testing".
@@ -90,7 +82,7 @@ public sealed class InterventionChoiceMenu
         string justificationQuestion)
     {
         Open(Array.Empty<InterventionSolutionDefinition>(), justifications,
-            null, justificationQuestion, ChoiceStep.JUSTIFICATION, false);
+            null, justificationQuestion, ChoiceStep.JUSTIFICATION);
     }
 
     private void Open(
@@ -98,8 +90,7 @@ public sealed class InterventionChoiceMenu
         IReadOnlyList<InterventionJustificationDefinition> justifications,
         string solutionQuestion,
         string justificationQuestion,
-        ChoiceStep step,
-        bool isRevision)
+        ChoiceStep step)
     {
         _solutions = solutions;
         _justifications = justifications;
@@ -110,7 +101,6 @@ public sealed class InterventionChoiceMenu
         _solutionQuestion = solutionQuestion;
         _justificationQuestion = justificationQuestion;
         _choiceStep = step;
-        _isRevision = isRevision;
     }
 
     private bool IsOpen => _choiceStep == ChoiceStep.SOLUTION
@@ -139,15 +129,7 @@ public sealed class InterventionChoiceMenu
     public bool TryTakeCompletedSolution(out InterventionSolutionDefinition solution)
     {
         solution = _completedSolution;
-        if (solution == null || _isRevision) return false;
-        _completedSolution = null;
-        return true;
-    }
-
-    public bool TryTakeCompletedRevision(out InterventionSolutionDefinition solution)
-    {
-        solution = _completedSolution;
-        if (solution == null || !_isRevision) return false;
+        if (solution == null) return false;
         _completedSolution = null;
         return true;
     }
@@ -296,9 +278,8 @@ public sealed class InterventionChoiceMenu
 
     private void DrawSolutionStep(SpriteBatch spriteBatch)
     {
-        string question = _solutionQuestion ?? (_isRevision
-            ? "Como você revisaria a intervenção para resolver o problema?"
-            : "Que intervenção você aplicaria para resolver esse problema?");
+        string question = _solutionQuestion ??
+            "Que intervenção você aplicaria para resolver esse problema?";
         DrawFittedSolutionText(spriteBatch, _solutionTitleFont, question,
             new Vector2(248.7f, 185.3f), new Vector2(1456.0f, 82.7f),
             PaperTextColor, 0.55f, true);
@@ -310,7 +291,7 @@ public sealed class InterventionChoiceMenu
     private Vector2 GetSolutionCardPosition(int index)
     {
         // The three-card layout follows the exact Affinity positions.
-        // Revision rounds with fewer options remain centered.
+        // Fewer options stay centered.
         float cardsWidth = _solutions.Count * CardWidth + (_solutions.Count - 1) * CardSpacing;
         float cardsLeft = (LogicalWidth - cardsWidth) / 2.0f;
         float x = _solutions.Count == 3

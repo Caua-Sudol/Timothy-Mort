@@ -14,7 +14,6 @@ public sealed class PhaseDefinition
     public int MaximumHealth { get; }
     public double DamageInvulnerabilitySeconds { get; }
     public SolutionVisualModule BaseVisualModules { get; }
-    public int? ExitHealthThreshold { get; }
 
     // Room format (as in Affordance): challenge rooms in order plus one intervention room.
     public IReadOnlyList<string> RoomScenarioIds { get; }
@@ -40,7 +39,6 @@ public sealed class PhaseDefinition
         int maximumHealth = 0,
         double damageInvulnerabilitySeconds = 0.0,
         SolutionVisualModule baseVisualModules = SolutionVisualModule.NONE,
-        int? exitHealthThreshold = null,
         IReadOnlyList<string> roomScenarioIds = null,
         string interventionScenarioId = null,
         string bestSolutionId = null,
@@ -74,14 +72,6 @@ public sealed class PhaseDefinition
                 nameof(damageInvulnerabilitySeconds));
         }
 
-        if (exitHealthThreshold.HasValue &&
-            (maximumHealth <= 0 ||
-             exitHealthThreshold.Value < 0 ||
-             exitHealthThreshold.Value > maximumHealth))
-        {
-            throw new ArgumentOutOfRangeException(nameof(exitHealthThreshold));
-        }
-
         Id = id;
         ProblemScenarioId = problemScenarioId;
         ChoiceCatalog = choiceCatalog;
@@ -89,7 +79,6 @@ public sealed class PhaseDefinition
         MaximumHealth = maximumHealth;
         DamageInvulnerabilitySeconds = damageInvulnerabilitySeconds;
         BaseVisualModules = baseVisualModules;
-        ExitHealthThreshold = exitHealthThreshold;
         _scenarioIds = new HashSet<string>(scenarioIds, StringComparer.Ordinal);
         RoomScenarioIds = roomScenarioIds ?? Array.Empty<string>();
         InterventionScenarioId = interventionScenarioId;
@@ -132,11 +121,5 @@ public sealed class PhaseDefinition
     {
         return !string.IsNullOrEmpty(scenarioId) &&
             _scenarioIds.Contains(scenarioId);
-    }
-
-    public bool HealthAllowsExit(int currentHealth)
-    {
-        return ExitHealthThreshold.HasValue &&
-            currentHealth <= ExitHealthThreshold.Value;
     }
 }

@@ -223,11 +223,6 @@ public sealed class PhaseRun : IDisposable
                     Activity?.RecordIntervention(_phaseState.PhaseId, "solucao", solution.Id);
                 }, solution.Id);
             }
-            else if (_interventionChoiceMenu.TryTakeCompletedRevision(
-                out InterventionSolutionDefinition revisionSolution))
-            {
-                ApplyChoiceWithBlink(() => _phaseState.ApplyRevision(revisionSolution), revisionSolution.Id);
-            }
             else if (_interventionChoiceMenu.TryTakeExitJustification(
                 out InterventionJustificationDefinition justification))
             {
@@ -332,20 +327,6 @@ public sealed class PhaseRun : IDisposable
                 _interventionChoiceMenu.OpenSolutions(
                     GetOrCreateInitialSolutions(),
                     _phaseState.ChoiceCatalog.SolutionQuestion);
-                _overlayState = OverlayState.INTERVENTION_CHOICES;
-                return;
-            }
-
-            // Room format: no revision round; the choice changes inside the intervention.
-            if (_phaseState.NeedsSolutionRevision &&
-                !_phaseState.Definition.UsesRoomFormat)
-            {
-                _interventionChoiceMenu.OpenRevision(
-                    _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
-                        ? GetOrCreateInitialSolutions()
-                        : _phaseState.ChoiceCatalog.AvailableRevisionSolutions,
-                    _phaseState.PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId
-                        ? AffordanceChoiceCatalog.SolutionQuestion : null);
                 _overlayState = OverlayState.INTERVENTION_CHOICES;
                 return;
             }
@@ -710,11 +691,7 @@ public sealed class PhaseRun : IDisposable
             int maximumHealth = _phaseState.HasDamageSystem ? _phaseState.MaximumHealth : 1;
             int currentHealth = _scene.PlayerIsDead ? 0 :
                 _phaseState.HasDamageSystem ? _phaseState.CurrentHealth : 1;
-            _damageHud.Draw(
-                _spriteBatch,
-                currentHealth,
-                maximumHealth,
-                _phaseState.AppliedVisualModules);
+            _damageHud.Draw(_spriteBatch, currentHealth, maximumHealth);
         }
 
         if (_overlayState == OverlayState.PAUSED)

@@ -57,9 +57,6 @@ public class Scene
 
     public void SetInteractionPressed(bool pressed) => _interactPressed = pressed;
     public void AlignCamera(Camera camera) => UpdatePlayingCamera(camera);
-    private double _damageParticlesTimer;
-    private double _damageImpactMarkTimer;
-    private Vector2 _damageContactPoint;
     // Phase 2 solution effects. The heart is a placeholder until the 3-frame art arrives.
     private double _heartCrackTimer;
     private double _screenShakeTimer;
@@ -88,13 +85,8 @@ public class Scene
     private readonly float? _playerScreenHeightRatio;
     private readonly bool _supportsPlayerScalePreview;
     public bool UseOriginalScaleTestCamera { get; set; }
-    private readonly PropVisualPresentation _propVisualPresentation;
-    private readonly ConceptualRuleReminderPresentation
-        _conceptualRuleReminderPresentation;
 private readonly PlayerCollision _playerCollision = new PlayerCollision();
 private readonly HashSet<Rectangle> _usedGelatins = new HashSet<Rectangle>();
-private bool _playerWasTouchingSolidSurface;
-private bool _playerWasTouchingGelatinSurface;
 private Vector2 _checkpoint;
     private bool _playerIsDead;
     private Vector2 _playerStart;
@@ -142,7 +134,6 @@ private Vector2 _checkpoint;
             scenario.FallbackPlayerStart,
             entrySpawnId,
             phaseState,
-            scenario.Id == ScenarioCatalog.PropVisualScenarioId,
             scenario.LdtkLevelId,
             scenario.CameraBehavior,
             scenario.PlayerScreenHeightRatio,
@@ -168,7 +159,7 @@ private Vector2 _checkpoint;
     private static readonly Color TutorialSignColor = new Color(0xD8, 0xD0, 0xBB);
 
     public Scene(string mapPath, Vector2 playerStart)
-        : this(mapPath, playerStart, null, null, false)
+        : this(mapPath, playerStart, null, null)
     {
     }
 
@@ -177,7 +168,6 @@ private Vector2 _checkpoint;
         Vector2 playerStart,
         string entrySpawnId,
         PhaseState phaseState,
-        bool usesPropVisualPresentation,
         string ldtkLevelId = null,
         ScenarioCameraBehavior cameraBehavior = ScenarioCameraBehavior.FOLLOW_PLAYER,
         float? playerScreenHeightRatio = null,
@@ -188,13 +178,6 @@ private Vector2 _checkpoint;
         _cameraBehavior = cameraBehavior;
         _playerScreenHeightRatio = playerScreenHeightRatio;
         _supportsPlayerScalePreview = supportsPlayerScalePreview;
-        _propVisualPresentation = usesPropVisualPresentation
-            ? new PropVisualPresentation()
-            : null;
-        _conceptualRuleReminderPresentation =
-            phaseState?.PhaseId == ScenarioCatalog.ConceptualModelsConstraintsScenarioId
-                ? new ConceptualRuleReminderPresentation()
-                : null;
         _fallbackPlayerStart = playerStart;
         _entrySpawnId = entrySpawnId;
         _phaseState = phaseState;
@@ -245,8 +228,6 @@ private Vector2 _checkpoint;
         _interventionExitRequested = false;
         SyncInterventionState();
         _usedGelatins.Clear();
-        _playerWasTouchingSolidSurface = false;
-        _playerWasTouchingGelatinSurface = false;
         _fadeRectangle = new Rectangle(0, 0, ScreenWidth, ScreenHeight);
         loading.Mark("preparacao");
         _map.LoadContent(graphicsDevice);
@@ -286,8 +267,6 @@ private Vector2 _checkpoint;
                 LoadDiagnostics.LoadTexture(content, "ui/icons/coracao"));
             _interventionTrigger.SetSwordTexture(LoadDiagnostics.LoadTexture(content, "visual/intervention_sword"));
         }
-        _propVisualPresentation?.LoadContent(content);
-        _conceptualRuleReminderPresentation?.LoadContent(graphicsDevice, content);
         ConfigureExitDoor();
         _playerStart = _map.GetPlayerSpawn(_entrySpawnId)
             ?? _map.PlayerSpawn
@@ -495,12 +474,9 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             StartMortCallout(MortDialogueCatalog.DashOnlyInAir, freezes: false);
         }
         ApplyGelatinFallSpeed();
-        bool dashWasAvailableBeforePhysics = _player.CanDash;
         UpdatePlayerPhysics(deltaTime);
         _player.UpdateAnimation(deltaTime);
         ApplyGelatinFallSpeed();
-        _damageParticlesTimer = Math.Max(0, _damageParticlesTimer - deltaTime);
-        _damageImpactMarkTimer = Math.Max(0, _damageImpactMarkTimer - deltaTime);
         _heartCrackTimer = Math.Max(0, _heartCrackTimer - deltaTime);
         _screenShakeTimer = Math.Max(0, _screenShakeTimer - deltaTime);
         UpdateDamage(camera);
@@ -508,22 +484,6 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         if (_playerIsDead)
         {
             return;
-        }
-
-        if (!dashWasAvailableBeforePhysics && _player.CanDash &&
-            _phaseState?.AppliedSolutionUsesModule(
-                SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL) == true)
-        {
-            _player.StartDashRechargeSymbol();
-        }
-
-        if (!dashWasAvailableBeforePhysics && _player.CanDash &&
-            _phaseState?.AppliedSolutionUsesModule(
-                SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION) == true)
-        {
-            _player.StartDashEnergyAbsorption(new Vector2(
-                _player.HitBox.Center.X,
-                _player.HitBox.Bottom + 8));
         }
 
         // Sword: a simple effect, stronger after the first solution (inviting a second test),
@@ -554,7 +514,6 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             StartMortCallout(MortDialogueCatalog.AffordanceFirstGelatinCallout);
 
     UpdateGelatinContact();
-    UpdateSurfaceContactFeedback();
     // Tutorial: the last ground touched is the checkpoint, so a fall only repeats that stretch.
     if (_isTutorial && _player.IsGrounded)
         _checkpoint = new Vector2(
@@ -675,9 +634,7 @@ private void UpdatePlaying(Camera camera, double deltaTime)
         if (_useAdditionalCollidersOnly)
             return _additionalSolidColliders;
 
-        return _map.GetSolidColliders(
-                _phaseState?.VerticalRouteRevealed == true,
-                GetAppliedVisualModules().HasFlag(SolutionVisualModule.SAFE_ROUTE))
+        return _map.GetSolidColliders(_phaseState?.VerticalRouteRevealed == true)
             .Concat(_exitDoor.Collider.HasValue
                 ? new[] { _exitDoor.Collider.Value }
                 : Enumerable.Empty<Rectangle>())
@@ -696,21 +653,9 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             return true;
         }
 
-        SolutionVisualModule visualModules = GetAppliedVisualModules();
         DamageVolume damageVolume = _map.GetDamageVolume(
             _player.HitBox,
             _phaseState.VerticalRouteRevealed);
-        bool hitHarmlessSpike = false;
-
-        if (damageVolume == null &&
-            (visualModules.HasFlag(
-                SolutionVisualModule.RESTORE_HARMLESS_SPIKE_DAMAGE) ||
-             visualModules.HasFlag(
-                SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE)))
-        {
-            damageVolume = _map.GetHarmlessSpikeVolume(_player.HitBox);
-            hitHarmlessSpike = damageVolume != null;
-        }
 
         // Affordance spikes work like falling: lose a heart and respawn, even while invulnerable.
         if (damageVolume != null && IsAffordance)
@@ -719,14 +664,8 @@ private void UpdatePlaying(Camera camera, double deltaTime)
             return true;
         }
 
-        int damageAmount = hitHarmlessSpike &&
-            visualModules.HasFlag(
-                SolutionVisualModule.HARMLESS_SPIKE_DOUBLE_DAMAGE)
-            ? 2
-            : 1;
-
         if (damageVolume == null ||
-            !_phaseState.TryApplyDamage(damageAmount))
+            !_phaseState.TryApplyDamage())
         {
             return false;
         }
@@ -942,43 +881,18 @@ private void UpdatePlaying(Camera camera, double deltaTime)
 
     private void ApplyDamageFeedback(DamageVolume damageVolume)
     {
-        SolutionVisualModule visualModules = GetAppliedVisualModules();
-        Rectangle damageBounds = damageVolume.Bounds;
-        int playerCenterX = _player.HitBox.Center.X;
-        int horizontalDirection = playerCenterX.CompareTo(damageBounds.Center.X);
+        int horizontalDirection = _player.HitBox.Center.X.CompareTo(damageVolume.Bounds.Center.X);
 
-        _damageContactPoint = new Vector2(
-            Math.Clamp(playerCenterX, damageBounds.Left, damageBounds.Right),
-            Math.Clamp(_player.HitBox.Center.Y, damageBounds.Top, damageBounds.Bottom));
-
-        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_KNOCKBACK))
+        if (GetAppliedVisualModules().HasFlag(SolutionVisualModule.DAMAGE_KNOCKBACK))
         {
             _player.ApplyDamageKnockback(horizontalDirection);
-        }
-
-        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_PARTICLES))
-        {
-            _damageParticlesTimer = DamageFeedbackSettings.ImpactEffectDurationSeconds;
-        }
-
-        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_IMPACT_MARK))
-        {
-            _damageImpactMarkTimer = DamageFeedbackSettings.ImpactEffectDurationSeconds;
-        }
-
-        if (visualModules.HasFlag(SolutionVisualModule.DAMAGE_COMPRESSION))
-        {
-            _player.StartDamageCompression();
         }
     }
 
     private void ClearDamageFeedbackEffects()
     {
-        _damageParticlesTimer = 0;
-        _damageImpactMarkTimer = 0;
         _heartCrackTimer = 0;
         _screenShakeTimer = 0;
-        _player?.ClearDamageFeedback();
     }
 
     public void SyncInterventionState()
@@ -1020,23 +934,12 @@ private void UpdateGelatinContact()
             continue;
         }
 
-        bool dashWasAvailable = _player.CanDash;
-
-        SolutionVisualModule visualModules = GetAppliedVisualModules();
         // Restaurar (phase 3) makes the trampoline impostor act like the known gelatin.
-        bool restoresTrampolineGelatin = visualModules.HasFlag(
-            SolutionVisualModule.RESTORE_TRAMPOLINE_GELATIN) || ImpostorsRestored;
-
-        if (_map.IsTrampolineGelatin(gelatin) && !restoresTrampolineGelatin)
+        if (_map.IsTrampolineGelatin(gelatin) && !ImpostorsRestored)
         {
             if (_player.Velocity.Y >= 0)
             {
-                float trampolineSpeed = visualModules.HasFlag(
-                    SolutionVisualModule.TRAMPOLINE_DASH_EQUIVALENT)
-                    ? ConceptualModelsConstraintsSettings
-                        .TrampolineDashEquivalentVerticalSpeed
-                    : ConceptualModelsConstraintsSettings.TrampolineVerticalSpeed;
-                _player.ApplyUpwardImpulse(trampolineSpeed);
+                _player.ApplyUpwardImpulse(ConceptualModelsConstraintsSettings.TrampolineVerticalSpeed);
                 _usedGelatins.Add(gelatin);
 
                 // Before the choice: light balloon on the first launch.
@@ -1048,67 +951,9 @@ private void UpdateGelatinContact()
             continue;
         }
 
-        if (_phaseState?.AppliedSolutionUsesModule(
-            SolutionVisualModule.PLAYER_DASH_RECOVERY_COLOR) == true)
-            {
-                _player.RestoreDash();
-            }
-            else
-        {
-            _player.RestoreDashWithoutVisualFeedback();
-        }
-
-        if (!dashWasAvailable &&
-            _phaseState?.AppliedSolutionUsesModule(
-                SolutionVisualModule.PLAYER_DASH_RECHARGE_SYMBOL) == true)
-        {
-            _player.StartDashRechargeSymbol();
-        }
-
-        if (!dashWasAvailable &&
-            _phaseState?.AppliedSolutionUsesModule(
-                SolutionVisualModule.PLAYER_DASH_ENERGY_ABSORPTION) == true)
-        {
-            _player.StartDashEnergyAbsorption(new Vector2(
-                gelatin.Center.X,
-                gelatin.Center.Y));
-        }
-
+        _player.RestoreDashWithoutVisualFeedback();
         _usedGelatins.Add(gelatin);
     }
-}
-
-private void UpdateSurfaceContactFeedback()
-{
-    bool verticalRouteRevealed =
-        _phaseState?.VerticalRouteRevealed == true;
-
-    bool playerIsTouchingSolidSurface =
-        PlayerTouchesAnySurface(_map.Platforms) ||
-        (verticalRouteRevealed &&
-         PlayerTouchesAnySurface(_map.VerticalRoutePlatforms));
-
-    bool playerIsTouchingGelatinSurface =
-        PlayerTouchesAnySurface(
-            GetGelatinVolumes(verticalRouteRevealed));
-
-    bool contactStarted =
-        playerIsTouchingSolidSurface &&
-        !_playerWasTouchingSolidSurface ||
-        playerIsTouchingGelatinSurface &&
-        !_playerWasTouchingGelatinSurface;
-
-    if (contactStarted &&
-        _phaseState?.AppliedSolutionUsesModule(
-            SolutionVisualModule.PLAYER_SURFACE_CONTACT_FLASH) == true)
-    {
-        _player.StartSurfaceContactFlash();
-    }
-
-    _playerWasTouchingSolidSurface =
-        playerIsTouchingSolidSurface;
-    _playerWasTouchingGelatinSurface =
-        playerIsTouchingGelatinSurface;
 }
 
 private bool PlayerTouchesAnySurface(
@@ -1206,12 +1051,7 @@ private static bool RectanglesTouchOrIntersect(
         ClearDamageFeedbackEffects();
         _playerIsDead = true;
         _usedGelatins.Clear();
-        _playerWasTouchingSolidSurface = false;
-        _playerWasTouchingGelatinSurface = false;
         _player.CancelDash();
-        _player.ClearSurfaceContactFlash();
-        _player.ClearDashRechargeSymbol();
-        _player.ClearDashEnergyAbsorption();
         _player.ResetVelocity();
     }
 
@@ -1220,15 +1060,10 @@ private static bool RectanglesTouchOrIntersect(
         _map.ResetDynamicPlatforms();
         _playerIsDead = false;
         _usedGelatins.Clear();
-        _playerWasTouchingSolidSurface = false;
-        _playerWasTouchingGelatinSurface = false;
         _player.Move(
             (int)_checkpoint.X + (PlayerWidth - _player.HitBox.Width) / 2,
             (int)_checkpoint.Y + PlayerHeight - _player.HitBox.Height);
         _player.CancelDash();
-        _player.ClearSurfaceContactFlash();
-        _player.ClearDashRechargeSymbol();
-        _player.ClearDashEnergyAbsorption();
         _player.ResetVelocity();
         _player.Grounded();
         _player.RestoreDash();
@@ -1369,7 +1204,7 @@ private static bool RectanglesTouchOrIntersect(
             spriteBatch,
             camera,
             _player,
-            _propVisualPresentation?.DebugReferenceHeight ?? _player.DebugReferenceHeight,
+            _player.DebugReferenceHeight,
             _playerScreenHeightRatio.HasValue);
     }
 
@@ -1519,64 +1354,13 @@ private static bool RectanglesTouchOrIntersect(
             split * 0.5f, halfOrigin, scale, SpriteEffects.None, 0f);
     }
 
-    private void DrawDamageEventEffects(
-        SpriteBatch spriteBatch,
-        SolutionVisualModule visualModules)
+    private void DrawDamageEventEffects(SpriteBatch spriteBatch)
     {
         DrawHeartCrack(spriteBatch);
-        if (_damageParticlesTimer > 0 &&
-            visualModules.HasFlag(SolutionVisualModule.DAMAGE_PARTICLES))
-        {
-            float progress = 1f - (float)(
-                _damageParticlesTimer / DamageFeedbackSettings.ImpactEffectDurationSeconds);
-            Vector2[] directions =
-            [
-                new(-1f, -1f),
-                new(0f, -1.3f),
-                new(1f, -1f),
-                new(-1.2f, 0f),
-                new(1.2f, 0f),
-                new(0f, 1f)
-            ];
-
-            foreach (Vector2 direction in directions)
-            {
-                Vector2 position = _damageContactPoint + direction * (8f + 18f * progress);
-                spriteBatch.Draw(
-                    _fadeTexture,
-                    new Rectangle((int)position.X - 2, (int)position.Y - 2, 4, 4),
-                    Color.OrangeRed * (1f - progress));
-            }
-        }
-
-        if (_damageImpactMarkTimer > 0 &&
-            visualModules.HasFlag(SolutionVisualModule.DAMAGE_IMPACT_MARK))
-        {
-            float opacity = (float)(
-                _damageImpactMarkTimer / DamageFeedbackSettings.ImpactEffectDurationSeconds);
-            int centerX = (int)_damageContactPoint.X;
-            int centerY = (int)_damageContactPoint.Y;
-            Color markColor = Color.Gold * opacity;
-
-            spriteBatch.Draw(
-                _fadeTexture,
-                new Rectangle(centerX - 10, centerY - 2, 20, 4),
-                markColor);
-            spriteBatch.Draw(
-                _fadeTexture,
-                new Rectangle(centerX - 2, centerY - 10, 4, 20),
-                markColor);
-        }
     }
 
     private void DrawWorld(SpriteBatch spriteBatch, Camera camera, Effect playerEffect)
     {
-        if (_propVisualPresentation != null)
-        {
-            DrawPropVisualWorld(spriteBatch, camera);
-            return;
-        }
-
         var cameraTransform = camera.GetTransform() * GetScreenShakeTransform();
         bool drawsScenery = _map.HasLdtkScenery && !_useAdditionalCollidersOnly;
         if (_isTutorial) DrawTutorialBackground(spriteBatch, cameraTransform);
@@ -1623,21 +1407,11 @@ private static bool RectanglesTouchOrIntersect(
         _exitDoor.Draw(spriteBatch, _fadeTexture);
     }
 
-    if (visualModules.HasFlag(SolutionVisualModule.CONCEPTUAL_RULE_REMINDERS))
-    {
-        _conceptualRuleReminderPresentation?.Draw(
-            spriteBatch,
-            _map,
-            _phaseState?.VerticalRouteRevealed == true);
-    }
-
     if (UsesRoomFormat) DrawRoomFormatEffects(spriteBatch);
     if (_isTutorial)
         foreach (Rectangle sign in _map.ControlSigns)
             DrawInteractionPrompt(spriteBatch, sign);
-    DrawDamageEventEffects(spriteBatch, visualModules);
-    _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
-    _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
+    DrawDamageEventEffects(spriteBatch);
 
         spriteBatch.End();
 
@@ -1672,42 +1446,6 @@ private static bool RectanglesTouchOrIntersect(
             _map.DrawLdtkScenery(spriteBatch, inFrontOfPlayer: true);
             spriteBatch.End();
         }
-    }
-
-    private void DrawPropVisualWorld(SpriteBatch spriteBatch, Camera camera)
-    {
-        Matrix cameraTransform = camera.GetTransform();
-        SolutionVisualModule visualModules = GetAppliedVisualModules();
-
-        spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
-        _propVisualPresentation.DrawBackground(spriteBatch);
-        spriteBatch.End();
-
-        spriteBatch.Begin(
-            samplerState: SamplerState.LinearClamp,
-            transformMatrix: cameraTransform);
-        _propVisualPresentation.DrawMidground(
-            spriteBatch,
-            _map.Platforms,
-            _map.Gelatins);
-        spriteBatch.End();
-
-        spriteBatch.Begin(
-            samplerState: SamplerState.LinearClamp,
-            transformMatrix: cameraTransform);
-        _propVisualPresentation.DrawPlayer(spriteBatch, _player);
-        DrawDamageEventEffects(spriteBatch, visualModules);
-        _player.DrawDashRechargeSymbol(spriteBatch, visualModules);
-        _player.DrawDashEnergyAbsorption(spriteBatch, visualModules);
-        spriteBatch.End();
-
-        spriteBatch.Begin(
-            samplerState: SamplerState.LinearClamp,
-            transformMatrix: cameraTransform);
-        _propVisualPresentation.DrawForeground(
-            spriteBatch,
-            _map.PropVisualForegrounds);
-        spriteBatch.End();
     }
 
     private bool _combinationDemo;

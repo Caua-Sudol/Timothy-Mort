@@ -23,11 +23,8 @@ public partial class LevelMap
     private const string VerticalRoutePlatformLayerName = "rotaVerticalSolida";
     private const string VerticalRouteGelatinLayerName = "rotaVerticalGelatina";
     private const string DamageLayerName = "dano";
-    private const string HarmlessSpikeLayerName = "espinhoInofensivo";
     private const string VerticalRouteDamageLayerName = "rotaVerticalDano";
-    private const string SafeRouteSolidLayerName = "rotaSeguraSolida";
     private const string DebugMeasurementLayerName = "medicaoDebug";
-    private const string PropVisualForegroundLayerName = "visualForeground";
     private const string SceneDestinationPropertyName = "destino";
     private const string SceneDestinationSpawnPropertyName = "spawnDestino";
     private const string SceneRequiresAppliedSolutionPropertyName = "requerSolucaoAplicada";
@@ -49,12 +46,9 @@ public partial class LevelMap
     private List<InterventionEntrance> _interventionEntrances = new List<InterventionEntrance>();
     private List<Rectangle> _interventionButtons = new List<Rectangle>();
     private List<Rectangle> _verticalRoutePlatforms = new List<Rectangle>();
-    private List<Rectangle> _safeRoutePlatforms = new List<Rectangle>();
     private List<Rectangle> _verticalRouteGelatins = new List<Rectangle>();
     private List<DamageVolume> _damageVolumes = new List<DamageVolume>();
-    private List<DamageVolume> _harmlessSpikeVolumes = new List<DamageVolume>();
     private List<DamageVolume> _verticalRouteDamageVolumes = new List<DamageVolume>();
-    private List<Rectangle> _propVisualForegrounds = new List<Rectangle>();
     private Dictionary<string, Vector2> _playerSpawns = new Dictionary<string, Vector2>();
     private Texture2D _platformTexture;
     private readonly Dictionary<string, Texture2D> _objectTextures = new Dictionary<string, Texture2D>();
@@ -173,19 +167,9 @@ public partial class LevelMap
         get { return _damageVolumes; }
     }
 
-    public IEnumerable<DamageVolume> HarmlessSpikeVolumes
-    {
-        get { return _harmlessSpikeVolumes; }
-    }
-
     public IEnumerable<DamageVolume> VerticalRouteDamageVolumes
     {
         get { return _verticalRouteDamageVolumes; }
-    }
-
-    public IEnumerable<Rectangle> PropVisualForegrounds
-    {
-        get { return _propVisualForegrounds; }
     }
 
     public LevelMap(string mapPath, string ldtkLevelId = null, LdtkRoomLinks roomLinks = null)
@@ -288,9 +272,7 @@ public void UpdateVisualEffects(double deltaTime)
         return null;
     }
 
-    public IEnumerable<Rectangle> GetSolidColliders(
-        bool verticalRouteRevealed,
-        bool safeRouteRevealed)
+    public IEnumerable<Rectangle> GetSolidColliders(bool verticalRouteRevealed)
     {
         foreach (Rectangle platform in _platforms)
         {
@@ -302,14 +284,6 @@ public void UpdateVisualEffects(double deltaTime)
         if (verticalRouteRevealed)
         {
             foreach (Rectangle platform in _verticalRoutePlatforms)
-            {
-                yield return platform;
-            }
-        }
-
-        if (safeRouteRevealed)
-        {
-            foreach (Rectangle platform in _safeRoutePlatforms)
             {
                 yield return platform;
             }
@@ -372,19 +346,6 @@ public void UpdateVisualEffects(double deltaTime)
         return null;
     }
 
-    public DamageVolume GetHarmlessSpikeVolume(Rectangle hitBox)
-    {
-        foreach (DamageVolume damageVolume in _harmlessSpikeVolumes)
-        {
-            if (hitBox.Intersects(damageVolume.Bounds))
-            {
-                return damageVolume;
-            }
-        }
-
-        return null;
-    }
-
     public void Draw(
         SpriteBatch spriteBatch,
         InterventionEntrancePlacement? activeInterventionEntrancePlacement,
@@ -415,94 +376,27 @@ public void UpdateVisualEffects(double deltaTime)
                 spriteBatch.Draw(_woodPlatformTexture, platform, Color.White);
             else
                 spriteBatch.Draw(_platformTexture, platform, Color.Purple);
-            DrawSharedPlatformDecoration(spriteBatch, platform, visualModules);
-            DrawSharedPlatformOutline(spriteBatch, platform, visualModules);
         }
 
         foreach (Rectangle gelatin in _gelatins)
-        {
             DrawGelatin(spriteBatch, gelatin, visualModules);
-            DrawSharedPlatformDecoration(spriteBatch, gelatin, visualModules);
-            DrawSharedPlatformOutline(spriteBatch, gelatin, visualModules);
-        }
 
         foreach (Rectangle trampoline in _trampolineGelatins)
-        {
-            Color? trampolineColor = visualModules.HasFlag(
-                SolutionVisualModule.DISTINCT_TRAMPOLINE_GELATIN)
-                ? Color.LimeGreen
-                : null;
-            DrawGelatin(
-                spriteBatch,
-                trampoline,
-                visualModules,
-                trampolineColor);
-            DrawSharedPlatformDecoration(spriteBatch, trampoline, visualModules);
-            DrawSharedPlatformOutline(spriteBatch, trampoline, visualModules);
-        }
+            DrawGelatin(spriteBatch, trampoline, visualModules);
 
         if (verticalRouteRevealed)
         {
             foreach (Rectangle platform in _verticalRoutePlatforms)
-            {
                 spriteBatch.Draw(_platformTexture, platform, Color.Purple);
-                DrawSharedPlatformDecoration(spriteBatch, platform, visualModules);
-                DrawSharedPlatformOutline(spriteBatch, platform, visualModules);
-            }
 
             foreach (Rectangle gelatin in _verticalRouteGelatins)
-            {
                 DrawGelatin(spriteBatch, gelatin, visualModules);
-                DrawSharedPlatformDecoration(spriteBatch, gelatin, visualModules);
-                DrawSharedPlatformOutline(spriteBatch, gelatin, visualModules);
-            }
-
-            if ((visualModules & SolutionVisualModule.PATH_INDICATOR) != 0)
-            {
-                DrawPathIndicators(spriteBatch);
-            }
         }
 
-        if (visualModules.HasFlag(SolutionVisualModule.SAFE_ROUTE))
-        {
-            foreach (Rectangle platform in _safeRoutePlatforms)
-            {
-                spriteBatch.Draw(_platformTexture, platform, new Color(38, 122, 82));
-                spriteBatch.Draw(
-                    _platformTexture,
-                    new Rectangle(platform.X, platform.Y, platform.Width, 5),
-                    Color.LightGreen);
-
-                int markerY = platform.Y + Math.Max(8, platform.Height / 2);
-                for (int markerX = platform.X + 20; markerX < platform.Right - 8; markerX += 40)
-                {
-                    spriteBatch.Draw(
-                        _platformTexture,
-                        new Rectangle(markerX, markerY, 12, 4),
-                        Color.LightGreen);
-                    spriteBatch.Draw(
-                        _platformTexture,
-                        new Rectangle(markerX + 8, markerY - 4, 4, 12),
-                        Color.LightGreen);
-                }
-            }
-        }
-
-        DrawDamageVolumes(spriteBatch, _damageVolumes, visualModules, false);
-        DrawDamageVolumes(
-            spriteBatch,
-            _harmlessSpikeVolumes,
-            visualModules,
-            visualModules.HasFlag(SolutionVisualModule.DISTINCT_HARMLESS_SPIKES));
+        DrawDamageVolumes(spriteBatch, _damageVolumes);
 
         if (verticalRouteRevealed)
-        {
-            DrawDamageVolumes(
-                spriteBatch,
-                _verticalRouteDamageVolumes,
-                visualModules,
-                false);
-        }
+            DrawDamageVolumes(spriteBatch, _verticalRouteDamageVolumes);
 
         if (!IsLdtk && activeInterventionEntrancePlacement.HasValue)
         {
@@ -516,11 +410,6 @@ public void UpdateVisualEffects(double deltaTime)
         }
 
         interventionTrigger.Draw(spriteBatch, _interventionButtons, _platformTexture);
-
-        if ((visualModules & SolutionVisualModule.DESTINATION_HIGHLIGHT) != 0)
-        {
-            DrawDestinationHighlights(spriteBatch);
-        }
     }
 
 public void ReloadObjects()
@@ -708,21 +597,12 @@ private void LoadObjects(TmxMap map)
         LoadRectanglesFromOptionalLayer(map, InterventionButtonLayerName, _interventionButtons);
         LoadExitDoor(map);
         LoadRectanglesFromOptionalLayer(map, VerticalRoutePlatformLayerName, _verticalRoutePlatforms);
-        LoadRectanglesFromOptionalLayer(map, SafeRouteSolidLayerName, _safeRoutePlatforms);
     LoadRectanglesFromOptionalLayer(map, VerticalRouteGelatinLayerName, _verticalRouteGelatins);
     LoadDamageVolumesFromOptionalLayer(map, DamageLayerName, _damageVolumes);
     LoadDamageVolumesFromOptionalLayer(
         map,
-        HarmlessSpikeLayerName,
-        _harmlessSpikeVolumes);
-    LoadDamageVolumesFromOptionalLayer(
-        map,
         VerticalRouteDamageLayerName,
         _verticalRouteDamageVolumes);
-    LoadRectanglesFromOptionalLayer(
-        map,
-        PropVisualForegroundLayerName,
-        _propVisualForegrounds);
     LoadDebugMeasurementPair(map);
 }
 
@@ -742,10 +622,8 @@ private void ApplyObjectState(LevelMap candidate)
     _interventionEntrances = candidate._interventionEntrances;
     _interventionButtons = candidate._interventionButtons;
     _verticalRoutePlatforms = candidate._verticalRoutePlatforms;
-    _safeRoutePlatforms = candidate._safeRoutePlatforms;
     _verticalRouteGelatins = candidate._verticalRouteGelatins;
     _damageVolumes = candidate._damageVolumes;
-    _harmlessSpikeVolumes = candidate._harmlessSpikeVolumes;
     _hotSurfaces = candidate._hotSurfaces;
     _impostorRocks = candidate._impostorRocks;
     _signTexts = candidate._signTexts;
@@ -753,7 +631,6 @@ private void ApplyObjectState(LevelMap candidate)
     _controlSigns = candidate._controlSigns;
     _mortCallouts = candidate._mortCallouts;
     _verticalRouteDamageVolumes = candidate._verticalRouteDamageVolumes;
-    _propVisualForegrounds = candidate._propVisualForegrounds;
     _playerSpawns = candidate._playerSpawns;
     PlayerSpawn = candidate.PlayerSpawn;
     DebugMeasurementPair = candidate.DebugMeasurementPair;
@@ -920,9 +797,7 @@ private void ApplyObjectState(LevelMap candidate)
 
     private void DrawDamageVolumes(
         SpriteBatch spriteBatch,
-        IEnumerable<DamageVolume> damageVolumes,
-        SolutionVisualModule visualModules,
-        bool usesDistinctVisual)
+        IEnumerable<DamageVolume> damageVolumes)
     {
         // LDtk supplies hazard artwork through its tile layers; volumes only cause damage.
         if (IsLdtk) return;
@@ -933,35 +808,7 @@ private void ApplyObjectState(LevelMap candidate)
         foreach (DamageVolume damageVolume in damageVolumes)
         {
             Rectangle bounds = damageVolume.Bounds;
-            Color spikeColor = usesDistinctVisual
-                ? Color.MediumVioletRed
-                : Color.OrangeRed;
-            if (visualModules.HasFlag(SolutionVisualModule.DANGER_PLATFORM_HIGHLIGHT))
-            {
-                Rectangle dangerBand = new(
-                    bounds.X,
-                    bounds.Y - 8,
-                    bounds.Width,
-                    bounds.Height + 8);
-                spriteBatch.Draw(_platformTexture, dangerBand, Color.DarkRed * 0.65f);
-                spriteBatch.Draw(
-                    _platformTexture,
-                    new Rectangle(bounds.X, bounds.Y - 8, bounds.Width, 4),
-                    Color.Yellow);
-
-                for (int alertX = bounds.X + 24; alertX < bounds.Right; alertX += 48)
-                {
-                    spriteBatch.Draw(
-                        _platformTexture,
-                        new Rectangle(alertX, bounds.Y - 30, 5, 14),
-                        Color.Yellow);
-                    spriteBatch.Draw(
-                        _platformTexture,
-                        new Rectangle(alertX, bounds.Y - 12, 5, 5),
-                        Color.Yellow);
-                }
-            }
-
+            Color spikeColor = Color.OrangeRed;
             // Vertical hazard strips repeat sideways spikes along their entire height.
             if (TryGetObjectTexture(DamageLayerName, bounds, out Texture2D spikeTexture))
             {
@@ -1043,45 +890,19 @@ private void ApplyObjectState(LevelMap candidate)
     private void DrawGelatin(
         SpriteBatch spriteBatch,
         Rectangle gelatin,
-        SolutionVisualModule visualModules,
-        Color? colorOverride = null)
+        SolutionVisualModule visualModules)
     {
         TryGetObjectTexture(GelatinLayerName, gelatin, out Texture2D gelatinTexture);
         gelatin = GetGelatinVisualBounds(gelatin, visualModules);
 
-        Color gelatinColor = colorOverride ?? (
-            (visualModules & SolutionVisualModule.GELATIN_COLOR) != 0
-                ? Color.DeepSkyBlue
-                : (visualModules & SolutionVisualModule.GELATIN_TEXTURE) != 0
-                    ? Color.CornflowerBlue
-                    : (visualModules & SolutionVisualModule.GELATIN_GLOW) != 0
-                        ? Color.Cyan
-                        : Color.Purple);
-
-        if ((visualModules & SolutionVisualModule.GELATIN_GLOW) != 0)
-        {
-            float glowOpacity = 0.35f;
-
-            if ((visualModules & SolutionVisualModule.GELATIN_GLOW_PULSE) != 0)
-            {
-                double pulse =
-                    (Math.Sin(_visualEffectTime * 3.0) + 1.0) / 2.0;
-                glowOpacity = (float)(0.30 + 0.50 * pulse);
-            }
-
-            var glow = new Rectangle(
-                gelatin.X - 8,
-                gelatin.Y - 8,
-                gelatin.Width + 16,
-                gelatin.Height + 16);
-            spriteBatch.Draw(_platformTexture, glow, Color.Cyan * glowOpacity);
-        }
+        Color gelatinColor = (visualModules & SolutionVisualModule.GELATIN_COLOR) != 0
+            ? Color.DeepSkyBlue
+            : Color.Purple;
 
         if (IsLdtk) { }
         else if (gelatinTexture != null)
         {
-            Color tint = colorOverride ??
-                (visualModules.HasFlag(SolutionVisualModule.GELATIN_COLOR) ? gelatinColor : Color.White);
+            Color tint = visualModules.HasFlag(SolutionVisualModule.GELATIN_COLOR) ? gelatinColor : Color.White;
             spriteBatch.Draw(gelatinTexture, gelatin, tint);
         }
         else
@@ -1098,84 +919,6 @@ private void ApplyObjectState(LevelMap candidate)
                 spriteBatch.Draw(_platformTexture,
                     new Rectangle(mark.X + 2, mark.Y + 2, size - 4, size - 4),
                     new Color(37, 40, 43));
-        }
-
-        if ((visualModules & SolutionVisualModule.GELATIN_DASH_SYMBOL) != 0)
-        {
-            DrawGelatinDashSymbol(spriteBatch, gelatin);
-        }
-
-        if ((visualModules & SolutionVisualModule.GELATIN_DIRECTIONAL_ANIMATION) != 0)
-        {
-            DrawGelatinEnergyChannels(spriteBatch, gelatin);
-        }
-
-        if ((visualModules & SolutionVisualModule.GELATIN_TEXTURE) == 0)
-        {
-            return;
-        }
-
-        for (int x = gelatin.Left + 8; x < gelatin.Right; x += 24)
-        {
-            spriteBatch.Draw(
-                _platformTexture,
-                new Rectangle(x, gelatin.Top, 6, gelatin.Height),
-                Color.White * 0.65f);
-        }
-    }
-
-    private void DrawGelatinDashSymbol(
-        SpriteBatch spriteBatch,
-        Rectangle gelatin)
-    {
-        const int stroke = 4;
-        int centerX = gelatin.Center.X;
-        int centerY = gelatin.Center.Y;
-        Color symbolColor = Color.White * 0.85f;
-
-        spriteBatch.Draw(
-            _platformTexture,
-            new Rectangle(centerX - 10, centerY - 2, 12, stroke),
-            symbolColor);
-        spriteBatch.Draw(
-            _platformTexture,
-            new Rectangle(centerX, centerY - 6, stroke, 12),
-            symbolColor);
-        spriteBatch.Draw(
-            _platformTexture,
-            new Rectangle(centerX + 4, centerY - 2, stroke, stroke),
-            symbolColor);
-    }
-
-    private void DrawGelatinEnergyChannels(
-        SpriteBatch spriteBatch,
-        Rectangle gelatin)
-    {
-        const int channelRowSpacing = 10;
-        const int segmentSpacing = 22;
-        const int segmentWidth = 12;
-        const int segmentHeight = 3;
-
-        for (int y = gelatin.Top + 5;
-             y < gelatin.Bottom - segmentHeight;
-             y += channelRowSpacing)
-        {
-            for (int x = gelatin.Left + 6;
-                 x < gelatin.Right - 4;
-                 x += segmentSpacing)
-            {
-                double phase =
-                    _visualEffectTime * 5.0 +
-                    (x - gelatin.Left) * 0.18 +
-                    (y - gelatin.Top) * 0.45;
-                float pulse = (float)((Math.Sin(phase) + 1.0) * 0.5);
-                Color channelColor = Color.Aquamarine * (0.25f + pulse * 0.60f);
-
-                spriteBatch.Draw(
-                    _platformTexture,
-                    new Rectangle(x, y, segmentWidth, segmentHeight),
-                    channelColor);
-            }
         }
     }
 
@@ -1209,165 +952,5 @@ private void ApplyObjectState(LevelMap candidate)
             gelatin.Y + verticalOffset,
             gelatin.Width + horizontalOffset * 2,
             gelatin.Height - verticalOffset);
-    }
-
-    private void DrawSharedPlatformDecoration(
-        SpriteBatch spriteBatch,
-        Rectangle platform,
-        SolutionVisualModule visualModules)
-    {
-        if ((visualModules & SolutionVisualModule.PLATFORM_DECORATION) == 0)
-        {
-            return;
-        }
-
-        const int markerSize = 6;
-        const int markerSpacing = 32;
-        const int markerInset = 12;
-
-        for (int y = platform.Top + markerInset;
-             y + markerSize <= platform.Bottom;
-             y += markerSpacing)
-        {
-            for (int x = platform.Left + markerInset;
-                 x + markerSize <= platform.Right;
-                 x += markerSpacing)
-            {
-                spriteBatch.Draw(
-                    _platformTexture,
-                    new Rectangle(x, y, markerSize, markerSize),
-                    Color.White * 0.45f);
-            }
-        }
-    }
-
-    private void DrawSharedPlatformOutline(
-        SpriteBatch spriteBatch,
-        Rectangle platform,
-        SolutionVisualModule visualModules)
-    {
-        if ((visualModules & SolutionVisualModule.PLATFORM_OUTLINE) == 0)
-        {
-            return;
-        }
-
-        int thickness = Math.Min(
-            2,
-            Math.Min(platform.Width, platform.Height));
-
-        if (thickness <= 0)
-        {
-            return;
-        }
-
-        Color outlineColor = Color.White * 0.65f;
-
-        spriteBatch.Draw(
-            _platformTexture,
-            new Rectangle(
-                platform.Left,
-                platform.Top,
-                platform.Width,
-                thickness),
-            outlineColor);
-        spriteBatch.Draw(
-            _platformTexture,
-            new Rectangle(
-                platform.Left,
-                platform.Bottom - thickness,
-                platform.Width,
-                thickness),
-            outlineColor);
-        spriteBatch.Draw(
-            _platformTexture,
-            new Rectangle(
-                platform.Left,
-                platform.Top,
-                thickness,
-                platform.Height),
-            outlineColor);
-        spriteBatch.Draw(
-            _platformTexture,
-            new Rectangle(
-                platform.Right - thickness,
-                platform.Top,
-                thickness,
-                platform.Height),
-            outlineColor);
-    }
-
-    private void DrawPathIndicators(SpriteBatch spriteBatch)
-    {
-        bool hasVerticalRoute =
-            _verticalRoutePlatforms.Count > 0 ||
-            _verticalRouteGelatins.Count > 0;
-
-        if (hasVerticalRoute)
-        {
-            foreach (Rectangle platform in _verticalRoutePlatforms)
-            {
-                DrawPathIndicator(spriteBatch, platform);
-            }
-
-            foreach (Rectangle gelatin in _verticalRouteGelatins)
-            {
-                DrawPathIndicator(spriteBatch, gelatin);
-            }
-
-            return;
-        }
-
-        foreach (Rectangle platform in _platforms)
-        {
-            DrawPathIndicator(spriteBatch, platform);
-        }
-
-        foreach (Rectangle gelatin in _gelatins)
-        {
-            DrawPathIndicator(spriteBatch, gelatin);
-        }
-
-        foreach (Rectangle trampoline in _trampolineGelatins)
-        {
-            DrawPathIndicator(spriteBatch, trampoline);
-        }
-    }
-
-    private void DrawPathIndicator(
-        SpriteBatch spriteBatch,
-        Rectangle surface)
-    {
-        var marker = new Rectangle(
-            surface.Center.X - 24,
-            surface.Top - 20,
-            48,
-            8);
-        spriteBatch.Draw(_platformTexture, marker, Color.Gold);
-    }
-
-    private void DrawDestinationHighlights(SpriteBatch spriteBatch)
-    {
-        const int thickness = 4;
-
-        foreach (SceneExit sceneExit in _sceneExits)
-        {
-            Rectangle bounds = sceneExit.Bounds;
-            spriteBatch.Draw(
-                _platformTexture,
-                new Rectangle(bounds.Left, bounds.Top, bounds.Width, thickness),
-                Color.Gold);
-            spriteBatch.Draw(
-                _platformTexture,
-                new Rectangle(bounds.Left, bounds.Bottom - thickness, bounds.Width, thickness),
-                Color.Gold);
-            spriteBatch.Draw(
-                _platformTexture,
-                new Rectangle(bounds.Left, bounds.Top, thickness, bounds.Height),
-                Color.Gold);
-            spriteBatch.Draw(
-                _platformTexture,
-                new Rectangle(bounds.Right - thickness, bounds.Top, thickness, bounds.Height),
-                Color.Gold);
-        }
     }
 }

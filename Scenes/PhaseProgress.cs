@@ -8,8 +8,6 @@ public sealed class PhaseProgress
     private readonly HashSet<string> _completedPhaseIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _finalSolutionIds =
         new(StringComparer.Ordinal);
-    private readonly Dictionary<string, SolutionVisualModule> _finalSolutionVisualModules =
-        new(StringComparer.Ordinal);
 
     public bool IsCompleted(string phaseId)
     {
@@ -20,7 +18,6 @@ public sealed class PhaseProgress
     {
         _completedPhaseIds.Clear();
         _finalSolutionIds.Clear();
-        _finalSolutionVisualModules.Clear();
     }
 
     public void RestoreCompletedPhase(
@@ -31,10 +28,7 @@ public sealed class PhaseProgress
         _completedPhaseIds.Add(phaseId);
 
         if (!string.IsNullOrEmpty(finalSolutionId))
-        {
             _finalSolutionIds[phaseId] = finalSolutionId;
-            _finalSolutionVisualModules[phaseId] = finalSolutionVisualModules;
-        }
     }
 
     public bool IsUnlocked(string phaseId)
@@ -72,25 +66,10 @@ public sealed class PhaseProgress
         }
 
         if (string.IsNullOrEmpty(finalSolutionId))
-        {
             _finalSolutionIds.Remove(phaseId);
-            _finalSolutionVisualModules.Remove(phaseId);
-        }
         else
-        {
             _finalSolutionIds[phaseId] = finalSolutionId;
-            _finalSolutionVisualModules[phaseId] = finalSolutionVisualModules;
-        }
 
         return _completedPhaseIds.Add(phaseId);
-    }
-
-    private SolutionVisualModule GetFinalSolutionVisualModules(string phaseId)
-    {
-        return _finalSolutionVisualModules.TryGetValue(
-            phaseId,
-            out SolutionVisualModule visualModules)
-            ? visualModules
-            : SolutionVisualModule.NONE;
     }
 }

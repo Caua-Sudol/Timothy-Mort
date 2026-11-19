@@ -7,7 +7,6 @@ public static class ConceptualModelsConstraintsSettings
     public const double InvulnerabilityDurationSeconds = 1.0;
     // Mini-jump: about twice the normal jump height, since it does not refill the dash.
     public const float TrampolineVerticalSpeed = 880f;
-    public const float TrampolineDashEquivalentVerticalSpeed = Player.DashSpeed;
 
     // Fixed damage feedback from the start: recuo + coração rachando on hot rocks;
     // the impostor rock swaps the heart for screen shake (see Scene).

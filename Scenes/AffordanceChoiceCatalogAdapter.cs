@@ -13,11 +13,6 @@ public sealed class AffordanceChoiceCatalogAdapter : IInterventionChoiceCatalog
         get { return AffordanceChoiceCatalog.JustificationQuestion; }
     }
 
-    public IReadOnlyList<InterventionSolutionDefinition> AvailableRevisionSolutions
-    {
-        get { return AffordanceChoiceCatalog.AvailableRevisionSolutions; }
-    }
-
     public string SolutionQuestion => AffordanceChoiceCatalog.SolutionQuestion;
 
     private AffordanceChoiceCatalogAdapter()

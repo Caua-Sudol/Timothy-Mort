@@ -302,7 +302,6 @@ public class Game1 : Game
             PhaseSelectOption.AFFORDANCE => ScenarioCatalog.AffordanceVisibilityScenarioId,
             PhaseSelectOption.FEEDBACK => ScenarioCatalog.DamageFeedbackScenarioId,
             PhaseSelectOption.CONCEPTUAL_MODELS => ScenarioCatalog.ConceptualModelsConstraintsScenarioId,
-            PhaseSelectOption.PROP_VISUAL => ScenarioCatalog.PropVisualScenarioId,
             _ => null
         };
 

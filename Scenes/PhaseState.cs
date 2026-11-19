@@ -15,7 +15,6 @@ public sealed class PhaseState
 
     private readonly PhaseDefinition _definition;
     private readonly string _deathCountingScenarioId;
-    private readonly SolutionVisualModule? _baseVisualModulesOverride;
     private bool _appliedSolutionAllowsExit;
     private bool _deathRegisteredInCurrentAttempt;
     private IReadOnlyList<PresentedSolutionDefinition> _initialSolutionPresentation =
@@ -68,9 +67,7 @@ public sealed class PhaseState
     {
         get
         {
-            return _appliedSolutionAllowsExit ||
-                CurrentScenarioId == _definition.ProblemScenarioId &&
-                _definition.HealthAllowsExit(CurrentHealth);
+            return _appliedSolutionAllowsExit;
         }
     }
 
@@ -109,16 +106,6 @@ public sealed class PhaseState
         get { return !string.IsNullOrEmpty(FirstSolutionId); }
     }
 
-    public bool NeedsSolutionRevision
-    {
-        get
-        {
-            return HasFirstChoice &&
-                (PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId || !ExitDoorIsOpen) &&
-                ChoiceCatalog.AvailableRevisionSolutions.Count > 0;
-        }
-    }
-
     public bool InterventionEntranceIsActive
     {
         get { return !_appliedSolutionAllowsExit; }
@@ -133,8 +120,7 @@ public sealed class PhaseState
     {
         get
         {
-            SolutionVisualModule modules =
-                _baseVisualModulesOverride ?? _definition.BaseVisualModules;
+            SolutionVisualModule modules = _definition.BaseVisualModules;
 
             if (!_definition.AppliesSolutionVisualModules ||
                 string.IsNullOrEmpty(AppliedSolutionId))
@@ -165,8 +151,7 @@ public sealed class PhaseState
 
     public PhaseState(
         PhaseDefinition definition,
-        string initialScenarioId,
-        SolutionVisualModule? baseVisualModulesOverride = null)
+        string initialScenarioId)
     {
         _definition = definition ??
             throw new ArgumentNullException(nameof(definition));
@@ -182,7 +167,6 @@ public sealed class PhaseState
         CurrentScenarioId = initialScenarioId;
         InterventionReturnScenarioId = definition.ProblemScenarioId;
         _deathCountingScenarioId = definition.ProblemScenarioId;
-        _baseVisualModulesOverride = baseVisualModulesOverride;
         RestoreDamageState();
     }
 
@@ -562,43 +546,5 @@ public sealed class PhaseState
         }
 
         return false;
-    }
-
-    public void ApplyRevision(InterventionSolutionDefinition solution)
-    {
-        if (solution == null)
-        {
-            throw new ArgumentNullException(nameof(solution));
-        }
-
-        if (!HasFirstChoice || !NeedsSolutionRevision)
-        {
-            throw new InvalidOperationException("A fase nao esta aguardando revisao de solucao.");
-        }
-
-        if (HasRevision && PhaseId != ScenarioCatalog.AffordanceVisibilityScenarioId)
-        {
-            throw new InvalidOperationException("A revisao da fase ja foi registrada.");
-        }
-
-        bool isAffordanceExperiment = PhaseId == ScenarioCatalog.AffordanceVisibilityScenarioId;
-        if (isAffordanceExperiment)
-        {
-            // Accept only one of this phase's three alternatives; preserve the first hypothesis.
-            solution = ChoiceCatalog.GetSolution(solution.Id);
-        }
-
-        if (!isAffordanceExperiment &&
-            (solution.ChoiceRound != SolutionChoiceRound.REVISION ||
-             solution.Quality == SolutionQuality.INADEQUATE))
-        {
-            throw new InvalidOperationException("A revisao deve usar uma solucao parcial ou adequada.");
-        }
-
-        AppliedSolutionId = solution.Id;
-        SolutionSelectionCount++;
-        HasRevision = true;
-        VerticalRouteRevealed = true;
-        _appliedSolutionAllowsExit = solution.OpensExitDoor;
     }
 }

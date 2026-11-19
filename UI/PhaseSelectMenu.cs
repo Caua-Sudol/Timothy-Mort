@@ -10,7 +10,6 @@ public enum PhaseSelectOption
 {
     NONE = 0,
     AFFORDANCE = 1,
-    PROP_VISUAL = 2,
     FEEDBACK = 3,
     CONCEPTUAL_MODELS = 4,
     SCALE_TEST = 5

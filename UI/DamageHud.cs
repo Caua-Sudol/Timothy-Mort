@@ -9,7 +9,6 @@ public sealed class DamageHud
 {
     private const int Margin = 32;
     private const int HeartSize = 52;
-    private const int EmphasizedHeartSize = 64;
     private const int OutlinePixels = 3;
     private static readonly Color FullFillColor = new(214, 38, 52);
     private static readonly Color FullStrokeColor = new(60, 8, 16);
@@ -33,13 +32,11 @@ public sealed class DamageHud
         _heartSilhouette = BuildHeart(icon, pixels, interior, Color.White, Color.White);
     }
 
-    public void Draw(SpriteBatch spriteBatch, int currentHealth, int maximumHealth,
-        SolutionVisualModule visualModules)
+    public void Draw(SpriteBatch spriteBatch, int currentHealth, int maximumHealth)
     {
         if (_fullHeart == null || maximumHealth <= 0) return;
-        bool emphasizeHud = visualModules.HasFlag(SolutionVisualModule.DAMAGE_HUD_EMPHASIS);
-        int size = emphasizeHud ? EmphasizedHeartSize : HeartSize;
-        int spacing = emphasizeHud ? 16 : 12;
+        const int size = HeartSize;
+        const int spacing = 12;
         spriteBatch.Begin(samplerState: SamplerState.LinearClamp);
         for (int index = 0; index < maximumHealth; index++)
         {

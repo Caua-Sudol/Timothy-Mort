@@ -58,7 +58,7 @@ Todas as teclas funcionam ao mesmo tempo. O "esquema" só muda os nomes de tecla
 
 As salas das três fases, as salas de intervenção e o tutorial estão num único projeto: `Content/Maps/Affordance.ldtk`. As camadas, os valores de colisão e as entidades estão documentados em [Content/Maps/README.md](Content/Maps/README.md).
 
-Restam dois mapas TMX (Tiled): a cena inicial e o protótipo visual. Os TMX antigos das fases e da sala de escala saíram do projeto.
+Resta um mapa TMX (Tiled), `SimpleCutsceneMap.tmx`: o id dele só serve de sinal para "voltar à seleção", e o carregador TMX ainda existe no código. Os outros TMX saíram do projeto.
 
 ## Dados da pesquisa
 

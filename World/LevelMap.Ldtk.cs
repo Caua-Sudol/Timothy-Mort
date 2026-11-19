@@ -333,13 +333,9 @@ public partial class LevelMap
                             .Select(bounds => new DamageVolume(bounds)));
                         continue;
                     }
-                    // Phase 3: looks like a spike already seen, but does no harm.
+                    // Retired value (old phase 3 harmless spike): ignored, never treated as solid.
                     if (kind.Value.Equals("espinhoInofensivo", StringComparison.OrdinalIgnoreCase))
-                    {
-                        _harmlessSpikeVolumes.AddRange(MergeLdtkCells(cells, columns, size, kind.Key, ox, oy)
-                            .Select(bounds => new DamageVolume(bounds)));
                         continue;
-                    }
                     // Phase 3: looks like the gelatin already seen, but bounces the player up.
                     if (kind.Value.Equals("gelatinaTrampolim", StringComparison.OrdinalIgnoreCase))
                     {
