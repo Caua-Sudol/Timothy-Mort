@@ -180,6 +180,11 @@ secrets.json
 AGENTS.md
 
 # ---------------------------
+# LDtk (cópias automáticas do editor)
+# ---------------------------
+Content/Maps/*/backups/
+
+# ---------------------------
 # Affinity
 # ---------------------------
 *.af

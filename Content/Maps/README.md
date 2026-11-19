@@ -1,6 +1,6 @@
 # Mapas do jogo (LDtk)
 
-Abra `Content/Maps/Affordance.ldtk` no LDtk. Apesar do nome, este projeto contém **todas** as salas das três fases, as três salas de intervenção e o tutorial. A pasta `Content/Maps/Affordance/backups/` guarda cópias automáticas do LDtk; não edite essas cópias. `EurekaTeste.ldtk` é usado só pela sala de teste do menu (ver `EurekaTeste.md`).
+Abra `Content/Maps/Affordance.ldtk` no LDtk. Apesar do nome, este projeto contém **todas** as salas das três fases, as três salas de intervenção e o tutorial. O LDtk cria cópias automáticas em `Content/Maps/Affordance/backups/`; elas ficam fora do git (`.gitignore`) e não devem ser editadas. `EurekaTeste.ldtk` é usado só pela sala de teste do menu (ver `EurekaTeste.md`).
 
 O `.csproj` copia `Content/Maps/*.ldtk` na compilação: depois de salvar no LDtk, recompile ou use `Ctrl + R` dentro da sala (só em Debug).
 

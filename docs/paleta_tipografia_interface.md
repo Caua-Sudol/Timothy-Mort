@@ -151,7 +151,7 @@ Aplicação apenas em `Content/AffordanceVisibilidade.tmx`, nos objetos da camad
 `mapaGeral` nomeados `wood` seguido de número (atualmente `wood1` a `wood4`).
 A arte substitui o retângulo visual de blockout; a colisão mantém as medidas do mapa.
 
-> A seção acima é histórica: as plataformas de tronco eram do mapa TMX antigo da Affordance.
+> A seção acima é histórica: as plataformas de tronco eram do mapa TMX antigo da Affordance, que saiu do projeto em 19/11/2026.
 
 ## Cores desenhadas por código (novembro/2026)
 

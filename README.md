@@ -29,28 +29,15 @@ Introdução -> Sala 1 -> Sala 2 (passagem para a sala 3 bloqueada até a escolh
 -> Fase concluída
 ```
 
-| Fase | Problema | Soluções (a melhor primeiro) | Documento LM-GM |
-|---|---|---|---|
-| Affordance e visibilidade | Gelatinas que recarregam o dash têm a mesma aparência da terra. | Aparência, Marcação, Deformação | [docs/lm_gm_affordance_visibilidade.md](docs/lm_gm_affordance_visibilidade.md) |
-| Feedback | Rochas quentes ferem sem nenhum sinal. | Recuo, Coração rachando, Tela tremendo | [docs/lm_gm_feedback.md](docs/lm_gm_feedback.md) |
-| Modelos conceituais | Impostoras com a aparência de plataformas conhecidas agem de outro jeito. | Diferenciar, Restaurar, Animar | [docs/lm_gm_modelos_conceituais_restricoes.md](docs/lm_gm_modelos_conceituais_restricoes.md) |
+| Fase | Problema | Soluções (a melhor primeiro) |
+|---|---|---|
+| Affordance e visibilidade | Gelatinas que recarregam o dash têm a mesma aparência da terra. | Aparência, Marcação, Deformação |
+| Feedback | Rochas quentes ferem sem nenhum sinal. | Recuo, Coração rachando, Tela tremendo |
+| Modelos conceituais | Impostoras com a aparência de plataformas conhecidas agem de outro jeito. | Diferenciar, Restaurar, Animar |
 
 A qualidade de cada solução é registrada na telemetria, mas não é mostrada ao jogador.
 
-## LM-GM
-
-O mapeamento pedagógico de cada fase segue o modelo Learning Mechanics–Game Mechanics:
-
-> Arnab, S. et al. (2015). *Mapping learning and game mechanics for serious games analysis*. BJET, 46(2), 391–411. DOI: [10.1111/bjet.12113](https://doi.org/10.1111/bjet.12113)
-
-Cada documento tem:
-
-- uma tabela com game mechanic, learning mechanic, implementação e uso;
-- um mapa do fluxo pelos níveis de Bloom;
-- a leitura das soluções;
-- as evidências disponíveis na telemetria.
-
-O modelo é descritivo: ele formaliza a hipótese de design, mas não substitui a avaliação com participantes.
+O mapeamento pedagógico das fases (modelo LM-GM, Arnab et al., 2015) está no texto do TCC.
 
 ## Controles
 
@@ -71,7 +58,7 @@ Todas as teclas funcionam ao mesmo tempo. O "esquema" só muda os nomes de tecla
 
 As salas das três fases, as salas de intervenção e o tutorial estão num único projeto: `Content/Maps/Affordance.ldtk`. As camadas, os valores de colisão e as entidades estão documentados em [Content/Maps/README.md](Content/Maps/README.md).
 
-Restam alguns mapas TMX (Tiled): a cena inicial, o protótipo visual e a sala de escala. Os TMX das versões antigas das fases não são mais carregados.
+Restam dois mapas TMX (Tiled): a cena inicial e o protótipo visual. Os TMX antigos das fases e da sala de escala saíram do projeto.
 
 ## Dados da pesquisa
 
@@ -102,7 +89,7 @@ Configurações em `App/ResearchStudyConfiguration.cs`:
 | `UI` | Menus, tela de escolhas, telas de introdução, resultado e conclusão. |
 | `World` | Leitura e desenho dos mapas LDtk e TMX. |
 | `Persistence` | SQLite e exportação JSON da sessão. |
-| `docs` | Documentação de design. Os documentos de checkpoint antigos estão marcados como históricos. |
+| `docs` | Régua de movimento (`metricas_mov.md`) e paleta (`paleta_tipografia_interface.md`). |
 
 ## Executar
 

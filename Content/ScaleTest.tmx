@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="90" height="50" tilewidth="32" tileheight="32" infinite="0" nextlayerid="3" nextobjectid="22">
- <objectgroup id="1" name="mapaGeral"/>
- <objectgroup id="2" name="spawnJogador">
-  <object id="21" name="spawn_inicial" x="482.523" y="1103.02" width="16" height="16"/>
- </objectgroup>
-</map>
